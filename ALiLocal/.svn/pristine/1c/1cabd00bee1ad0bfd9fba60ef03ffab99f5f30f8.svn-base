@@ -1,0 +1,142 @@
+<?php
+class Controller_Account extends Controller_Abstract {
+	/**
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 账号---产品---渠道同步
+	 */
+	function actionSync() {
+		if(request_is_post()){
+			$account=json_decode(Helper_Curl::get1('http://kuaijian.far800.com/index.php?controller=cron&action=getaccount'),true);
+			//print_r($account);exit;
+			if(count($account)){
+				Accountsync::find()->getAll()->destroy();
+				foreach ($account as $value){
+					$account_sync=new Accountsync();
+					$account_sync->changeProps(array(
+						'account'=>$value['print_account'] ,
+						'product_id'=>$value['product_id'] ,
+						'product_code'=>$value['product_code'] ,
+						'product_name'=>$value['product_name'] ,
+						'channel_id'=>$value['channel_id'] ,
+						'channel_name'=>$value['channel_name'] ,
+						'fail_time'=>$value['fail_time'] ,
+						'operator'=>MyApp::CurrentUser('staff_name')
+					));
+					$account_sync->save();
+					$accountinfo=$value['accountinfo'];
+					$upsaccount=new UPSAccount();					
+					$upsaccount->aname=trim(strtoupper($accountinfo['aname']));
+					$upsaccount->state=trim(strtoupper($accountinfo['state']));
+					$upsaccount->city=trim(strtoupper($accountinfo['city']));
+					$upsaccount->postcode=trim($accountinfo['postcode']);
+					$upsaccount->name=trim(strtoupper($accountinfo['name']));
+					$upsaccount->phone=trim($accountinfo['phone']);
+					$upsaccount->address=trim(strtoupper($accountinfo['address']));
+					$upsaccount->city_cn=trim($accountinfo['city_cn']);
+					$upsaccount->sender_cn=trim($accountinfo['sender_cn']);
+					$upsaccount->business_code=trim($accountinfo['business_code']);
+					$upsaccount->address_cn=trim($accountinfo['address_cn']);
+					$upsaccount->credit_code=trim(strtoupper($accountinfo['credit_code']));
+					$upsaccount->userid=trim($accountinfo['userid']);
+					$upsaccount->pwd=trim($accountinfo['pwd']);
+					$upsaccount->account=trim($accountinfo['account']);
+					$upsaccount->license=trim($accountinfo['license']);
+					$upsaccount->countrycode=trim(strtoupper($accountinfo['countrycode']));
+					$upsaccount->tp_account=trim($accountinfo['tp_account']);
+					$upsaccount->tp_countrycode=trim(strtoupper($accountinfo['tp_countrycode']));
+					$upsaccount->tp_postalcode=trim($accountinfo['tp_postalcode']);
+					$upsaccount->tp_cname=trim($accountinfo['tp_cname']);
+					$upsaccount->available=trim($accountinfo['available']);;
+					$upsaccount->save();
+				}
+			}
+		}
+		$this->_view['account']=Accountsync::find()->getAll();
+	}
+	
+	function actionDetail() {
+	    $account=request('account');
+	    $upsaccount=UPSAccount::find('account=?',$account)->getOne();
+	    if ($upsaccount->isNewRecord()) {
+	        exit('error account');
+	    }
+	    if(request_is_post()){
+	       //信息保存
+	       $upsaccount->aname=trim(strtoupper(request('aname')));
+	       $upsaccount->state=trim(strtoupper(request('state')));
+	       $upsaccount->city=trim(strtoupper(request('city')));
+	       $upsaccount->postcode=trim(request('postcode'));
+	       $upsaccount->name=trim(strtoupper(request('name')));
+	       $upsaccount->phone=trim(request('phone'));
+	       $upsaccount->address=trim(strtoupper(request('address')));
+	       $upsaccount->city_cn=trim(request('city_cn'));
+	       $upsaccount->sender_cn=trim(request('sender_cn'));
+	       $upsaccount->business_code=trim(request('business_code'));
+	       $upsaccount->address_cn=trim(request('address_cn'));
+	       $upsaccount->credit_code=trim(strtoupper(request('credit_code')));
+	       $upsaccount->save();
+	       return $this->_redirectMessage('发件人信息修改', '保存成功', url('/detail',array('account'=>$upsaccount->account)));
+	    }
+	    $this->_view['account']=$upsaccount;
+	}
+	
+	/**
+	 * @todo UPS账号管理
+	 * @author 许杰晔
+	 * @since 2020.6.3
+	 * @link Feature #80144
+	 */
+	function actionUpsList(){
+		$this->_view['accounts']=UPSAccount::find('account_level=2')->getAll();		
+	}
+	
+	/**
+	 * @todo UPS账号信息
+	 * @author 许杰晔
+	 * @since 2020.6.3
+	 * @link Feature #80144
+	 */
+	function actionUpsDetail() {		
+		$upsaccount=new UPSAccount();
+		if(request('id')){
+		//$account=request('account');
+		$upsaccount=UPSAccount::find('id=?',request('id'))->getOne();
+			if ($upsaccount->isNewRecord()) {
+				exit('error account');
+			}
+		}
+		if(request_is_post()){
+			//信息保存
+			$upsaccount->aname=trim(strtoupper(request('aname')));
+			$upsaccount->state=trim(strtoupper(request('state')));
+			$upsaccount->city=trim(strtoupper(request('city')));
+			$upsaccount->postcode=trim(request('postcode'));
+			$upsaccount->name=trim(strtoupper(request('name')));
+			$upsaccount->phone=trim(request('phone'));
+			$upsaccount->address=trim(strtoupper(request('address')));
+			$upsaccount->city_cn=trim(request('city_cn'));
+			$upsaccount->sender_cn=trim(request('sender_cn'));
+			$upsaccount->business_code=trim(request('business_code'));
+			$upsaccount->address_cn=trim(request('address_cn'));
+			$upsaccount->credit_code=trim(strtoupper(request('credit_code')));
+			$upsaccount->userid=trim(request('userid'));
+			$upsaccount->pwd=trim(request('pwd'));
+			$upsaccount->account=trim(request('account'));
+			$upsaccount->license=trim(request('license'));
+			$upsaccount->countrycode=trim(strtoupper(request('countrycode')));
+			$upsaccount->tp_account=trim(request('tp_account'));
+			$upsaccount->tp_countrycode=trim(strtoupper(request('tp_countrycode')));
+			$upsaccount->tp_postalcode=trim(request('tp_postalcode'));
+			$upsaccount->tp_cname=trim(request('tp_cname'));
+			$upsaccount->available=1;
+			$upsaccount->account_level=2;
+			$upsaccount->save();
+			return $this->_redirectMessage('发件人信息修改', '保存成功', url('/upslist'));
+		}
+		$this->_view['account']=$upsaccount;
+	}
+}

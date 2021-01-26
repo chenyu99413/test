@@ -1,0 +1,100 @@
+<?PHP $this->_extends('_layouts/modal_layout'); ?>
+<?PHP $this->_block('head');?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('container_main');?>
+<div style="width: 300px;">
+	<form style="margin-bottom: 0px;" id="edit-currency-form">
+		<span>提示：比如1USD=7.0906CNY,汇率填7.0906。</span>
+		<table class="table table-bordered table-condensed">
+			<colgroup>
+				<col style="width: 80px;">
+				<col style="width: 200px;">
+			</colgroup>
+			<tbody>
+				<tr>
+					<th>代码</th>
+					<td>
+						<input type="text" name="code" value="<?php echo $currency->code?>" />
+						<input type="hidden" name="currency_id"
+							value="<?php echo request('currency_id')?>" />
+					</td>
+				</tr>
+				<tr>
+					<th>名称</th>
+					<td>
+						<input type="text" name="name" value="<?php echo $currency->name?>"
+							required="required" />
+					</td>
+				</tr>
+				<tr>
+					<th>汇率</th>
+					<td>
+						<input type="text" name="rate" value="<?php echo $currency->rate?>" placeholder="默认货币CNY填写1.00"
+							required="required" />
+					</td>
+				</tr>
+				<tr>
+					<th>汇率时间设置</th>
+					<td>
+						<div class="input-daterange input-group">
+							<input type="text" class="form-control date-picker" name="start_date" id="start_date" placeholder="不填写默认本月"
+    						value="<?php echo $currency->start_date?date('Y-m',$currency->start_date):''?>">
+						</div>
+    				</td>
+				</tr>
+			</tbody>
+		</table>
+		<div class="form-actions">
+			<button type="button" class="btn btn-primary" id="save-currency">
+				<i class="icon-save"></i>
+				保存
+			</button>
+		</div>
+	</form>
+</div>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('page_js');?>
+<script type="text/javascript">
+$(function(){
+	$('#save-currency').on('click',function(){
+		var saveload = layer.load(1);
+		var index = parent.layer.getFrameIndex(window.name);
+		var form_data = $('#edit-currency-form').serialize();
+		$.ajax({
+			url: '<?php echo url("codecurrency/editsave")?>',
+			type: 'POST',
+			dataType: 'json',
+			data: form_data,
+		})
+		.done(function(data) {
+			layer.close(saveload);
+			parent.layer.msg(data.message);
+			if (data.success) {
+				parent.layer.close(index);
+				parent.$('#search-currency-btn').click();
+			}
+		})
+		.fail(function(data) {
+			layer.close(saveload);
+			parent.layer.alert('发生内部错误，暂时无法修改');
+		});
+	});
+	
+	// 时间初始化
+	$('.date-picker').datepicker({
+        startView: 'months',  //起始选择范围
+        maxViewMode:'years', //最大选择范围
+        minViewMode:'months', //最小选择范围
+        todayHighlight : true,// 当前时间高亮显示
+        autoclose : 'true',// 选择时间后弹框自动消失
+        format : 'yyyy-mm',// 时间格式
+        language : 'zh-CN',// 汉化
+        // todayBtn:"linked",//显示今天 按钮
+        clearBtn : true,// 清除按钮，和今天 按钮只能显示一个   
+	})
+	if($('.datepicker').css('display')=='block'){
+		$('.datepicker').css('z-index','9002')
+	}
+});
+</script>
+<?PHP $this->_endblock();?>

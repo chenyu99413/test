@@ -1,0 +1,92 @@
+<?php
+class Helper_Label_Ems{
+	/**
+	 * @todo   ems账号渠道
+	 * @author stt
+	 * @since  2020-09-09
+	 * @link   #82496
+	 */
+	static function ems($order){
+		$url="http://134.175.95.217:8082/createOrderApi.htm";
+		$invoice=array();
+		foreach ($order->product as $p){
+			$invoice[]=array(
+				"invoice_amount"=> $p->product_quantity*$p->declaration_price,
+				"invoice_pcs"=> $p->product_quantity,
+				"invoice_title"=> $p->product_name_en_far,
+				"invoice_weight"=> "",
+				"item_id"=>"",
+				"item_transactionid"=> "",
+				"sku"=> $p->product_name_far,
+				"sku_code"=> ""
+			);
+		}
+		$arr=array(
+			"buyerid"=> "",
+			"consignee_address"=> $order->consignee_street1.$order->consignee_street2,
+			"consignee_city"=> $order->consignee_city,
+			"consignee_mobile"=> $order->consignee_mobile,
+			"order_returnsign"=>"Y",
+			"consignee_name"=> $order->consignee_name1,
+			"trade_type"=> "ZYXT",
+			"consignee_postcode"=> $order->consignee_postal_code,
+			"consignee_state"=> $order->consignee_state_region_code ? $order->consignee_state_region_code : $order->consignee_city,
+			"consignee_telephone"=> $order->consignee_telephone ? '/'.$order->consignee_telephone : '',
+			"country"=> $order->consignee_country_code,
+			"customer_id"=> "16461",
+			"customer_userid"=> "12921",
+			"orderInvoiceParam"=> $invoice,
+			"order_customerinvoicecode"=> $order->ali_order_no,
+			"product_id"=> "2041",
+			"weight"=> $order->weight_label,
+			"product_imagepath"=> ""
+		);
+		QLog::log(json_encode($arr));
+		//EMS订单报文
+		$log=new OrderLog(array(
+			'order_id'=>$order->order_id,
+			'staff_id'=>MyApp::currentUser('staff_id'),
+			'staff_name'=>MyApp::currentUser('staff_name'),
+			//json
+			'comment'=>'EMS订单报文：'.json_encode($arr)
+		));
+		$log->save();
+		$return=Helper_Curl::post($url, 'param='.json_encode($arr));
+		QLog::log($return);
+		$return=json_decode($return,true);
+		if($return['ack']=='true'){
+			sleep(2);
+			$labelurl='http://134.175.95.217:8089/order/FastRpt/PDF_NEW.aspx?PrintType=A4&order_id=';
+			$dir=Q::ini('upload_tmp_dir');
+			@Helper_Filesys::mkdirs($dir);
+			$target=$dir.DS.$return['tracking_number'].'.pdf';
+			try {
+				$source=file_get_contents($labelurl.$return['order_id']);
+				file_put_contents($target,$source);
+				Helper_PDF::ems($target);
+				$uploadoss = new Helper_AlipicsOss();
+				//上传到oss
+				$miandan_data = $uploadoss->uploadAlifiles($return['tracking_number'].'.pdf');
+				if ($uploadoss->doesExist($return['tracking_number'].'.pdf')){
+					//上传成功，删除
+					unlink($dir.DS.$return['tracking_number'].'.pdf');
+				}
+				$order->tracking_no=$return['tracking_number'];
+				$order->ems_order_id=$return['order_id'];
+				$order->save();
+				//保存子单信息，用于交货核查
+				$subcode=new Subcode();
+				$subcode->order_id=$order->order_id;
+				$subcode->sub_code=$return['tracking_number'];
+				$subcode->save();
+				$view['errormessage']='';
+				$view['account']='EMS';
+			} catch (Exception $e) {
+				$view['errormessage']="EMS获取面单失败";
+			}
+		}else {
+			$view['errormessage']=urldecode($return['message']);
+		}
+		return $view;
+	}
+}

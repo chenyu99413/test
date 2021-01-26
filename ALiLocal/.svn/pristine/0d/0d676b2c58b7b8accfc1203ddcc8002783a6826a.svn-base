@@ -1,0 +1,228 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    补充数据
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>
+						订单日期从：
+					</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date" )
+						) )?>
+					</td>
+					<th>到</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date")
+						) )?>
+					</td>
+					<th>阿里订单号</th>
+					<td>
+						<input name="ali_order_no" type="text" style="width: 150px"
+							value="<?php echo request('ali_order_no')?>">
+					</td>
+					<th>泛远单号</th>
+					<td>
+						<input name="far_no" type="text" style="width: 150px"
+							value="<?php echo request('far_no')?>">
+					</td>
+					<th>类型</th>
+					<td>
+						<?php
+						echo Q::control ( "dropdownbox", "type", array (
+							"items" => array('1'=>'低价-非港澳台','2'=>'低价-港澳台','3'=>'高价'),
+						    "value" => request ( "type" ),
+							"style" => "width:140px"
+						) )?>
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<table class="FarTable">
+	    <?php foreach ($orders as $order):?>
+	    <thead>
+    	    <tr>
+    	       <th colspan="6"><?php echo $order->ali_order_no?></th>
+    	    </tr>
+	    </thead>
+	    <?php if(request('type','1')=='3'):?>
+	    <tr data="<?php echo $order->order_id?>">
+	       <th style="width:80px;">委托书编号</th>
+	       <td style="width:160px;"><input type="text" value=""></td>
+	       <th style="width:90px;">经营单位编码</th>
+	       <td colspan="2"><input type="text" style="width:240px;" maxlength="10" class="business_code" value=""></td>
+	    </tr>
+	    <?php endif;?>
+	    <?php if(request('type','1')=='1' || request('type','1')=='2'):?>
+	    <?php if(request('type','1')=='2'):?>
+	    <tr data="<?php echo $order->order_id?>">
+	        <th style="width:80px;">收件人中文名</th>
+    		<td style="width:160px;">
+    			<input type="text" value="">
+    		</td>
+    		<th style="width:90px;">收件人地址中文</th>
+    		<td>
+    			<input type="text" style="width:300px;" class="address" value="">
+    		</td>
+	    </tr>
+	    <?php endif;?>
+	    <tr>
+	       <td colspan="6" style="padding:2px 0px;">
+	           <table class="FarTable">
+	               <thead>
+	                   <tr>
+	                       <th>中文品名</th>
+	                       <th>英文品名</th>
+	                       <th>HS Code</th>
+	                       <th>数量1</th>
+	                       <th>单位1</th>
+	                       <th>数量2</th>
+	                       <th>单位2</th>
+	                   </tr>
+	               </thead>
+	               <tbody>
+	                   <?php foreach ($order->product as $product):?>
+	                   <tr data="<?php echo $product->order_product_id?>">
+	                       <td><input type="text" value="<?php echo $product->product_name?>"></td>
+	                       <td><input type="text" value="<?php echo $product->product_name_en?>"></td>
+	                       <td><input type="text" value="<?php echo $product->hs_code?>"></td>
+	                       <td><input type="text" value=""></td>
+	                       <td><input type="text" value=""></td>
+	                       <td><input type="text" value="<?php echo $product->product_quantity?>"></td>
+	                       <td><input type="text" class="unit2" value=""></td>
+	                   </tr>
+	                   <?php endforeach;?>
+	               </tbody>
+	           </table>
+	       </td>
+	    </tr>
+	    <?php endif;?>
+	    <?php endforeach;?>
+	</table>
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+</form>
+<script type="text/javascript">
+$('body').on('keydown', 'input, select', function(e) {
+	if (e.keyCode == 13) {
+		return enter2tab(this,e);
+	}
+});
+$("form").keypress(function(e) {
+	  if (e.which == 13) {
+	    return false;
+	  }
+	});
+$('.FarTable').find('input').eq(0).focus();
+//保存中文地址
+$(".address").on('keydown',function (e) {
+	if (e.keyCode == 13) {
+		var consignee_name_cn=$(this).parent().parent().find('input').eq(0).val();
+		var consignee_address_cn=$(this).val();
+		var order_id=$(this).parent().parent().attr('data');
+		if(consignee_name_cn==''){
+			$.messager.alert('Error','请填写收件人中文名');
+		}else if(consignee_address_cn==''){
+			$.messager.alert('Error','请填写收件人地址中文名');
+		}else{
+			//保存
+			$.ajax({
+				url:'<?php echo url('/saveconsignee')?>',
+				data:{consignee_name_cn:consignee_name_cn,consignee_address_cn:consignee_address_cn,order_id:order_id},
+				type:'post',
+				async:false,
+				success:function(){
+					
+				}
+			});
+		}
+	}
+});
+//保存低价产品信息
+$(".unit2").on('keydown',function (e) {
+	if (e.keyCode == 13) {
+		var product_name_cn=$(this).parent().parent().find('input').eq(0).val();
+		var product_name_en=$(this).parent().parent().find('input').eq(1).val();
+		var hs_code=$(this).parent().parent().find('input').eq(2).val();
+		var quantity1=$(this).parent().parent().find('input').eq(3).val();
+		var unit1=$(this).parent().parent().find('input').eq(4).val();
+		var quantity2=$(this).parent().parent().find('input').eq(5).val();
+		var unit2=$(this).val();
+		var order_product_id=$(this).parent().parent().attr('data');
+		if(product_name_cn==''){
+			$.messager.alert('Error','请填写产品中文名');
+		}else if(product_name_en==''){
+			$.messager.alert('Error','请填写产品英文名');
+		}else if(hs_code==''){
+			$.messager.alert('Error','请填写HS编码');
+		}else if(quantity1==''){
+			$.messager.alert('Error','请填写数量1');
+		}else if(unit1==''){
+			$.messager.alert('Error','请填写单位1');
+		}else if(quantity2==''){
+			$.messager.alert('Error','请填写数量2');
+		}else if(unit2==''){
+			$.messager.alert('Error','请填写单位2');
+		}else{
+			//保存
+			$.ajax({
+				url:'<?php echo url('/saveproduct')?>',
+				data:{product_name_cn:product_name_cn,product_name_en:product_name_en,
+					hs_code:hs_code,quantity1:quantity1,unit1:unit1,quantity2:quantity2,unit2:unit2,order_product_id:order_product_id},
+				type:'post',
+				async:false,
+				success:function(){
+					
+				}
+			});
+		}
+	}
+});
+//保存经营单位编码和委托书编号
+$(".business_code").on('keydown',function (e) {
+	if (e.keyCode == 13) {
+		var business_code=$(this).val();
+		var commission_code=$(this).parent().parent().find('input').eq(0).val();
+		var order_id=$(this).parent().parent().attr('data');
+		if(commission_code==''){
+			$.messager.alert('Error','请填写委托书编号');
+		}else if(business_code=='' || business_code.length!='10'){
+			$.messager.alert('Error','10位经营单位编码不正确');
+		}else{
+			//保存
+			$.ajax({
+				url:'<?php echo url('/savebusinesscode')?>',
+				data:{business_code:business_code,commission_code:commission_code,order_id:order_id},
+				type:'post',
+				async:false,
+				success:function(){
+					
+				}
+			});
+		}
+	}
+});
+</script>
+<?PHP $this->_endblock();?>
+

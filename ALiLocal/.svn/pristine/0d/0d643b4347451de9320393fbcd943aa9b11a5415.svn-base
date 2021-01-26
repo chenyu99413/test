@@ -1,0 +1,76 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+  工作台
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'工作台' => ''
+	) 
+) )?>
+<form method="POST">
+	 <h5>
+	 	(阿里/泛远/末端)单号:<input style="width:160px;" type='text' value="" name="order_no" autofocus>
+		 <button class="btn btn-primary btn-small" id="search">
+		 	<i class="icon-search"></i>
+		                 搜索
+	     </button>
+     </h5>
+    <h4>
+    	待取件清单 <button type="submit" name="export" class="btn btn-small btn-info" value="exportpick">
+		<i class="icon-download"></i>
+		导出
+		</button>
+	</h4>
+    <table class="FarTable">
+		<thead>
+			<tr>
+				<th>序号</th>
+				<th>阿里订单号</th>
+				<th width="90px">订单日期</th>
+				<th>取件网点</th>
+				<th>省</th>
+				<th>市</th>
+				<th width="200px">地址</th>
+				<th>邮编</th>
+				<th 姓名</th>
+				<th>手机号</th>
+				<th>电话</th>
+				<th>邮箱</th>
+				<th>件数</th>
+			</tr>
+		</thead>
+		<tbody>
+	<?php $i=1;?>
+	<?php foreach ($orders as $p):?>
+	<?php  $item_count=0;
+		foreach ($p->packages as $package){
+			$item_count+=$package->quantity;
+		}
+	?>
+		<tr>
+			<td><?php echo $i++ ?></td>
+			<td><?php echo $p->ali_order_no?></td>
+			<td><?php echo Helper_Util::strDate('m-d H:i', $p->create_time)?></td>
+			<td><?php echo $p->pick_company?></td>
+			<td><?php echo $p->sender_state_region_code?></td>
+			<td ><?php echo $p->sender_city?></td>
+			<td ><?php echo $p->sender_street1.' '.$p->sender_street2?></td>
+			<td ><?php echo $p->sender_postal_code?></td>
+			<td><?php echo $p->sender_name1?></td>
+			<td><?php echo $p->sender_mobile?></td>
+			<td ><?php echo $p->sender_telephone?></td>
+			<td><?php echo $p->sender_email?></td>
+			<td><?php echo $item_count?></td>
+		</tr>
+	<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+    
+<?PHP $this->_endblock();?>
+

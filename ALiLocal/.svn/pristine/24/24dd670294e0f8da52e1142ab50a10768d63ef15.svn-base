@@ -1,0 +1,363 @@
+<input type="hidden" id="hidden_balance">
+<table id="table_income" class="FarTable">
+	<caption>
+		<strong>应收</strong>
+	</caption>
+	<thead>
+		<tr>
+			<th>费用名称</th>
+			<th>金额</th>
+			<th>币种</th>
+			<th>发票号</th>
+			<th>凭证号</th>
+			<th>登账日期</th>
+			<th>往来单位</th>
+			<th>备注</th>
+			<?php if(Helper_ViewPermission::isAudit()):?>
+			<th>操作</th>
+			<?php endif;?>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach ( $receivable as $value ) : ?>
+		<input type="hidden" id="order_id" value="<?php echo $value->order_id?>" />
+		<tr id="<?php echo $value->fee_id?>">
+			<td><?php echo $value->fee_item_name?></td>
+			<td style="text-align: right;"><?php echo sprintf("%.2f",$value->amount)?></td>
+			<td><?php echo $value->currency?></td>
+			<td><?php echo $value->invoice_no?></td>
+			<td><?php echo $value->voucher_no?></td>
+			<td><?php echo Helper_Util::strDate('Y-m-d', $value->account_date)?></td>
+			<td><?php echo Customer::find('customer_id = ?',$value->btype_id)->getOne()->customer ?></td>
+			<td><?php echo $value->remark ?></td>
+			<?php if(Helper_ViewPermission::isAudit()):?>
+			<td>
+			    <?php if (!$value->account_date || $value->account_date>strtotime(Config::cbDate())):?>
+    			    <?php if (trim($value->invoice_no)=='' && trim($value->voucher_no)==''):?>
+    				<a class="btn btn-mini" href="javascript:void(0);"
+    					onclick="EditRow([{'type':'select','option':<?php echo str_replace("\"","'",json_encode(Fee::getFeeList()));?>},{'type':'number','precision':'2'},{'type':'select','option':<?php echo str_replace("\"","'",json_encode(CodeCurrency::getCurrencyList()));?>},{},{},{},{'type':'select','option':<?php echo str_replace("\"","'",json_encode(Fee::getCustomerList()));?>},{'type':'text'}],this);">
+    					<i class="icon-pencil"></i>
+    					编辑
+    				</a>
+    				<a class="btn btn-mini btn-danger" href="javascript:void(0);"
+    					onclick="if(DeleteRow(this)){SetIncomeAmount();SetGrossAmount();}">
+    					<i class="icon-trash"></i>
+    					删除
+    				</a>
+    				<?php endif;?>
+				<?php endif;?>
+			</td>
+			<?php endif;?>
+		</tr>
+		<?php endforeach;?>
+		<?php if(Helper_ViewPermission::isAudit()):?>
+		<tr>
+			<td id="td_income"></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td>
+				<a class="btn btn-mini btn-success" href="javascript:void(0);"
+					onclick="NewRow([{'type':'select','option':<?php echo str_replace("\"","'",json_encode(Fee::getFeeList()));?>},{'type':'number','precision':'2'},{'type':'select','option':<?php echo str_replace("\"","'",json_encode(CodeCurrency::getCurrencyList()));?>},{},{},{},{'type':'select','option':<?php echo str_replace("\"","'",json_encode(Fee::getCustomerList()));?>},{'type':'text'}],this);">
+					<i class="icon-plus"></i>
+					新建
+				</a>
+			</td>
+		</tr>
+		<?php endif;?>
+		<tr>
+			<td colspan="11">
+				总计(CNY)：
+				<a id="a_balance_amount_income"
+					style="font-size: 14px; margin-left: 10px;"></a>
+			</td>
+		</tr>
+	</tbody>
+</table>
+<table id="table_outlay" class="FarTable">
+	<caption>
+		<strong>应付</strong>
+	</caption>
+	<thead>
+		<tr>
+			<th>费用名称</th>
+			<th>金额</th>
+			<th>币种</th>
+			<th>发票号</th>
+			<th>凭证号</th>
+			<th>登账日期</th>
+			<th>往来单位</th>
+			<th>备注</th>
+			<?php if(Helper_ViewPermission::isAudit()):?>
+			<th>操作</th>
+			<?php endif;?>
+		</tr>
+	</thead>
+	<tbody>
+		<?php foreach ( $payment as $value ) : ?>
+		<tr id="<?php echo $value->fee_id?>">
+			<td><?php echo $value->fee_item_name?></td>
+			<td style="text-align: right;"><?php echo sprintf("%.2f",$value->amount)?></td>
+			<td><?php echo $value->currency?></td>
+			<td><?php echo $value->invoice_no?></td>
+			<td><?php echo $value->voucher_no?></td>
+			<td><?php echo Helper_Util::strDate('Y-m-d', $value->account_date)?></td>
+			<td><?php echo Supplier::find('supplier_id = ?',$value->btype_id)->getOne()->supplier ?></td>
+			<td><?php echo $value->remark?></td>
+			<?php if(Helper_ViewPermission::isAudit()):?>
+			<td>
+			    <?php if (!$value->account_date || $value->account_date>strtotime(Config::cbDate())):?>
+    			    <?php if (trim($value->invoice_no)=='' && trim($value->voucher_no)==''):?>
+    				<a class="btn btn-mini" href="javascript:void(0);"
+    					onclick="EditRow([{'type':'select','option':<?php echo str_replace("\"","'",json_encode(Fee::getFeeList()));?>},{'type':'number','precision':'2'},{'type':'select','option':<?php echo str_replace("\"","'",json_encode(CodeCurrency::getCurrencyList()));?>},{},{},{},{'type':'select','option':<?php echo str_replace("\"","'",json_encode(Fee::getSupplierList()));?>},{'type':'text'}],this);">
+    					<i class="icon-pencil"></i>
+    					编辑
+    				</a>
+    				<a class="btn btn-mini btn-danger" href="javascript:void(0);"
+    					onclick="if(DeleteRow(this)){SetOutlayAmount();SetGrossAmount();}">
+    					<i class="icon-trash"></i>
+    					删除
+    				</a>
+    				<?php endif;?>
+				<?php endif;?>
+			</td>
+			<?php endif;?>
+		</tr>
+		<?php endforeach;?>
+		<?php if(Helper_ViewPermission::isAudit()):?>
+		<tr>
+			<td id="td_outlay"></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td></td>
+			<td>
+				<a class="btn btn-mini btn-success" href="javascript:void(0);"
+					onclick="NewRow([{'type':'select','option':<?php echo str_replace("\"","'",json_encode(Fee::getFeeList()));?>},{'type':'number','precision':'2'},{'type':'select','option':<?php echo str_replace("\"","'",json_encode(CodeCurrency::getCurrencyList()));?>},{},{},{},{'type':'select','option':<?php echo str_replace("\"","'",json_encode(Fee::getSupplierList()));?>},{'type':'text'}],this);">
+					<i class="icon-plus"></i>
+					新建
+				</a>
+			</td>
+		</tr>
+		<?php endif;?>
+		<tr>
+			<td colspan="11">
+				总计(CNY)：
+				<a id="a_balance_amount_outlay"
+					style="font-size: 14px; margin-left: 10px;"></a>
+			</td>
+		</tr>
+	</tbody>
+</table>
+<div class="FarTool">
+	<h5 class="text-success" style="margin-left: 10px;">
+		毛利(CNY):
+		<label id="a_balance_amount_gross" style="font-size: 14px;"></label>
+	</h5>
+</div>
+<script type="text/javascript">
+var tr_id=null;
+/**
+ * 删除
+ */
+function DeleteBefore(obj){
+	tr_id=$(obj).attr("id")==undefined?"":$(obj).attr("id");
+}
+/**
+ * 应收应付 JSON数据
+ */
+function GetBalanceJSON(obj,name){
+	var id = "";
+	if(tr_id!=null){
+		id=tr_id;
+	}else{
+		id=$(obj).attr("id")==undefined?"":$(obj).attr("id");
+	}
+	
+	var json="";
+	if(name=="table_income"){
+		var fee_item_name=$(obj).children().eq(0).text();
+		var amount=$(obj).children().eq(1).text();
+		var currency=$(obj).children().eq(2).text();
+		var btype_name=$(obj).children().eq(6).text();
+		var remark=$(obj).children().eq(7).text();
+		var fee_type='1';
+		json+='{"id":"'+id
+			+'","fee_item_name":"'+fee_item_name
+			+'","amount":"'+amount
+			+'","currency":"'+currency
+			+'","btype_name":"'+btype_name
+			+'","remark":"'+remark
+			+'","fee_type":"'+fee_type+'"},';
+	}else if (name=="table_outlay"){
+		var fee_item_name=$(obj).children().eq(0).text();
+		var amount=$(obj).children().eq(1).text();
+		var currency=$(obj).children().eq(2).text();
+		var btype_name=$(obj).children().eq(6).text();
+		var remark=$(obj).children().eq(7).text();
+		var fee_type='2';
+		json+='{"id":"'+id
+    		+'","fee_item_name":"'+fee_item_name
+    		+'","amount":"'+amount
+    		+'","currency":"'+currency
+    		+'","btype_name":"'+btype_name
+    		+'","remark":"'+remark
+    		+'","fee_type":"'+fee_type+'"},';
+	}
+	json="["+json.substring(0,json.length-1)+"]";
+	$("#hidden_balance").val(json);
+}
+/**
+ * 计算应收 合计
+ */
+function SetIncomeAmount(){
+	var amount=[];
+	var cuuery = [];
+	var order_id = $('#order_id').val();
+	$("#table_income tr:gt(0)").each(function(index){
+		var id=$(this).attr("id");
+		if(!isNaN(id)){
+			amount.push(parseFloat($(this).children().eq(1).text()));
+			cuuery.push($(this).children().eq(2).text());
+		}
+	});
+	var amount = JSON.stringify(amount);
+	var cuuery = JSON.stringify(cuuery);
+	console.log(amount)
+	console.log(cuuery)
+	$.ajax({
+    			url:"<?php echo url('order/SetIncomeAmount')?>",
+    			type:"POST",
+    			async:false,
+    			data:{"type":'1',"order_id":order_id,'amount':amount,'cuuery':cuuery},
+    			success:function(msg){
+    				console.log(FormatMoney(msg, 2))
+    				$("#a_balance_amount_income").text(FormatMoney(msg, 2));
+    			}
+    		});
+	
+}
+/**
+ * 计算应付 合计
+ */
+function SetOutlayAmount(){
+	var amount=[];
+	var cuuery = [];
+	var order_id = $('#order_id').val();
+	$("#table_outlay tr:gt(0)").each(function(index){
+		var id=$(this).attr("id");
+		if(!isNaN(id)){
+			amount.push(parseFloat($(this).children().eq(1).text()));
+			cuuery.push($(this).children().eq(2).text());
+		}
+	});
+	var amount = JSON.stringify(amount);
+	var cuuery = JSON.stringify(cuuery);
+	console.log(amount)
+	console.log(cuuery)
+	$.ajax({
+    			url:"<?php echo url('order/SetIncomeAmount')?>",
+    			type:"POST",
+    			async:false,
+    			data:{"type":'2',"order_id":order_id,'amount':amount,'cuuery':cuuery},
+    			success:function(msg){
+
+    				console.log(FormatMoney(msg, 2))
+    				$("#a_balance_amount_outlay").text(FormatMoney(msg, 2));
+    			}
+    		});
+}
+/**
+ * 计算毛利
+ */
+function SetGrossAmount(){
+	var income=parseFloat($("#a_balance_amount_income").text().replace(/,/g,""));
+	var outlay=parseFloat($("#a_balance_amount_outlay").text().replace(/,/g,""));
+	var sum = (parseInt(income*100) - parseInt(outlay*100))/100;
+	$("#a_balance_amount_gross").text(FormatMoney(sum, 2));
+	$.ajax({
+		url:"<?php echo url('order/savebalance')?>",
+		type:"POST",
+		data:{"order_id":"<?php echo request('order_id')?>",a_balance_amount_gross:sum},
+		async : false,
+		success:function(msg){
+		}
+	});
+}
+
+/**
+ * 保存应收应付
+ */
+function SaveBalance(obj,name){
+	var result="";
+	
+	// 应收应付 JSON数据
+	GetBalanceJSON(obj,name);
+	
+	//提交数据
+	$.ajax({
+		url:"<?php echo url('order/savebalance')?>",
+		type:"POST",
+		data:{"order_id":"<?php echo request('order_id')?>",
+			"balance":$("#hidden_balance").val(),
+			"amount_income":$("#a_balance_amount_income").text(),
+			"amount_outlay":$("#a_balance_amount_outlay").text(),
+			"delete_flag":tr_id!=null?true:false},
+		async : false,
+		success:function(msg){
+			result = msg;
+		}
+	});
+
+	if(isNaN(result)){
+		return result;
+	}else{
+		if(obj!=null){
+			$(obj).attr("id",result);
+		}
+		return true;
+	}
+}
+/**
+ * 回调
+ */
+function CallBack(obj,name){
+	MessagerProgress("载入");
+	//计算应收的合计
+	if(name=="table_income" || name=="table_outlay"){
+		var flag = true;
+		while(flag){
+			var msg = SaveBalance(obj,name);
+			if(msg!=true){
+				if(confirm(msg+"\n保存失败请确认票件是否正确,点击[确定]重新保存 或点击[取消]撤销本次操作.")){
+					flag = true;
+				}else{
+					flag = false;
+					window.location.reload();
+				}
+			}else{
+				flag = false;
+			}
+		}
+	}
+	tr_id=null;
+
+	//计算应收应付合计
+	SetIncomeAmount();
+	SetOutlayAmount();
+	SetGrossAmount();
+	
+	MessagerProgress("close");
+}
+SetIncomeAmount();
+SetOutlayAmount();
+SetGrossAmount();
+</script>
+<?php 

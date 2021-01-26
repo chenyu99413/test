@@ -1,0 +1,513 @@
+2018-12-27T14:37:29+08:00 DEBUG: --- STARTUP TIME --- 1545892649.4482
+2018-12-27T14:37:29+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:29+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:37:29+08:00 DEBUG: REQUEST UDI: default::user/login@default
+2018-12-27T14:37:29+08:00 DEBUG: ::1
+2018-12-27T14:37:29+08:00 DEBUG: EXECUTE ACTION: Controller_User::actionlogin()
+2018-12-27T14:37:29+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892649.4682 (0.020009994506836)sec
+2018-12-27T14:37:32+08:00 DEBUG: --- STARTUP TIME --- 1545892652.6057
+2018-12-27T14:37:32+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:32+08:00 INFO: REQUEST METHOD：POST
+2018-12-27T14:37:32+08:00 DEBUG: REQUEST UDI: default::user/login@default
+2018-12-27T14:37:32+08:00 DEBUG: ::1
+2018-12-27T14:37:32+08:00 DEBUG: EXECUTE ACTION: Controller_User::actionlogin()
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_user`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_department`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SELECT `tb_user`.*   FROM `far800express`.`tb_user`   WHERE ((user_account = 'admin' and status != '0')) LIMIT 1
+2018-12-27T14:37:32+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892652.6755 (0.069761037826538)sec
+2018-12-27T14:37:32+08:00 DEBUG: --- STARTUP TIME --- 1545892652.6863
+2018-12-27T14:37:32+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:32+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:37:32+08:00 DEBUG: REQUEST UDI: default::user/index@default
+2018-12-27T14:37:32+08:00 DEBUG: ::1
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_group_role`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_role`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_role_purview`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-27T14:37:32+08:00 DEBUG: EXECUTE ACTION: Controller_User::actionindex()
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_group_role`   WHERE ((user_id ='1' and role_id in(6,3))) LIMIT 1
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_baf`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_network`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SELECT `tb_baf`.*   FROM `far800express`.`tb_baf`   WHERE ((fail_date >= '2018-12-27' and effective_date <='2018-12-27'))
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and contract_expiration_date between '2018-12-27 14:37:32' And '2019-01-26 14:37:32' And contract_code is not null And contract_code != '' And contract_date is not null And contract_date!= '' )) LIMIT 1
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and contract_expiration_date < '2018-12-27 14:37:32' And contract_code is not null And contract_code!= '' And contract_date is not null And contract_date!= '' And status !='1' )) LIMIT 1
+2018-12-27T14:37:32+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and contract_expiration_date < '2018-12-27 14:37:32' And contract_code is not null And contract_code!= '' And contract_date is not null And contract_date!= '' And status ='1' )) LIMIT 1
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_product`
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_service`
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_remote_manage`
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_price_manage`
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_partition_manage`
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_product`   WHERE (( fail_date between '2018-12-27 14:37:33' And '2019-01-03 14:37:33' )) LIMIT 1
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_waybill`
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_channel`
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_country`
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_waybill`.`department_abbreviation`   FROM `far800express`.`tb_waybill`   WHERE ((record_order_date >= '2018-12-27 00:00:00' and record_order_date <= '2018-12-27 23:59:59' and department_abbreviation is not null and department_abbreviation != '' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and sort = 'S1'))   GROUP BY department_abbreviation
+2018-12-27T14:37:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_waybill`.`department_abbreviation`   FROM `far800express`.`tb_waybill`   WHERE ((record_order_date >= '2018-12-27 00:00:00' and record_order_date <= '2018-12-27 23:59:59' and department_abbreviation is not null and department_abbreviation != '' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and sort = 'D3'))   GROUP BY department_abbreviation
+2018-12-27T14:37:33+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892653.0782 (0.39186692237854)sec
+2018-12-27T14:37:38+08:00 DEBUG: --- STARTUP TIME --- 1545892658.0133
+2018-12-27T14:37:38+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:38+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:37:38+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymentstatistics@default
+2018-12-27T14:37:38+08:00 DEBUG: ::1
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-27T14:37:38+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymentstatistics()
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_ib_balance`
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_fee_type`
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_order`
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_order_detail`
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_abbreviation`, `tb_order`.`customer_id`, `tb_ib_balance`.`currency`,  SUM(amount_origin) AS amount_origin   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)   WHERE ((tb_order.last_scan_date>=1545235200 and tb_order.last_scan_date<=1545926399) AND (balance_type='1' and voucher_code=''))   GROUP BY tb_order.customer_id
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_abbreviation`, `tb_order`.`customer_id`, `tb_ib_balance`.`currency`,  SUM(amount_origin) AS amount_origin   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)   WHERE ((tb_order.last_scan_date>=1545235200 and tb_order.last_scan_date<=1545926399) AND (balance_type='1' and voucher_code=''))   GROUP BY currency,tb_order.customer_id
+2018-12-27T14:37:38+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892658.1173 (0.10396790504456)sec
+2018-12-27T14:37:38+08:00 DEBUG: --- STARTUP TIME --- 1545892658.2783
+2018-12-27T14:37:38+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:38+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:37:38+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:37:38+08:00 DEBUG: ::1
+2018-12-27T14:37:38+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*)   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1545235200 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-27T14:37:38+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1545235200 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50'))) LIMIT 0, 100
+2018-12-27T14:37:38+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892658.3473 (0.069049119949341)sec
+2018-12-27T14:37:42+08:00 DEBUG: --- STARTUP TIME --- 1545892662.689
+2018-12-27T14:37:42+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:42+08:00 INFO: REQUEST METHOD：POST
+2018-12-27T14:37:42+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymentstatistics@default
+2018-12-27T14:37:42+08:00 DEBUG: ::1
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-27T14:37:42+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymentstatistics()
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_abbreviation`, `tb_order`.`customer_id`, `tb_ib_balance`.`currency`,  SUM(amount_origin) AS amount_origin   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type='1' and voucher_code=''))   GROUP BY tb_order.customer_id
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_abbreviation`, `tb_order`.`customer_id`, `tb_ib_balance`.`currency`,  SUM(amount_origin) AS amount_origin   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type='1' and voucher_code=''))   GROUP BY currency,tb_order.customer_id
+2018-12-27T14:37:42+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892662.7626 (0.073634147644043)sec
+2018-12-27T14:37:42+08:00 DEBUG: --- STARTUP TIME --- 1545892662.9332
+2018-12-27T14:37:42+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:42+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:37:42+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:37:42+08:00 DEBUG: ::1
+2018-12-27T14:37:42+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*)   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-27T14:37:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50'))) LIMIT 0, 100
+2018-12-27T14:37:42+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892662.9982 (0.064971923828125)sec
+2018-12-27T14:37:44+08:00 DEBUG: --- STARTUP TIME --- 1545892664.1738
+2018-12-27T14:37:44+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:44+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:37:44+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:37:44+08:00 DEBUG: ::1
+2018-12-27T14:37:44+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:37:44+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:37:44+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:37:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:37:44+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*)   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16349'))
+2018-12-27T14:37:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16349')) LIMIT 0, 100
+2018-12-27T14:37:44+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892664.2384 (0.064636945724487)sec
+2018-12-27T14:37:45+08:00 DEBUG: --- STARTUP TIME --- 1545892665.0697
+2018-12-27T14:37:45+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:45+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:37:45+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:37:45+08:00 DEBUG: ::1
+2018-12-27T14:37:45+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:37:45+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:37:45+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:37:45+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:37:45+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*)   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:37:45+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350')) LIMIT 0, 100
+2018-12-27T14:37:45+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892665.1203 (0.050657987594604)sec
+2018-12-27T14:37:46+08:00 DEBUG: --- STARTUP TIME --- 1545892666.4804
+2018-12-27T14:37:46+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:46+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:37:46+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:37:46+08:00 DEBUG: ::1
+2018-12-27T14:37:46+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:37:46+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:37:46+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:37:46+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:37:46+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:37:46+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:37:46+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:37:46+08:00 DEBUG: ::1
+2018-12-27T14:37:46+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:37:46+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:37:46+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:37:46+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:37:46+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:37:46+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:37:46+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892666.5646 (0.084198951721191)sec
+2018-12-27T14:39:34+08:00 DEBUG: --- STARTUP TIME --- 1545892774.6048
+2018-12-27T14:39:34+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:39:34+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:39:34+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:39:34+08:00 DEBUG: ::1
+2018-12-27T14:39:34+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_ib_balance`
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_fee_type`
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_user`
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_department`
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_order`
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs`
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_order_detail`
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:39:34+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:39:34+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:39:34+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:39:34+08:00 DEBUG: ::1
+2018-12-27T14:39:34+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:39:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:39:34+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892774.7122 (0.10737705230713)sec
+2018-12-27T14:39:52+08:00 DEBUG: --- STARTUP TIME --- 1545892792.4195
+2018-12-27T14:39:52+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:39:52+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:39:52+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:39:52+08:00 DEBUG: ::1
+2018-12-27T14:39:52+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:39:52+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:39:52+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:39:52+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:39:52+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:39:52+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:39:52+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:39:52+08:00 DEBUG: ::1
+2018-12-27T14:39:52+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:39:52+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:39:52+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:39:52+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:39:52+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:39:52+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:39:52+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892792.4737 (0.054197072982788)sec
+2018-12-27T14:40:26+08:00 DEBUG: --- STARTUP TIME --- 1545892826.7133
+2018-12-27T14:40:26+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:40:26+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:40:26+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:40:26+08:00 DEBUG: ::1
+2018-12-27T14:40:26+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:40:26+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:40:26+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:40:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:40:26+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:40:26+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:40:26+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:40:26+08:00 DEBUG: ::1
+2018-12-27T14:40:26+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:40:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:40:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:40:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:40:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:40:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:40:26+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892826.7798 (0.066476106643677)sec
+2018-12-27T14:40:33+08:00 DEBUG: --- STARTUP TIME --- 1545892833.862
+2018-12-27T14:40:33+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:40:33+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:40:33+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:40:33+08:00 DEBUG: ::1
+2018-12-27T14:40:33+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:40:33+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:40:33+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:40:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:40:33+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:40:33+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:40:33+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:40:33+08:00 DEBUG: ::1
+2018-12-27T14:40:33+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:40:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:40:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:40:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:40:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:40:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:40:33+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892833.9156 (0.053539991378784)sec
+2018-12-27T14:40:35+08:00 DEBUG: --- STARTUP TIME --- 1545892835.628
+2018-12-27T14:40:35+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:40:35+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:40:35+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:40:35+08:00 DEBUG: ::1
+2018-12-27T14:40:35+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_ib_balance`
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_fee_type`
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_user`
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_department`
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_order`
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs`
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_order_detail`
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:40:35+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:40:35+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:40:35+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:40:35+08:00 DEBUG: ::1
+2018-12-27T14:40:35+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:40:35+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:40:35+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892835.7442 (0.11624979972839)sec
+2018-12-27T14:40:44+08:00 DEBUG: --- STARTUP TIME --- 1545892844.0112
+2018-12-27T14:40:44+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:40:44+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:40:44+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:40:44+08:00 DEBUG: ::1
+2018-12-27T14:40:44+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:40:44+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:40:44+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:40:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:40:44+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:40:44+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:40:44+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:40:44+08:00 DEBUG: ::1
+2018-12-27T14:40:44+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:40:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:40:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:40:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:40:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:40:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:40:44+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892844.0777 (0.066444158554077)sec
+2018-12-27T14:40:51+08:00 DEBUG: --- STARTUP TIME --- 1545892851.1958
+2018-12-27T14:40:51+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:40:51+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:40:51+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:40:51+08:00 DEBUG: ::1
+2018-12-27T14:40:51+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:40:51+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:40:51+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:40:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:40:51+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:40:51+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:40:51+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:40:51+08:00 DEBUG: ::1
+2018-12-27T14:40:51+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:40:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:40:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:40:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:40:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:40:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:40:51+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892851.2601 (0.064363956451416)sec
+2018-12-27T14:41:06+08:00 DEBUG: --- STARTUP TIME --- 1545892866.7884
+2018-12-27T14:41:06+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:41:06+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:41:06+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:41:06+08:00 DEBUG: ::1
+2018-12-27T14:41:06+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:41:06+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:41:06+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:41:06+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:41:06+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:41:06+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:41:06+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:41:06+08:00 DEBUG: ::1
+2018-12-27T14:41:06+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:41:06+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:41:06+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:41:06+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:41:06+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:41:06+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:41:06+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892866.8535 (0.065073013305664)sec
+2018-12-27T14:41:34+08:00 DEBUG: --- STARTUP TIME --- 1545892894.2796
+2018-12-27T14:41:34+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:41:34+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:41:34+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:41:34+08:00 DEBUG: ::1
+2018-12-27T14:41:34+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:41:34+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:41:34+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:41:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:41:34+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:41:34+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:41:34+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:41:34+08:00 DEBUG: ::1
+2018-12-27T14:41:34+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:41:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:41:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:41:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:41:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:41:34+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:41:34+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892894.3496 (0.070061922073364)sec
+2018-12-27T14:41:43+08:00 DEBUG: --- STARTUP TIME --- 1545892903.6106
+2018-12-27T14:41:43+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:41:43+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:41:43+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T14:41:43+08:00 DEBUG: ::1
+2018-12-27T14:41:43+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_ib_balance`
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_fee_type`
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_user`
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_department`
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_order`
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs`
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_order_detail`
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T14:41:43+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T14:41:43+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T14:41:43+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T14:41:43+08:00 DEBUG: ::1
+2018-12-27T14:41:43+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T14:41:43+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T14:41:43+08:00 DEBUG: --- SHUTDOWN TIME --- 1545892903.7132 (0.10259008407593)sec
+2018-12-27T15:00:19+08:00 DEBUG: --- STARTUP TIME --- 1545894019.3861
+2018-12-27T15:00:19+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T15:00:19+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T15:00:19+08:00 DEBUG: REQUEST UDI: default::user/login@default
+2018-12-27T15:00:19+08:00 DEBUG: ::1
+2018-12-27T15:00:19+08:00 DEBUG: EXECUTE ACTION: Controller_User::actionlogin()
+2018-12-27T15:00:19+08:00 DEBUG: --- SHUTDOWN TIME --- 1545894019.416 (0.029838085174561)sec
+2018-12-27T15:00:22+08:00 DEBUG: --- STARTUP TIME --- 1545894022.4648
+2018-12-27T15:00:22+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T15:00:22+08:00 INFO: REQUEST METHOD：POST
+2018-12-27T15:00:22+08:00 DEBUG: REQUEST UDI: default::user/login@default
+2018-12-27T15:00:22+08:00 DEBUG: ::1
+2018-12-27T15:00:22+08:00 DEBUG: EXECUTE ACTION: Controller_User::actionlogin()
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_user`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_department`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT `tb_user`.*   FROM `far800express`.`tb_user`   WHERE ((user_account = 'admin' and status != '0')) LIMIT 1
+2018-12-27T15:00:22+08:00 DEBUG: --- SHUTDOWN TIME --- 1545894022.5244 (0.059615850448608)sec
+2018-12-27T15:00:22+08:00 DEBUG: --- STARTUP TIME --- 1545894022.5392
+2018-12-27T15:00:22+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T15:00:22+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T15:00:22+08:00 DEBUG: REQUEST UDI: default::user/index@default
+2018-12-27T15:00:22+08:00 DEBUG: ::1
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_group_role`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_role`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_role_purview`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-27T15:00:22+08:00 DEBUG: EXECUTE ACTION: Controller_User::actionindex()
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_group_role`   WHERE ((user_id ='1' and role_id in(6,3))) LIMIT 1
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_baf`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_network`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT `tb_baf`.*   FROM `far800express`.`tb_baf`   WHERE ((fail_date >= '2018-12-27' and effective_date <='2018-12-27'))
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and contract_expiration_date between '2018-12-27 15:00:22' And '2019-01-26 15:00:22' And contract_code is not null And contract_code != '' And contract_date is not null And contract_date!= '' )) LIMIT 1
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and contract_expiration_date < '2018-12-27 15:00:22' And contract_code is not null And contract_code!= '' And contract_date is not null And contract_date!= '' And status !='1' )) LIMIT 1
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and contract_expiration_date < '2018-12-27 15:00:22' And contract_code is not null And contract_code!= '' And contract_date is not null And contract_date!= '' And status ='1' )) LIMIT 1
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_product`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_service`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_remote_manage`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_price_manage`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_partition_manage`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_product`   WHERE (( fail_date between '2018-12-27 15:00:22' And '2019-01-03 15:00:22' )) LIMIT 1
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_waybill`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_channel`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_country`
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT `tb_waybill`.`department_abbreviation`   FROM `far800express`.`tb_waybill`   WHERE ((record_order_date >= '2018-12-27 00:00:00' and record_order_date <= '2018-12-27 23:59:59' and department_abbreviation is not null and department_abbreviation != '' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and sort = 'S1'))   GROUP BY department_abbreviation
+2018-12-27T15:00:22+08:00 DEBUG: [DB EXECUTE] SELECT `tb_waybill`.`department_abbreviation`   FROM `far800express`.`tb_waybill`   WHERE ((record_order_date >= '2018-12-27 00:00:00' and record_order_date <= '2018-12-27 23:59:59' and department_abbreviation is not null and department_abbreviation != '' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and sort = 'D3'))   GROUP BY department_abbreviation
+2018-12-27T15:00:22+08:00 DEBUG: --- SHUTDOWN TIME --- 1545894022.8545 (0.31524705886841)sec
+2018-12-27T15:00:26+08:00 DEBUG: --- STARTUP TIME --- 1545894026.147
+2018-12-27T15:00:26+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T15:00:26+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T15:00:26+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymentstatistics@default
+2018-12-27T15:00:26+08:00 DEBUG: ::1
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-27T15:00:26+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymentstatistics()
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_ib_balance`
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_fee_type`
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_order`
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_order_detail`
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_abbreviation`, `tb_order`.`customer_id`, `tb_ib_balance`.`currency`,  SUM(amount_origin) AS amount_origin   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)   WHERE ((tb_order.last_scan_date>=1545235200 and tb_order.last_scan_date<=1545926399) AND (balance_type='1' and voucher_code=''))   GROUP BY tb_order.customer_id
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_abbreviation`, `tb_order`.`customer_id`, `tb_ib_balance`.`currency`,  SUM(amount_origin) AS amount_origin   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)   WHERE ((tb_order.last_scan_date>=1545235200 and tb_order.last_scan_date<=1545926399) AND (balance_type='1' and voucher_code=''))   GROUP BY currency,tb_order.customer_id
+2018-12-27T15:00:26+08:00 DEBUG: --- SHUTDOWN TIME --- 1545894026.2699 (0.12287902832031)sec
+2018-12-27T15:00:26+08:00 DEBUG: --- STARTUP TIME --- 1545894026.4972
+2018-12-27T15:00:26+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T15:00:26+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T15:00:26+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T15:00:26+08:00 DEBUG: ::1
+2018-12-27T15:00:26+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*)   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1545235200 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-27T15:00:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1545235200 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50'))) LIMIT 0, 100
+2018-12-27T15:00:26+08:00 DEBUG: --- SHUTDOWN TIME --- 1545894026.5719 (0.074634075164795)sec
+2018-12-27T15:00:30+08:00 DEBUG: --- STARTUP TIME --- 1545894030.4195
+2018-12-27T15:00:30+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T15:00:30+08:00 INFO: REQUEST METHOD：POST
+2018-12-27T15:00:30+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymentstatistics@default
+2018-12-27T15:00:30+08:00 DEBUG: ::1
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-27T15:00:30+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymentstatistics()
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_abbreviation`, `tb_order`.`customer_id`, `tb_ib_balance`.`currency`,  SUM(amount_origin) AS amount_origin   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type='1' and voucher_code=''))   GROUP BY tb_order.customer_id
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_abbreviation`, `tb_order`.`customer_id`, `tb_ib_balance`.`currency`,  SUM(amount_origin) AS amount_origin   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type='1' and voucher_code=''))   GROUP BY currency,tb_order.customer_id
+2018-12-27T15:00:30+08:00 DEBUG: --- SHUTDOWN TIME --- 1545894030.5122 (0.092730045318604)sec
+2018-12-27T15:00:30+08:00 DEBUG: --- STARTUP TIME --- 1545894030.7203
+2018-12-27T15:00:30+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T15:00:30+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T15:00:30+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T15:00:30+08:00 DEBUG: ::1
+2018-12-27T15:00:30+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*)   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-27T15:00:30+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50'))) LIMIT 0, 100
+2018-12-27T15:00:30+08:00 DEBUG: --- SHUTDOWN TIME --- 1545894030.7686 (0.048252105712891)sec
+2018-12-27T15:00:31+08:00 DEBUG: --- STARTUP TIME --- 1545894031.9177
+2018-12-27T15:00:31+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T15:00:31+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T15:00:31+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T15:00:31+08:00 DEBUG: ::1
+2018-12-27T15:00:31+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T15:00:31+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T15:00:31+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T15:00:31+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T15:00:31+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*)   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T15:00:31+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350')) LIMIT 0, 100
+2018-12-27T15:00:31+08:00 DEBUG: --- SHUTDOWN TIME --- 1545894031.982 (0.064332008361816)sec
+2018-12-27T15:00:33+08:00 DEBUG: --- STARTUP TIME --- 1545894033.1048
+2018-12-27T15:00:33+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T15:00:33+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T15:00:33+08:00 DEBUG: REQUEST UDI: default::chinamerica/paymenttable@default
+2018-12-27T15:00:33+08:00 DEBUG: ::1
+2018-12-27T15:00:33+08:00 DEBUG: EXECUTE ACTION: Controller_chinamerica::actionpaymenttable()
+2018-12-27T15:00:33+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-27T15:00:33+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-27T15:00:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-27T15:00:33+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-27T15:00:33+08:00 INFO: REQUEST METHOD：GET
+2018-12-27T15:00:33+08:00 DEBUG: REQUEST UDI: default::print/ibstatement@default
+2018-12-27T15:00:33+08:00 DEBUG: ::1
+2018-12-27T15:00:33+08:00 DEBUG: EXECUTE ACTION: Controller_Print::actionibstatement()
+2018-12-27T15:00:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_ib_balance`.*, `tb_customs`.`customs_abbreviation`, `tb_order`.`id`, `tb_order`.`customer_id`, `tb_order`.`parcel_no`, `tb_order`.`last_scan_date`, `tb_order`.`servicelevel`, `tb_order`.`gross_weight_income`, `tb_order_detail`.`consignee_state`, `tb_ib_balance`.`amount_origin`, `tb_ib_balance`.`currency`   FROM `far800express`.`tb_ib_balance`  LEFT JOIN `tb_order`   ON (tb_ib_balance.order_id=tb_order.id)  LEFT JOIN `tb_customs`   ON (tb_customs.customs_id=tb_order.customer_id)  LEFT JOIN `tb_order_detail`   ON (tb_order_detail.order_id=tb_order.id)   WHERE ((tb_order.last_scan_date>=1543593600 and tb_order.last_scan_date<=1545926399) AND (balance_type=1 and voucher_code="") AND (tb_order.department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND (tb_order.customer_id='16350'))
+2018-12-27T15:00:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_abbreviation='EIB685' and department_id in (48,49))) LIMIT 1
+2018-12-27T15:00:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6754))
+2018-12-27T15:00:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6755))
+2018-12-27T15:00:33+08:00 DEBUG: [DB EXECUTE] SELECT `tb_order`.*   FROM `far800express`.`tb_order`   WHERE ((`tb_order`.`id` = 6758))
+2018-12-27T15:00:33+08:00 DEBUG: --- SHUTDOWN TIME --- 1545894033.1794 (0.0745530128479)sec

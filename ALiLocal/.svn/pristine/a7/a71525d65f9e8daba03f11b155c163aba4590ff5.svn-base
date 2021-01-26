@@ -1,0 +1,219 @@
+<?php
+class Controller_Channelcost extends Controller_Abstract {
+	/**
+	 */
+	function actionIndex() {
+	}
+	/**
+	 * 验算
+	 */
+	function actionCalResult(){
+		$order=Order::find('ali_order_no=?',request('ali_order_no'))->getOne();
+		if($order->isNewRecord()){
+		    echo '<h4 style="color:red">验算失败，单号不存在</h4>';
+		}else{
+		    $channel=Channel::find('channel_id=?',request ( "channel_id" ))->getOne();
+		    $network=Network::find('network_code=?',$channel->network_code)->getOne();
+		    $channelcost = ChannelCost::find ( "product_id = ? and [channel_id] = ?", request ( "product_id" ), request ( "channel_id" ) )->getOne ();
+		    $channelcostppr= Channelcostppr::find('channel_cost_id =? and effective_time <=? and invalid_time>?',$channelcost->channel_cost_id,time(),time())->getOne();
+		    $quote=new Helper_Quote();
+		    $fee_quantity=Fee::find("order_id=? and fee_item_code='logisticsExpressASP_EX0034'",$order->order_id)->getOne()->quantity;
+		    $r=$quote->payment($order,$channelcostppr,$network->network_id,$fee_quantity);
+		    if(is_array($r)){
+		        $str='<table class="FarTable" style="width:40%"><thead><tr><th>费用项名称</th><th>金额</th></tr></thead><tbody>';
+		        $fee_total=0;
+		        foreach ($r['price_info']['fee_item'] as $key=>$value){
+		            if($value['fee']!=0){
+		                $fee_item=FeeItem::find('sub_code=?',$key)->getOne();
+		                $str.='<tr><td>'.(($fee_item->item_name=='基础运费' || $fee_item->item_name=='偏远地区附加费')?$fee_item->item_name.'（含燃油）':$fee_item->item_name).'</td><td>'.$value['fee'].'</td></tr>';
+		                $fee_total+=$value['fee'];
+		            }
+		        }
+		        if($fee_total>0){
+		        	$str.='<tr><th>总金额</th><th>'.sprintf("%.2f",$fee_total).'</th></tr>';
+		        }
+		        $str.='</tbody></table>';
+		        echo $str;
+		    }else{
+		        echo '<h4 style="color:red">验算失败，请检查公式正确性</h4>';
+		    }
+		}
+// 		dump($r,1,11);
+		exit;
+	}
+	/**
+	 * 检索
+	 */
+	function actionSearch() {
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		$this->_view ["tabs"] = Controller_Product::createTabs ( $product );
+		$this->_view ["product"] = $product;
+	}
+	
+	/**
+	 * 编辑
+	 */
+	function actionEdit() {
+		//产品
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		//产品渠道
+		$channelcost = ChannelCost::find ( "product_id = ? and [channel.channel_id] = ?", request ( "id" ), request ( "channel_id" ) )->getOne ();
+		//渠道成本类型
+		$channelCostTypeBox = ChannelCosttype::find ( "channel_cost_id = ? and package_type = 'BOX'", $channelcost->channel_cost_id)->getOne ();
+		$channelCostTypePak = ChannelCosttype::find ( "channel_cost_id = ? and package_type = 'PAK'", $channelcost->channel_cost_id)->getOne ();
+		$channelCostTypeDoc = ChannelCosttype::find ( "channel_cost_id = ? and package_type = 'DOC'", $channelcost->channel_cost_id)->getOne ();
+		//保存
+		if (request_is_post ()) {
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			
+			//渠道成本
+			if (request ( "channelcost" ) != null || strlen ( request ( "channelcost" ) ) > 0) {
+				$channelcost->product_id = $product->product_id;
+				$channelcost->changeProps ( request ( "channelcost" ) );
+				$channelcost->save ();
+			}
+			//渠道成本类型
+			if (strlen ( $channelcost->channel_cost_id ) > 0) {
+			    $channelCostTypeBox->channel_cost_id = $channelcost->channel_cost_id;
+			    $channelCostTypeBox->package_type = 'BOX';
+			    $channelCostTypeBox->save ();
+			    $channelCostTypePak->channel_cost_id = $channelcost->channel_cost_id;
+			    $channelCostTypePak->package_type = 'PAK';
+			    $channelCostTypePak->save ();
+			    $channelCostTypeDoc->channel_cost_id = $channelcost->channel_cost_id;
+			    $channelCostTypeDoc->package_type = 'DOC';
+			    $channelCostTypeDoc->save ();
+			}
+			//渠道折扣-价格-分区-偏派列表
+			if (request ( "Channelcostppr" ) != null || strlen ( request ( "Channelcostppr" ) ) > 0) {
+				Channelcostppr::meta ()->destroyWhere ( "channel_cost_id = ?", $channelcost->channel_cost_id);
+				foreach ( json_decode ( request ( "Channelcostppr" ) ) as $value ) {
+				    $value->effective_time=strtotime($value->effective_time."00:00:00");
+				    $value->invalid_time=strtotime($value->invalid_time."23:59:59");
+					$Channelcostppr = new Channelcostppr ();
+					$Channelcostppr->changeProps ( $value );
+					$Channelcostppr->channel_cost_id=$channelcost->channel_cost_id;
+					$Channelcostppr->save ();
+				}
+			}
+			
+			$conn->completeTrans ();
+			return $this->_redirectMessage ( "渠道成本", "保存成功", url ( "channelcost/edit", array (
+				"id" => $channelcost->product_id,
+				"channel_id" => $channelcost->channel_id,
+			    "type" => request ( "type", "BOX" ) 
+			) ) );
+		}
+		
+		$this->_view ["tabs"] = Controller_Product::createTabs ( $product );
+		$this->_view ["tabs_type"] = $this->createTabsType ( $product, $channelcost );
+		//产品
+		$this->_view ["product"] = $product;
+		//渠道成本
+		$this->_view ["channelcost"] = $channelcost;
+		//渠道列表
+		$select = Channel::find ();
+		$channel_ids = Helper_Array::getCols ( ChannelCost::find ( "product_id = ? and channel_id != ?", request ( "id" ), request ( "channel_id", "" ) )->getAll (), "channel_id" );
+		if (! empty ( $channel_ids )) {
+			$select->where ( "channel_id not in (?)", $channel_ids );
+		}
+		$this->_view ["channelCostType"] = request('type','BOX')=='BOX'?$channelCostTypeBox:(request('type','BOX')=='PAK'?$channelCostTypePak:$channelCostTypeDoc);
+		$this->_view ["channel"] = $select->getAll ();
+	}
+	
+	/**
+	 * 删除
+	 */
+	function actionDelete() {
+		//产品
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		//产品渠道
+		$channelcost = ChannelCost::find ( "product_id = ? and [channel.channel_id] = ?", request ( "id" ), request ( "channel_id" ) )->getOne ();
+		if ($channelcost->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品渠道", "产品渠道错误,请重新选择渠道", url ( "channelcost/search", array (
+				"id" => $product->product_id 
+			) ) );
+		}
+		
+		$channelcost->destroy ();
+		
+		return $this->_redirectMessage ( "产品渠道", "删除成功", url ( "channelcost/search", array (
+			"id" => $product->product_id 
+		) ) );
+	}
+	/**
+	 * 创建标签 包装类型
+	 *
+	 * @param 产品 $product
+	 * @return 标签列
+	 */
+	function createTabsType($product, $channelcost) {
+	    return array (
+	        array (
+	            "id" => "BOX",
+	            "title" => "BOX",
+	            "href" => url ( "channelcost/edit", array (
+	                "id" => $product->product_id,
+	                "channel_id" => $channelcost->channel_id,
+	                "type" => "BOX"
+	            ) )
+	        ),
+	        array (
+	            "id" => "PAK",
+	            "title" => "PAK",
+	            "href" => url ( "channelcost/edit", array (
+	                "id" => $product->product_id,
+	                "channel_id" => $channelcost->channel_id,
+	                "type" => "PAK"
+	            ) )
+	        ),
+	        array (
+	            "id" => "DOC",
+	            "title" => "DOC",
+	            "href" => url ( "channelcost/edit", array (
+	                "id" => $product->product_id,
+	                "channel_id" => $channelcost->channel_id,
+	                "type" => "DOC"
+	            ) )
+	        )
+	    );
+	}
+	/**
+	 * 费用公式保存
+	 */
+	function actionsaveoperate(){
+	    //保存
+	    if (request_is_post ()) {
+	        //操作费
+	        if (request ( "formula" ) != null || strlen ( request ( "formula" ) ) > 0) {
+	            $value=json_decode ( request ( "formula" ),true);
+	            $formula =  ChannelCostformula::find("channel_cost_formula_id=?",$value[0]["channel_cost_formula_id"])->getOne();
+	            if (request ( "delete_flag" ) == "true") {
+	                if (! $formula->isNewRecord ()) {
+	                    $formula->destroy ();
+	                }
+	            }else{
+	                $value[0]['effective_time']=strtotime($value[0]['effective_time']."00:00:00");
+	                $value[0]['fail_time']=strtotime($value[0]['fail_time']."23:59:59");
+	                $formula->changeProps ( $value[0] );
+	                $formula->save ();
+	            }
+	            echo ($formula->channel_cost_formula_id);
+	        }
+	        exit;
+	    }
+	}
+}

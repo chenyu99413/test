@@ -1,0 +1,40 @@
+<HTML>
+<meta http-equiv="content-type" content="text/html; charset=gb2312">
+<head>
+<link rel="stylesheet" href="temp1.css" type="text/css">
+<script type="text/javascript" src="../../binary/dynaload.js?93"></script>
+<script language="JavaScript">
+ function OnReady(id)
+ {
+  AF.func('ReadXML', 'left.xml');
+  AF.func('expand', '02');
+ }
+ function OnEvent(id, Event, p1, p2, p3, p4)
+ {
+  if(Event != "SelChanged") return;
+  var index = p2.indexOf('#');
+  if(index == -1)
+    p2 += "?93";
+  else {
+  	var l = p2.substring(0, index);
+  	var r = p2.substring(index);
+  	p2 = l + "?93" + r;
+  }
+  parent.document.getElementById('ContentPage').src = p2;
+ }
+</script>
+</head>
+
+<body bgcolor=#EEEEEE leftMargin=2 rightMargin=1 bottommargin=1 topmargin=12 vlink=#0000ff link=#0000ff alink=#0000ff>
+<table cols=1 border=0 height=100% width=100% cellspacing=0 cellpading=0>
+<tr height=24><td class="noline" align=center><img src='../../res/tip2.bmp'>&nbsp; 开发者指南 &nbsp;<img src='../../res/tip2.bmp'></td></tr>
+<tr height=38><td class="noline" align=center>目 录</td></tr>
+<tr><td class="noline">
+<div style="position:relative;width:100%;height:100%">
+	<script>insertTree('AF', 'Border=clientEdge; style=hasButton,hasLine,showSelAlways; leafImage=3; nodeImage=0; BackColor=#F0F0F0,#D0D0D0')</script>
+</div>
+</td></tr>
+</table>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+<?php
+class Controller_Department extends Controller_Abstract {
+	
+	/**
+	 * 初始化
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 检索
+	 */
+	function actionSearch() {
+	
+	}
+	
+}

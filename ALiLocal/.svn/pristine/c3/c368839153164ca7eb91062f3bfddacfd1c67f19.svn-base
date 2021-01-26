@@ -1,0 +1,134 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    订单查询
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<div>
+</div>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>
+						创建日期从：
+					</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date" ),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>到</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date"),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>阿里订单号</th>
+					<td>
+						<input name="ali_order_no" type="text" style="width: 150px"
+							value="<?php echo request('ali_order_no')?>">
+					</td>
+					<th>问题件状态</th>
+					<td>
+						<?php
+						echo Q::control ( 'dropdownbox', 'parcel_flag', array (
+							'items' => array (
+								'1' => '开启',
+								'2' => '关闭'
+							),
+							'empty'=>true,
+							'value' => request ( 'parcel_flag' ,1) 
+						) )?>
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="tabs-container " style="min-width: 1148px;">
+		<?php
+		echo Q::control ( "tabs", "description", array (
+			"tabs" => $tabs,"active_id" => $active_id 
+		) );
+		?>
+		<div class="tabs-panels">
+			<div class="panel-body panel-body-noheader panel-body-noborder"
+				style="padding: 10px;">
+            	<table class="FarTable" id="list">
+            		<thead>
+            			<tr>
+            				<th>No</th>
+            				<th>问题件编号</th>
+            				<th>阿里单号</th>
+            				<th>末端运单号 &nbsp; 
+            				<a href="#13" class=" copy" data-clipboard-target="#tns"><i class="icon icon-copy"></i></a>&nbsp;
+            				<a href="javascript:trace()" ><i class="icon icon-link"></i></a>
+            				</th>
+            				<th style="width:90px">问题类型</th>
+            				<th >状态</th>
+            				<th width="70px">发起人</th>
+            				<th>发起时间</th>
+            				<th style="width:70px;">最后跟进</th>
+            				<th style="width:350px">最后备注</th>
+            			</tr>
+            		</thead>
+            		<tbody>
+            		<?php $i=1;$status=array('1'=>'取件异常件','2'=>'库内异常件','3'=>'渠道异常件');$tns=array();?>
+            		<?php foreach ($parcels as $parcel):$tns[]=$parcel->order->tracking_no;?>
+            			<?php $history=Abnormalparcelhistory::find("abnormal_parcel_id=?",$parcel->abnormal_parcel_id)->order("create_time desc")->getOne()?>
+            			<tr>
+            				<td><?php echo $i++ ?></td>
+            				<td><a  target="_blank"
+            					    href="<?php echo url('order/issuehistory', array('abnormal_parcel_id' => $parcel->abnormal_parcel_id))?>">
+            					    <?php echo $parcel->abnormal_parcel_no ?>
+            					</a>
+            				</td>
+            				<td><?php echo $parcel->ali_order_no?></td>
+            				<td><?php echo $parcel->order->tracking_no?></td>
+            				<td ><?php echo $status[$parcel->issue_type]?></td>
+            				<td style="width:30px;"><?php echo $parcel->parcel_flag=='1'?"开启":"关闭"?></td>
+            				<td><?php echo $parcel->abnormal_parcel_operator?></td>
+            				<td align="center"><?php echo Helper_Util::strDate('Y-m-d H:i', $parcel->create_time)?></td>
+            				<td ><?php echo $history->follow_up_operator?></td>
+            				<td ><?php echo $history->follow_up_content?></td>
+            			</tr>
+            		<?php endforeach;?>
+            		</tbody>
+            	</table>
+            	<textarea rows="" cols="" id="tns" style="width:1px;height:1px;"><?php echo implode("\n",$tns)?></textarea>
+            </div>
+		</div>
+	</div>
+	<input id="parameters" type="hidden" name="parameters" value="<?php echo $parameters?>">
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+</form>
+<script type="text/javascript">
+	/**
+	 *  点击tabs设置隐藏框值 
+	 */	 
+	function TabSwitch(code){
+		$("#parameters").val(code);
+		$("form").trigger("submit");
+	}
+	function trace(){
+		window.open("https://www.ups.com/track?loc=en_US&tracknum="+$('#tns').val().replace(/\n/g,"%250D%250A")+"&requester=WT/trackdetails");
+	}
+</script>
+<?PHP $this->_endblock();?>
+

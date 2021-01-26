@@ -1,0 +1,25 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>首页<?php $this->_endblock(); ?>
+<?PHP $this->_block('head');?>
+<style>
+#dashLeft .nav>li {
+	float: left;
+	height: 150px;
+	width: 140px;
+}
+
+#dashLeft .nav>li>a {
+	color: black;
+}
+
+#dashLeft .nav>li>a:hover {
+	background: white;
+}
+</style>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<div class="row">
+
+</div>
+<?PHP $this->_endblock();?>
+

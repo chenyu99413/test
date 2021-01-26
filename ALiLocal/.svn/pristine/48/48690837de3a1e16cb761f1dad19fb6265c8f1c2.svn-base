@@ -1,0 +1,1080 @@
+2018-12-26T12:52:13+08:00 DEBUG: --- STARTUP TIME --- 1545799933.9758
+2018-12-26T12:52:13+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:52:13+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:52:13+08:00 DEBUG: REQUEST UDI: default::default/index@default
+2018-12-26T12:52:13+08:00 DEBUG: ::1
+2018-12-26T12:52:13+08:00 DEBUG: EXECUTE ACTION: Controller_Default::actionindex()
+2018-12-26T12:52:13+08:00 DEBUG: --- SHUTDOWN TIME --- 1545799933.9961 (0.020282030105591)sec
+2018-12-26T12:52:14+08:00 DEBUG: --- STARTUP TIME --- 1545799934.0126
+2018-12-26T12:52:14+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:52:14+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:52:14+08:00 DEBUG: REQUEST UDI: default::user/login@default
+2018-12-26T12:52:14+08:00 DEBUG: ::1
+2018-12-26T12:52:14+08:00 DEBUG: EXECUTE ACTION: Controller_User::actionlogin()
+2018-12-26T12:52:14+08:00 DEBUG: --- SHUTDOWN TIME --- 1545799934.0307 (0.018089056015015)sec
+2018-12-26T12:53:26+08:00 DEBUG: --- STARTUP TIME --- 1545800006.0462
+2018-12-26T12:53:26+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:53:26+08:00 INFO: REQUEST METHOD：POST
+2018-12-26T12:53:26+08:00 DEBUG: REQUEST UDI: default::user/login@default
+2018-12-26T12:53:26+08:00 DEBUG: ::1
+2018-12-26T12:53:26+08:00 DEBUG: EXECUTE ACTION: Controller_User::actionlogin()
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_user`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_department`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_user`.*   FROM `far800express`.`tb_user`   WHERE ((user_account = 'admin' and status != '0')) LIMIT 1
+2018-12-26T12:53:26+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800006.1206 (0.074450016021729)sec
+2018-12-26T12:53:26+08:00 DEBUG: --- STARTUP TIME --- 1545800006.1249
+2018-12-26T12:53:26+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:53:26+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:53:26+08:00 DEBUG: REQUEST UDI: default::user/index@default
+2018-12-26T12:53:26+08:00 DEBUG: ::1
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_group_role`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_role`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_role_purview`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-26T12:53:26+08:00 DEBUG: EXECUTE ACTION: Controller_User::actionindex()
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_group_role`   WHERE ((user_id ='1' and role_id in(6,3))) LIMIT 1
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_baf`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_network`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_baf`.*   FROM `far800express`.`tb_baf`   WHERE ((fail_date >= '2018-12-26' and effective_date <='2018-12-26'))
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and contract_expiration_date between '2018-12-26 12:53:26' And '2019-01-25 12:53:26' And contract_code is not null And contract_code != '' And contract_date is not null And contract_date!= '' )) LIMIT 1
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and contract_expiration_date < '2018-12-26 12:53:26' And contract_code is not null And contract_code!= '' And contract_date is not null And contract_date!= '' And status !='1' )) LIMIT 1
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and contract_expiration_date < '2018-12-26 12:53:26' And contract_code is not null And contract_code!= '' And contract_date is not null And contract_date!= '' And status ='1' )) LIMIT 1
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_product`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_service`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_remote_manage`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_price_manage`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_partition_manage`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_product`   WHERE (( fail_date between '2018-12-26 12:53:26' And '2019-01-02 12:53:26' )) LIMIT 1
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_waybill`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_channel`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_country`
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_waybill`.`department_abbreviation`   FROM `far800express`.`tb_waybill`   WHERE ((record_order_date >= '2018-12-26 00:00:00' and record_order_date <= '2018-12-26 23:59:59' and department_abbreviation is not null and department_abbreviation != '' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and sort = 'S1'))   GROUP BY department_abbreviation
+2018-12-26T12:53:26+08:00 DEBUG: [DB EXECUTE] SELECT `tb_waybill`.`department_abbreviation`   FROM `far800express`.`tb_waybill`   WHERE ((record_order_date >= '2018-12-26 00:00:00' and record_order_date <= '2018-12-26 23:59:59' and department_abbreviation is not null and department_abbreviation != '' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and sort = 'D3'))   GROUP BY department_abbreviation
+2018-12-26T12:53:26+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800006.4714 (0.34648680686951)sec
+2018-12-26T12:53:39+08:00 DEBUG: --- STARTUP TIME --- 1545800019.797
+2018-12-26T12:53:39+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:53:39+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:53:39+08:00 DEBUG: REQUEST UDI: default::customs/search@default
+2018-12-26T12:53:39+08:00 DEBUG: ::1
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-26T12:53:39+08:00 DEBUG: EXECUTE ACTION: Controller_Customs::actionsearch()
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50'))) LIMIT 1
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((contract_code is  null  OR contract_code= '' OR contract_date is null OR contract_date= '' OR contract_expiration_date is null OR contract_expiration_date= '' ) AND (department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50'))) LIMIT 1
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((contract_expiration_date between '2018-12-26 12:53:39' And '2019-01-25 12:53:39' And contract_code is not null And contract_code != '' And contract_date is not null And contract_date!= '' ) AND (department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50'))) LIMIT 1
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((contract_expiration_date < '2018-12-26 12:53:39' And contract_code is not null And contract_code!= '' And contract_date is not null And contract_date!= '' And status !='1' ) AND (department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50'))) LIMIT 1
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((contract_expiration_date < '2018-12-26 12:53:39' And contract_code is not null And contract_code!= '' And contract_date is not null And contract_date!= '' And status ='1' ) AND (department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50'))) LIMIT 1
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*) AS row_count   FROM `far800express`.`tb_customs`   WHERE ((status !='1' && contract_code is  not null && contract_code != '' &&  contract_date is not null &&  contract_date != '' &&  contract_expiration_date is not null  &&  contract_expiration_date != '' && contract_expiration_date > '2018-12-26 12:53:39' ) AND (department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50'))) LIMIT 1
+2018-12-26T12:53:39+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))   ORDER BY convert(abbreviation using gbk) ASC
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT COUNT(*)   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((department_id in('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))   ORDER BY `tb_customs`.`create_date` desc, `tb_customs`.`customs_code` desc LIMIT 0, 30
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 50))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount`
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16350'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 50))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16349'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 42))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16348'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 46))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16347'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 47))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16346'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 47))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16345'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 30))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16344'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 30))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16343'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 8))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16342'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 10))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16341'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 29))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16340'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 8))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16339'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 8))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16338'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 7))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16337'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 30))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16336'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 30))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16335'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 7))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16334'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 15))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16333'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 30))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16332'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 29))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16331'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 42))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16330'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 15))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16329'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 42))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16328'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 8))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16327'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 38))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16326'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 30))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16325'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 29))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16324'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 30))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16323'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 30))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16322'))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((`tb_department`.`department_id` = 11))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((`tb_customs_discount`.`customs_id` = '16321'))
+2018-12-26T12:53:40+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800020.187 (0.39003300666809)sec
+2018-12-26T12:53:40+08:00 DEBUG: --- STARTUP TIME --- 1545800020.4543
+2018-12-26T12:53:40+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:53:40+08:00 INFO: REQUEST METHOD：POST
+2018-12-26T12:53:40+08:00 DEBUG: REQUEST UDI: default::common/customsgridall@default
+2018-12-26T12:53:40+08:00 DEBUG: ::1
+2018-12-26T12:53:40+08:00 DEBUG: EXECUTE ACTION: Controller_Common::actioncustomsgridall()
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_id`, `tb_customs`.`customs_code`, `tb_customs`.`customs_full_name`, `tb_customs`.`company_name_en`, `tb_customs`.`status`, `tb_customs`.`customs_abbreviation`, `tb_customs`.`customs_code`, `tb_customs`.`receiver`, `tb_customs`.`receive_address`, `tb_customs`.`salesperson`, `tb_customs`.`source`, `tb_customs`.`account_period`   FROM `far800express`.`tb_customs`   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND ((customs_code like '%%' or customs_abbreviation like '%%' or customs_full_name like '%%' or customs_pinyin like '%%' or company_name_en like '%%'))) LIMIT 0, 30
+2018-12-26T12:53:40+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800020.5104 (0.056084871292114)sec
+2018-12-26T12:53:40+08:00 DEBUG: --- STARTUP TIME --- 1545800020.4633
+2018-12-26T12:53:40+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:53:40+08:00 INFO: REQUEST METHOD：POST
+2018-12-26T12:53:40+08:00 DEBUG: REQUEST UDI: default::common/customsgridall@default
+2018-12-26T12:53:40+08:00 DEBUG: ::1
+2018-12-26T12:53:40+08:00 DEBUG: EXECUTE ACTION: Controller_Common::actioncustomsgridall()
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_id`, `tb_customs`.`customs_code`, `tb_customs`.`customs_full_name`, `tb_customs`.`company_name_en`, `tb_customs`.`status`, `tb_customs`.`customs_abbreviation`, `tb_customs`.`customs_code`, `tb_customs`.`receiver`, `tb_customs`.`receive_address`, `tb_customs`.`salesperson`, `tb_customs`.`source`, `tb_customs`.`account_period`   FROM `far800express`.`tb_customs`   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND ((customs_code like '%%' or customs_abbreviation like '%%' or customs_full_name like '%%' or customs_pinyin like '%%' or company_name_en like '%%'))) LIMIT 0, 30
+2018-12-26T12:53:40+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800020.5459 (0.082632064819336)sec
+2018-12-26T12:53:40+08:00 DEBUG: --- STARTUP TIME --- 1545800020.4646
+2018-12-26T12:53:40+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:53:40+08:00 INFO: REQUEST METHOD：POST
+2018-12-26T12:53:40+08:00 DEBUG: REQUEST UDI: default::common/customsgridall@default
+2018-12-26T12:53:40+08:00 DEBUG: ::1
+2018-12-26T12:53:40+08:00 DEBUG: EXECUTE ACTION: Controller_Common::actioncustomsgridall()
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.`customs_id`, `tb_customs`.`customs_code`, `tb_customs`.`customs_full_name`, `tb_customs`.`company_name_en`, `tb_customs`.`status`, `tb_customs`.`customs_abbreviation`, `tb_customs`.`customs_code`, `tb_customs`.`receiver`, `tb_customs`.`receive_address`, `tb_customs`.`salesperson`, `tb_customs`.`source`, `tb_customs`.`account_period`   FROM `far800express`.`tb_customs`   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) AND ((customs_code like '%%' or customs_abbreviation like '%%' or customs_full_name like '%%' or customs_pinyin like '%%' or company_name_en like '%%'))) LIMIT 0, 30
+2018-12-26T12:53:40+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800020.5495 (0.08487606048584)sec
+2018-12-26T12:53:40+08:00 DEBUG: --- STARTUP TIME --- 1545800020.4392
+2018-12-26T12:53:40+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:53:40+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:53:40+08:00 DEBUG: REQUEST UDI: default::common/departmenttree2@default
+2018-12-26T12:53:40+08:00 DEBUG: ::1
+2018-12-26T12:53:40+08:00 DEBUG: EXECUTE ACTION: Controller_Common::actiondepartmenttree2()
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE (((super_department is null or super_department = '' or super_department not in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')) and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '1' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '2' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '3' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '4' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '5' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '6' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '7' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '8' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '19' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '29' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '30' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '38' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '9' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '10' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '11' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '12' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '32' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '33' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '35' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '13' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '14' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '15' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '16' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '17' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '18' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '20' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '21' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '22' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '37' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '23' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '40' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '47' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '24' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '25' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '34' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '36' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '41' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '42' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '50' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '45' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '46' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`   WHERE ((super_department = '48' and department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50')))
+2018-12-26T12:53:40+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800020.5672 (0.12796902656555)sec
+2018-12-26T12:53:44+08:00 DEBUG: --- STARTUP TIME --- 1545800024.7679
+2018-12-26T12:53:44+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:53:44+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:53:44+08:00 DEBUG: REQUEST UDI: default::discount/search@default
+2018-12-26T12:53:44+08:00 DEBUG: ::1
+2018-12-26T12:53:44+08:00 DEBUG: EXECUTE ACTION: Controller_Discount::actionsearch()
+2018-12-26T12:53:44+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:53:44+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:53:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_id = '16350')) LIMIT 1
+2018-12-26T12:53:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-26T12:53:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-26T12:53:44+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((customs_id = '16350'))
+2018-12-26T12:53:44+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800024.8517 (0.083834171295166)sec
+2018-12-26T12:53:48+08:00 DEBUG: --- STARTUP TIME --- 1545800028.6546
+2018-12-26T12:53:48+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:53:48+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:53:48+08:00 DEBUG: REQUEST UDI: default::discount/search@default
+2018-12-26T12:53:48+08:00 DEBUG: ::1
+2018-12-26T12:53:48+08:00 DEBUG: EXECUTE ACTION: Controller_Discount::actionsearch()
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_id = '16348')) LIMIT 1
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((customs_id = '16348'))
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount_type`
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_type`.*   FROM `far800express`.`tb_customs_discount_type`   WHERE ((`tb_customs_discount_type`.`customs_discount_id` = '1470'))
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`   WHERE ((`tb_network`.`network_id` = 1))
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`service_id` = 1))
+2018-12-26T12:53:48+08:00 DEBUG: [DB EXECUTE] SELECT `tb_baf`.*   FROM `far800express`.`tb_baf`   WHERE ((network_id = '1' and (effective_date < now()  && (fail_date is null or now() < fail_date))))   ORDER BY `tb_baf`.`effective_date` DESC LIMIT 1
+2018-12-26T12:53:48+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800028.7732 (0.11863708496094)sec
+2018-12-26T12:53:50+08:00 DEBUG: --- STARTUP TIME --- 1545800030.8719
+2018-12-26T12:53:50+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:53:50+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:53:50+08:00 DEBUG: REQUEST UDI: default::discount/edit@default
+2018-12-26T12:53:50+08:00 DEBUG: ::1
+2018-12-26T12:53:50+08:00 DEBUG: EXECUTE ACTION: Controller_Discount::actionedit()
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_id = '16348')) LIMIT 1
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((customs_discount_id = '1470' )) LIMIT 1
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_type`.*   FROM `far800express`.`tb_customs_discount_type`   WHERE ((customs_discount_id = '1470' and boxing_type = 'P')) LIMIT 1
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount_partition`
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_partition`.*   FROM `far800express`.`tb_customs_discount_partition`   WHERE ((`tb_customs_discount_partition`.`type_id` = '3569'))
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount_country`
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_country`.*   FROM `far800express`.`tb_customs_discount_country`   WHERE ((`tb_customs_discount_country`.`type_id` = '3569'))
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-26T12:53:50+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((`tb_customs`.`customs_id` = 16348))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((network_id = 1))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_product_department`
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product_department`.*   FROM `far800express`.`tb_product_department`  INNER JOIN `far800express`.`tb_product`   ON (`far800express`.`tb_product`.`product_id` = `tb_product_department`.`product_id` )   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and `far800express`.`tb_product`.`product_id` is not null and `far800express`.`tb_product`.`effective_date` <= '2018-12-26' and `far800express`.`tb_product`.`fail_date` >= '2018-12-26'))   GROUP BY product_id
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 98))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_partition_manage`.*   FROM `far800express`.`tb_partition_manage`
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_price_manage`.*   FROM `far800express`.`tb_price_manage`
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_remote_manage`.*   FROM `far800express`.`tb_remote_manage`
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount_operating`
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_operating`.*   FROM `far800express`.`tb_customs_discount_operating`   WHERE ((`tb_customs_discount_operating`.`type_id` = '3569'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount_other`
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_other`.*   FROM `far800express`.`tb_customs_discount_other`   WHERE ((`tb_customs_discount_other`.`type_id` = '3569'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product_department`.*   FROM `far800express`.`tb_product_department`  INNER JOIN `far800express`.`tb_product`   ON (`far800express`.`tb_product`.`product_id` = `tb_product_department`.`product_id` )   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and `far800express`.`tb_product`.`product_id` is not null and `far800express`.`tb_product`.`effective_date` <= '2018-12-26' and `far800express`.`tb_product`.`fail_date` >= '2018-12-26'))   GROUP BY product_id
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 98))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`   WHERE ((`tb_network`.`network_id` = 1))
+2018-12-26T12:53:51+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`service_id` = 4))
+2018-12-26T12:53:51+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800031.1374 (0.26555395126343)sec
+2018-12-26T12:54:10+08:00 DEBUG: --- STARTUP TIME --- 1545800050.528
+2018-12-26T12:54:10+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:54:10+08:00 INFO: REQUEST METHOD：POST
+2018-12-26T12:54:10+08:00 DEBUG: REQUEST UDI: default::discount/edit@default
+2018-12-26T12:54:10+08:00 DEBUG: ::1
+2018-12-26T12:54:10+08:00 DEBUG: EXECUTE ACTION: Controller_Discount::actionedit()
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_id = '16348')) LIMIT 1
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((customs_discount_id = '1470' )) LIMIT 1
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_type`.*   FROM `far800express`.`tb_customs_discount_type`   WHERE ((customs_discount_id = '1470' and boxing_type = 'P')) LIMIT 1
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] START TRANSACTION
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] UPDATE `far800express`.`tb_customs_discount` SET `customs_id` = 16348, `network_id` = 1, `service_id` = 2, `product_id` = 0, `baf_id` = 0, `remote_manage_id` = 0, `partition_manage_id` = 0, `price_manage_id` = 0, `operator_date` = '2018-12-26 12-54-10', `update_date` = '2018-12-26 12:54:10' WHERE `far800express`.`tb_customs_discount`.`customs_discount_id` = '1470'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] UPDATE `far800express`.`tb_customs_discount_type` SET `customs_discount_id` = 1470, `default_discount` = '0.5', `update_date` = '2018-12-26 12:54:10' WHERE `far800express`.`tb_customs_discount_type`.`type_id` = '3569'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_partition`.*   FROM `far800express`.`tb_customs_discount_partition`   WHERE ((type_id = '3569'))
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_country`.*   FROM `far800express`.`tb_customs_discount_country`   WHERE ((type_id = '3569'))
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '997'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '998'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '999'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '1000'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '1001'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '1002'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '1003'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '1004'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '1005'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '1006'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '1007'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] DELETE FROM `far800express`.`tb_customs_discount_country` WHERE `far800express`.`tb_customs_discount_country`.`discount_country_id` = '1008'
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_operating`.*   FROM `far800express`.`tb_customs_discount_operating`   WHERE ((type_id = '3569'))
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_other`.*   FROM `far800express`.`tb_customs_discount_other`   WHERE ((type_id = '3569'))
+2018-12-26T12:54:10+08:00 DEBUG: [DB EXECUTE] COMMIT
+2018-12-26T12:54:10+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800050.6121 (0.084101915359497)sec
+2018-12-26T12:54:11+08:00 DEBUG: --- STARTUP TIME --- 1545800051.2018
+2018-12-26T12:54:11+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:54:11+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:54:11+08:00 DEBUG: REQUEST UDI: default::discount/edit@default
+2018-12-26T12:54:11+08:00 DEBUG: ::1
+2018-12-26T12:54:11+08:00 DEBUG: EXECUTE ACTION: Controller_Discount::actionedit()
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_id = '16348')) LIMIT 1
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((customs_discount_id = '1470' )) LIMIT 1
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_type`.*   FROM `far800express`.`tb_customs_discount_type`   WHERE ((customs_discount_id = '1470' and boxing_type = 'P')) LIMIT 1
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_partition`.*   FROM `far800express`.`tb_customs_discount_partition`   WHERE ((`tb_customs_discount_partition`.`type_id` = '3569'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_country`.*   FROM `far800express`.`tb_customs_discount_country`   WHERE ((`tb_customs_discount_country`.`type_id` = '3569'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((`tb_customs`.`customs_id` = 16348))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((network_id = 1))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product_department`.*   FROM `far800express`.`tb_product_department`  INNER JOIN `far800express`.`tb_product`   ON (`far800express`.`tb_product`.`product_id` = `tb_product_department`.`product_id` )   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and `far800express`.`tb_product`.`product_id` is not null and `far800express`.`tb_product`.`effective_date` <= '2018-12-26' and `far800express`.`tb_product`.`fail_date` >= '2018-12-26'))   GROUP BY product_id
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 98))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_partition_manage`.*   FROM `far800express`.`tb_partition_manage`
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_price_manage`.*   FROM `far800express`.`tb_price_manage`
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_remote_manage`.*   FROM `far800express`.`tb_remote_manage`
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_operating`.*   FROM `far800express`.`tb_customs_discount_operating`   WHERE ((`tb_customs_discount_operating`.`type_id` = '3569'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_other`.*   FROM `far800express`.`tb_customs_discount_other`   WHERE ((`tb_customs_discount_other`.`type_id` = '3569'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product_department`.*   FROM `far800express`.`tb_product_department`  INNER JOIN `far800express`.`tb_product`   ON (`far800express`.`tb_product`.`product_id` = `tb_product_department`.`product_id` )   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and `far800express`.`tb_product`.`product_id` is not null and `far800express`.`tb_product`.`effective_date` <= '2018-12-26' and `far800express`.`tb_product`.`fail_date` >= '2018-12-26'))   GROUP BY product_id
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 98))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`   WHERE ((`tb_network`.`network_id` = 1))
+2018-12-26T12:54:11+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`service_id` = 4))
+2018-12-26T12:54:11+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800051.4465 (0.24468398094177)sec
+2018-12-26T12:54:22+08:00 DEBUG: --- STARTUP TIME --- 1545800061.9883
+2018-12-26T12:54:22+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:54:22+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:54:22+08:00 DEBUG: REQUEST UDI: default::common/checkcountryexist@default
+2018-12-26T12:54:22+08:00 DEBUG: ::1
+2018-12-26T12:54:22+08:00 DEBUG: EXECUTE ACTION: Controller_Common::actioncheckcountryexist()
+2018-12-26T12:54:22+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:54:22+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:54:22+08:00 DEBUG: [DB EXECUTE] SELECT `tb_country`.*   FROM `far800express`.`tb_country`   WHERE ((code_word_two = 'US')) LIMIT 1
+2018-12-26T12:54:22+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800062.0498 (0.061508893966675)sec
+2018-12-26T12:54:30+08:00 DEBUG: --- STARTUP TIME --- 1545800069.9955
+2018-12-26T12:54:30+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:54:30+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:54:30+08:00 DEBUG: REQUEST UDI: default::common/checkcountryexist@default
+2018-12-26T12:54:30+08:00 DEBUG: ::1
+2018-12-26T12:54:30+08:00 DEBUG: EXECUTE ACTION: Controller_Common::actioncheckcountryexist()
+2018-12-26T12:54:30+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:54:30+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:54:30+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_country`
+2018-12-26T12:54:30+08:00 DEBUG: [DB EXECUTE] SELECT `tb_country`.*   FROM `far800express`.`tb_country`   WHERE ((code_word_two = 'US')) LIMIT 1
+2018-12-26T12:54:30+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800070.0588 (0.063270092010498)sec
+2018-12-26T12:56:18+08:00 DEBUG: --- STARTUP TIME --- 1545800178.6353
+2018-12-26T12:56:18+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:56:18+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:56:18+08:00 DEBUG: REQUEST UDI: default::discount/edit@default
+2018-12-26T12:56:18+08:00 DEBUG: ::1
+2018-12-26T12:56:18+08:00 DEBUG: EXECUTE ACTION: Controller_Discount::actionedit()
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_department`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_id = '16348')) LIMIT 1
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_network`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_service`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_product`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_remote_manage`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_price_manage`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_partition_manage`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((customs_discount_id = '1470' )) LIMIT 1
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount_type`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_type`.*   FROM `far800express`.`tb_customs_discount_type`   WHERE ((customs_discount_id = '1470' and boxing_type = 'P')) LIMIT 1
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount_partition`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_partition`.*   FROM `far800express`.`tb_customs_discount_partition`   WHERE ((`tb_customs_discount_partition`.`type_id` = '3569'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount_country`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_country`.*   FROM `far800express`.`tb_customs_discount_country`   WHERE ((`tb_customs_discount_country`.`type_id` = '3569'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_group_role`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_user`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_role`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_role_purview`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((`tb_customs`.`customs_id` = 16348))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((network_id = 1))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_product_department`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product_department`.*   FROM `far800express`.`tb_product_department`  INNER JOIN `far800express`.`tb_product`   ON (`far800express`.`tb_product`.`product_id` = `tb_product_department`.`product_id` )   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and `far800express`.`tb_product`.`product_id` is not null and `far800express`.`tb_product`.`effective_date` <= '2018-12-26' and `far800express`.`tb_product`.`fail_date` >= '2018-12-26'))   GROUP BY product_id
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 98))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_partition_manage`.*   FROM `far800express`.`tb_partition_manage`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_price_manage`.*   FROM `far800express`.`tb_price_manage`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_remote_manage`.*   FROM `far800express`.`tb_remote_manage`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount_operating`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_operating`.*   FROM `far800express`.`tb_customs_discount_operating`   WHERE ((`tb_customs_discount_operating`.`type_id` = '3569'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_customs_discount_other`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_other`.*   FROM `far800express`.`tb_customs_discount_other`   WHERE ((`tb_customs_discount_other`.`type_id` = '3569'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product_department`.*   FROM `far800express`.`tb_product_department`  INNER JOIN `far800express`.`tb_product`   ON (`far800express`.`tb_product`.`product_id` = `tb_product_department`.`product_id` )   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and `far800express`.`tb_product`.`product_id` is not null and `far800express`.`tb_product`.`effective_date` <= '2018-12-26' and `far800express`.`tb_product`.`fail_date` >= '2018-12-26'))   GROUP BY product_id
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 98))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`   WHERE ((`tb_network`.`network_id` = 1))
+2018-12-26T12:56:18+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`service_id` = 4))
+2018-12-26T12:56:18+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800178.9262 (0.29091882705688)sec
+2018-12-26T12:56:42+08:00 DEBUG: --- STARTUP TIME --- 1545800202.6102
+2018-12-26T12:56:42+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T12:56:42+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T12:56:42+08:00 DEBUG: REQUEST UDI: default::discount/edit@default
+2018-12-26T12:56:42+08:00 DEBUG: ::1
+2018-12-26T12:56:42+08:00 DEBUG: EXECUTE ACTION: Controller_Discount::actionedit()
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((customs_id = '16348')) LIMIT 1
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount`.*   FROM `far800express`.`tb_customs_discount`   WHERE ((customs_discount_id = '1470' )) LIMIT 1
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_type`.*   FROM `far800express`.`tb_customs_discount_type`   WHERE ((customs_discount_id = '1470' and boxing_type = 'B')) LIMIT 1
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_partition`.*   FROM `far800express`.`tb_customs_discount_partition`   WHERE ((`tb_customs_discount_partition`.`type_id` = '3570'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_country`.*   FROM `far800express`.`tb_customs_discount_country`   WHERE ((`tb_customs_discount_country`.`type_id` = '3570'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs`.*   FROM `far800express`.`tb_customs`   WHERE ((`tb_customs`.`customs_id` = 16348))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((network_id = 1))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_department`.*   FROM `far800express`.`tb_department`
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product_department`.*   FROM `far800express`.`tb_product_department`  INNER JOIN `far800express`.`tb_product`   ON (`far800express`.`tb_product`.`product_id` = `tb_product_department`.`product_id` )   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and `far800express`.`tb_product`.`product_id` is not null and `far800express`.`tb_product`.`effective_date` <= '2018-12-26' and `far800express`.`tb_product`.`fail_date` >= '2018-12-26'))   GROUP BY product_id
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 98))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_partition_manage`.*   FROM `far800express`.`tb_partition_manage`
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_price_manage`.*   FROM `far800express`.`tb_price_manage`
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_remote_manage`.*   FROM `far800express`.`tb_remote_manage`
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_operating`.*   FROM `far800express`.`tb_customs_discount_operating`   WHERE ((`tb_customs_discount_operating`.`type_id` = '3570'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_customs_discount_other`.*   FROM `far800express`.`tb_customs_discount_other`   WHERE ((`tb_customs_discount_other`.`type_id` = '3570'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '1'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '2'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '3'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '4'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '5'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '6'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '7'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '8'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '9'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '10'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '11'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '12'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '13'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '14'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '15'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '16'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '17'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '18'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '19'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '20'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '21'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`network_id` = '22'))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product_department`.*   FROM `far800express`.`tb_product_department`  INNER JOIN `far800express`.`tb_product`   ON (`far800express`.`tb_product`.`product_id` = `tb_product_department`.`product_id` )   WHERE ((department_id in ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','29','30','32','33','34','35','36','37','38','40','41','42','45','46','47','48','50') and `far800express`.`tb_product`.`product_id` is not null and `far800express`.`tb_product`.`effective_date` <= '2018-12-26' and `far800express`.`tb_product`.`fail_date` >= '2018-12-26'))   GROUP BY product_id
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 98))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_network`.*   FROM `far800express`.`tb_network`   WHERE ((`tb_network`.`network_id` = 1))
+2018-12-26T12:56:42+08:00 DEBUG: [DB EXECUTE] SELECT `tb_service`.*   FROM `far800express`.`tb_service`   WHERE ((`tb_service`.`service_id` = 4))
+2018-12-26T12:56:42+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800202.8287 (0.21844983100891)sec
+2018-12-26T13:00:02+08:00 DEBUG: --- STARTUP TIME --- 1545800402.8582
+2018-12-26T13:00:02+08:00 DEBUG: session_id: cvcqevriam5f2n8bjnj8boqvp3
+2018-12-26T13:00:02+08:00 INFO: REQUEST METHOD：GET
+2018-12-26T13:00:02+08:00 DEBUG: REQUEST UDI: default::price/search@default
+2018-12-26T13:00:02+08:00 DEBUG: ::1
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] USE `far800express`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SET NAMES 'utf8'
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_group_role`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_user`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_department`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_role`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SELECT `tb_group_role`.*   FROM `far800express`.`tb_group_role`   WHERE ((user_id = '1'))
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_role_purview`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SELECT `tb_role_purview`.*   FROM `far800express`.`tb_role_purview`   WHERE ((role_id in (1)))   GROUP BY purview_path
+2018-12-26T13:00:02+08:00 DEBUG: EXECUTE ACTION: Controller_Price::actionsearch()
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_price_manage`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SELECT `tb_price_manage`.*   FROM `far800express`.`tb_price_manage`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_product`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_network`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_service`
+2018-12-26T13:00:02+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_remote_manage`
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_partition_manage`
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '1'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_channel_cost`
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SHOW FULL COLUMNS FROM `far800express`.`tb_channel`
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='1'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 40))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 41))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 39))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 38))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 53))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 61))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 62))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 65))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 96))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 128))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 146))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 147))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 148))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '2'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='2'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 10))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 13))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 19))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 28))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '3'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='3'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 9))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 14))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 20))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 29))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 70))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '4'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='4'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 11))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 15))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 18))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 21))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 33))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 63))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '5'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='5'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 12))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 16))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 23))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 109))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '6'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='6'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 43))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '7'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='7'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 46))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '8'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='8'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 56))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '9'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='9'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '10'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='10'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '11'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='11'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 97))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '12'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='12'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 36))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '13'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='13'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 45))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '14'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='14'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 50))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '15'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='15'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 58))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '16'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='16'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 44))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '17'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='17'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 57))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '23'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='23'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 55))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '26'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='26'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '27'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='27'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 54))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '31'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='31'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '32'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='32'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '33'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='33'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '34'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='34'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 47))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '35'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='35'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 66))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '36'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='36'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '37'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='37'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '38'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='38'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '39'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='39'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '40'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='40'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '41'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='41'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 31))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 32))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '42'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='42'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 71))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '43'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='43'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '44'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='44'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '45'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='45'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '46'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='46'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 85))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '47'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='47'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 88))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '48'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='48'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 87))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '49'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='49'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 92))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '50'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='50'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 52))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '51'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='51'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '52'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='52'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 94))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '53'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='53'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 64))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '54'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='54'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 93))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 102))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 124))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 149))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 151))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '55'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='55'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 150))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 152))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 158))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '56'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='56'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 101))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 142))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 144))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '57'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='57'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 116))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '58'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='58'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 121))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '59'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='59'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '60'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='60'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 122))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '61'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='61'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 123))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '62'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='62'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '69'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='69'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '70'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='70'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 126))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '71'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='71'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '72'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='72'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '73'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='73'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '74'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='74'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '75'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='75'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '76'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='76'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '77'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='77'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '78'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='78'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '79'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='79'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '80'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='80'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '81'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='81'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 34))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '82'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='82'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 35))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '83'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='83'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 153))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '84'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='84'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 160))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '85'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='85'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 159))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '86'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='86'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '88'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='88'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 26))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 156))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 163))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 167))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '89'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='89'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 24))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '90'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='90'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 27))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 168))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '91'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='91'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 25))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '92'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='92'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '93'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='93'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '94'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='94'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '95'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='95'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '96'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='96'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '97'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='97'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '98'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='98'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '99'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='99'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((`tb_product`.`product_id` = 157))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '100'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='100'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '101'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='101'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '102'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='102'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '103'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='103'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '104'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='104'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '105'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='105'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '106'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='106'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '107'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='107'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '108'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='108'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '109'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='109'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '110'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='110'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '111'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='111'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '112'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='112'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '113'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='113'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '114'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='114'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '115'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='115'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '116'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='116'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '117'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='117'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '118'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='118'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '119'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='119'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '120'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='120'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '121'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='121'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '122'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='122'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '123'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='123'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '124'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='124'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '125'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='125'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '126'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='126'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '127'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='127'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '128'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='128'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '129'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='129'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '132'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='132'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '133'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='133'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '134'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='134'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '135'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='135'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '136'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='136'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_product`.*   FROM `far800express`.`tb_product`   WHERE ((price_manage_id = '137'))
+2018-12-26T13:00:03+08:00 DEBUG: [DB EXECUTE] SELECT `tb_channel_cost`.*   FROM `far800express`.`tb_channel_cost`   WHERE ((price_manage_id ='137'))
+2018-12-26T13:00:03+08:00 DEBUG: --- SHUTDOWN TIME --- 1545800403.273 (0.41479110717773)sec

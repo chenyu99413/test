@@ -1,0 +1,165 @@
+<?php
+/**
+ */
+class Controller_wxAliPickupDevice extends Controller_Abstract {
+	function actionIndex() {
+		return $this->_redirect(Helper_WX::loginStep1('http://www.far800.com/wxalipickupdevice/auth'));
+	}
+	function actionAuth(){
+		$r=Helper_WX::loginStep2(request('code'));
+		if (empty($r['openid'])) {
+			exit('请先同意授权');
+		}
+		$m=PickUpMember::find('wechat_id =?',$r['openid'])->getOne();
+		//测试用
+		if($m->id == 27){
+			return $this->_redirect(url('/upload2',array('wechat_id'=>$m->id)));
+		}
+		if ($m->type == 1){
+			return $this->_redirect(url('/upload',array('wechat_id'=>$m->id)));
+		}
+		if ($m->status ==1) {
+			return $this->_redirect(url('/pkscan',array('wechat_id'=>$m->id)));
+		}
+		$m->changeProps(array(
+			'wechat_id'=>$r['openid'],
+			'wechat_no'=>$r['nickname'],
+			'img_url'=>$r['headimgurl'],
+			'gender'=>$r['sex']
+		));
+		$m->save();
+		return $this->_redirect(url('/profile',array('openid'=>$m->wechat_id)));
+	}
+	function actionProfile(){
+		$m=PickUpMember::find('wechat_id =?',request('openid'))->getOne();
+		if ($m->isNewRecord()) {
+			exit('error');
+		}
+		if (request_is_post()) {
+			$m->name=request('name');
+			$m->save();
+		}
+		$this->_view['m']=$m;
+	}
+	function actionPKscan() {
+		if (request_is_post()) {
+			//保存数据，更新取件时间、单号。。。
+			$scan_codes = json_decode(request('scan_codes'),true);
+			$reference_no = '';
+			foreach ($scan_codes as $scan_code){
+				if(substr($scan_code, 0, 3) <> 'ALS'){
+					$reference_no = $scan_code;
+				}
+			}
+			foreach ($scan_codes as $scan_code){
+				if(substr($scan_code, 0, 3) <> 'ALS'){
+					continue;
+				}
+				$order = Order::find('ali_order_no = ?',$scan_code)->getOne();
+				if(!$order -> isNewRecord()){
+					$order->pick_up_time = time();
+					$order->wechat_id = request('wechat_id');
+					$order->reference_no = $reference_no;
+					$order->order_status = 15;
+					$order->save();
+				}
+			}
+			//显示成功页面
+			$this->_viewname='pkscan1';
+		}
+	}
+	/**
+	 *
+	 * @todo 手机端上传图片页面，以及ajax判断单号是否存在
+	 * @author 吴开龙
+	 * @since 2020-7-1 15:44:59
+	 * @param
+	 *
+	 * @return json
+	 * @link #80695
+	 */
+	function actionUpload() {
+		if (request_is_post ()) {
+			$order = Order::find ( 'ali_order_no=? or tracking_no=? or reference_no=?', request ( 'orderno' ), request ( 'orderno' ), request ( 'orderno' ) )->getOne ();
+			if ($order->isNewRecord ()) {
+				$data ['code'] = 0;
+				return json_encode ( $data );
+			}
+			$data ['code'] = 1;
+			$data ['msg'] = $order->order_id;
+			return json_encode ( $data );
+		}
+	}
+	/**
+	 *
+	 * @todo 手机端上传图片页面，以及ajax判断单号是否存在 微信拍照
+	 * @author 吴开龙
+	 * @since 2020-7-28 15:44:59
+	 * @param
+	 *
+	 * @return json
+	 * @link #80695
+	 */
+	function actionUpload2() {
+		if (request_is_post ()) {
+			$order = Order::find ( 'ali_order_no=? or tracking_no=? or reference_no=?', request ( 'orderno' ), request ( 'orderno' ), request ( 'orderno' ) )->getOne ();
+			if ($order->isNewRecord ()) {
+				$data ['code'] = 0;
+				return json_encode ( $data );
+			}
+			$data ['code'] = 1;
+			$data ['msg'] = $order->order_id;
+			return json_encode ( $data );
+		}
+	}
+	/**
+	 *
+	 * @todo 手机端上传图片接收图片方法
+	 * @author 吴开龙
+	 * @since 2020-7-1 15:44:59
+	 * @param
+	 *
+	 * @return json
+	 * @link #80695
+	 */
+	function actionUploadImg() {
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'imagefile' )) {
+			return '无文件';
+		}
+		$uploader = $uploader->file ( 'imagefile' );
+// 				echo "<pre>";
+// 				print_r ( $uploader->extname () );
+// 				print_r ( $uploader );
+// 				print_r ( $_FILES );
+// 				exit ();
+		$order = Order::find ( 'order_id=?', request ( 'order_id' ) )->getOne ();
+		//随机数
+		$file_count = rand(1000,9999);
+		$houzhui1 = explode ( '.', request('name') );
+		$houzhui = $houzhui1[1];
+		//文件名
+		$postfix_name = $order->ali_order_no . '-' . $file_count . '.' . $houzhui;
+		//file_path
+		$file_path = '/www/ali1688/public/upload/files/' . date ( 'Ymd' ) . '/' . $postfix_name;
+		//创建文件夹以及保存文件
+		$root = INDEX_DIR;
+		$fileurl = DS . 'public' . DS . 'upload' . DS . 'files' . DS . date ( 'Ymd' );
+		$filename = DS . $postfix_name;
+		Helper_Filesys::mkdirs ( $root . $fileurl );
+		$uploader->move ( $root . $fileurl . $filename );
+		//保存数据
+		$wechat = PickUpMember::find('wechat_id=?',request('wechat_id'))->getOne();
+		$file = new File ();
+		$file->order_id = request ( 'order_id' );
+		$file->file_name = $postfix_name;
+		$file->file_path = $file_path;
+		$file->operator = $wechat->name;
+		$file->save ();
+		$data = array (
+			'code' => 1,
+			'msg' => '成功'
+		);
+		return json_encode ( $data );
+	}
+}

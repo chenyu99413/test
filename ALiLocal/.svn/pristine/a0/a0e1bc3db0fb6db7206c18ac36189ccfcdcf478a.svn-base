@@ -1,0 +1,195 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>渠道编辑<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<?php
+if (request('id') != null) {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'渠道管理' => '',
+			'渠道列表' => url ( 'channel/search' ),
+			'渠道编辑' => url ( 'channel/edit', array (
+				'id' => $channel->channel_id 
+			) ) 
+		) 
+	) );
+} else {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'渠道管理' => '',
+			'渠道列表' => url ( 'channel/search' ),
+			'新建渠道' => url ( 'channel/edit' ) 
+		) 
+	) );
+}
+?>
+<form method="post">
+	<div class="FarSearch span10" style="padding:5px;">
+	<div class="span5">
+		<table>
+			<tbody>
+				<tr>
+					<th class="required-title">渠道名称</th>
+    				<td>
+    					<input name="channel_name" id="channel_name" type="text" style="width: 150px" required="required" value="<?php echo $channel->channel_name?>">
+    				</td>
+				</tr>
+				<tr>
+					<th class="required-title">分组</th>
+    				<td>
+    					<?php echo Q::control('dropdownbox','channel_group_id',array(
+    					    'items'=>Helper_Array::toHashmap(Channelgroup::find()->getAll(),'channel_group_id','channel_group_name'),
+    					    'value'=>$channel->channel_group_id,
+    					    'style'=>'width:150px',
+    					    "empty"=>true,
+    					    "required"=>true
+    					))?>
+    				</td>
+				</tr>
+				<tr>
+					<th>网络</th>
+                	<td>
+                		<?php echo Q::control('dropdownlist','network_code',array('items'=>Helper_Array::toHashmap(Network::find()->getAll(),'network_code','network_name'),'value'=>$channel->network_code))?>
+                	</td>
+				</tr>
+				<tr>
+					<th>发件人</th>
+                	<td>
+                		<?php echo Q::control('dropdownbox','sender_id',array('items'=>Helper_Array::toHashmap(Sender::find()->getAll(),'sender_id','sender_code'),'value'=>$channel->sender_id,"empty"=>true))?>
+                	</td>
+				</tr>
+			</tbody>
+		</table>
+		</div>
+		<div class="span5">
+		         <b> 可用部门</b>
+			<label style="margin-left: 4px;"> 
+				<input id="check_all" type="checkbox" style="margin-top:0px;"
+					onclick="CheckAll(this);" />
+				全选
+			</label>
+			<div class="easyui-panel" style="padding: 5px">
+				<ul id="department_tree" class="easyui-tree"
+					data-options="url:'<?php echo url('department/departmenttree',$department)?>',method:'get',checkbox:true,cascadeCheck:false"></ul>
+			</div>
+		</div>
+    	<div class="FarTool span10" style="text-align: center">
+    		<a class="btn btn-inverse" href="<?php echo url('channel/search')?>">
+    			<i class="icon-reply"></i> 返回
+    		</a>
+    		<button type="submit" class="btn btn-primary">
+    			<i class="icon-save"></i> 保存
+    		</button>
+    	</div>
+    </div>
+	<?php if ($channel->channel_id):?>
+		<div class="span6" style="margin-left: 0px;">
+		         <b>禁用设置</b>
+		    <table id="table_networkfuel" class="FarTable">
+				<thead>
+					<tr>
+						<th>生效日期</th>
+						<th>失效日期</th>
+						<th>禁用部门</th>
+						<th width=120>操作</th>
+					</tr>
+				</thead>
+				<tbody>
+			    <?php foreach($disabled_department as $temp):?>
+				<tr id="<?php echo $temp->disabled_id?>">
+						<td style="text-align: center;"><?php echo Helper_Util::strDate('Y-m-d',$temp->effect_time);?></td>
+						<td style="text-align: center;"><?php echo Helper_Util::strDate('Y-m-d',$temp->failure_time);?></td>
+						<td style="text-align: center;"><?php echo $temp->department->department_name;?>
+						<input type="hidden" value="<?php echo $temp->department_id?>" /></td>
+						<td>
+							<a class="btn btn-mini" href="javascript:void(0);"
+								onclick="EditRow([{'type':'date','required':'true'},{'type':'date','required':'true'},{'type':'select','option':<?php echo str_replace("\"","'",json_encode(Channeldepartmentdisable::getdepartment()));?>,'required':'true'}],this);">
+								<i class="icon-pencil"></i>
+								编辑
+							</a>
+							<a class="btn btn-mini btn-danger" href="javascript:void(0);"
+								onclick="DeleteRow(this);">
+								<i class="icon-trash"></i>
+								删除
+							</a>
+						</td>
+					</tr>
+				<?php endforeach;?>
+				<tr>
+						<td></td>
+						<td></td>
+						<td></td>
+						<td>
+							<a class="btn btn-mini btn-success" href="javascript:void(0);"
+								onclick="NewRow([{'type':'date','required':'true'},{'type':'date','required':'true'},{'type':'select','option':<?php echo str_replace("\"","'",json_encode(Channeldepartmentdisable::getdepartment()));?>,'required':'true'}],this);">
+								<i class="icon-plus"></i>
+								新建
+							</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<?php endif;?>
+		<input type="hidden" name="department_hidden" id="department_hidden">
+</form>
+
+<script type="text/javascript">
+$(function(){
+	$("form").submit(function(){
+		//可用部门
+		var department = "";
+		$($("#department_tree").tree("getChecked")).each(function(){
+			department += $(this)[0].id+",";
+		});
+		$("#department_hidden").val(department.substring(0,department.length-1));
+	});
+})
+/**
+ * 全选
+ */
+function CheckAll(obj){
+	var check = obj.checked ? "check" : "uncheck";
+	var roots = $("#department_tree").tree("getRoots");
+	for(var i=0;i<roots.length;i++){
+		var notes = $("#department_tree").tree("getChildren", roots[i]);
+		for(var i=0;i<notes.length;i++){
+			$("#department_tree").tree(check,notes[i].target);
+		}
+	}
+}
+/**
+ * 回调 保存数据
+ */
+function CallBack(obj,name){
+	if(obj==null){
+		return false;
+	}
+	$.ajax({
+		url:"<?php echo url('channel/disabledsave')?>",
+		type:"POST",
+		data:{"channel_id":"<?php echo request('channel_id')?>",
+			"disable_department":{
+				"disabled_id":$(obj).attr("id")==undefined?"":$(obj).attr("id"),
+				"effect_time":$.trim($(obj).children().eq(0).text()),
+				"failure_time":$(obj).children().eq(1).text(),
+				"department_id":$(obj).children().eq(2).text()}},
+		success:function(msg){
+			$(obj).attr("id",msg);
+		}
+	});
+}
+	/**
+	 * 回调 删除数据
+	 */
+	function DeleteBefore(obj){
+		$.ajax({
+			url:"<?php echo url('channel/disableddel')?>",
+			type:"POST",
+			data:{"disabled_id":$(obj).attr("id")==undefined?"":$(obj).attr("id")},
+			success:function(msg){
+			}
+		});
+	}
+</script>
+
+<?PHP $this->_endblock();?>

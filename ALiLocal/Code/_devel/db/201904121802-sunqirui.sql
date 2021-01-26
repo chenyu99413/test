@@ -1,0 +1,1 @@
+ALTER TABLE `tb_order` ADD COLUMN `profit`  decimal(10,2) NULL COMMENT '毛利' AFTER `related_ali_order_no`;

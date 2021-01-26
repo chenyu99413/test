@@ -1,0 +1,31 @@
+<?php
+/**
+ * 收件公司选择控件
+ *
+ * @author firzen
+ *        
+ */
+class Control_Upscompany extends Control_ComboGrid {
+	function _before_render() {
+	    $idfield=$this->_extract ( 'idField', 'company_name' );
+		$columns = array (
+			array (
+				'field' => $idfield,
+				'title' => '公司名称',
+				'width' => 60,
+				'align' => 'center' 
+			),
+		);
+		$this->_attrs ['columns'] = $columns;
+		$oldValue=$this->_extract('oldValue');
+		$url = $this->_extract ( "url" );
+		if ($url) {
+		    $this->_attrs ["url"] = $url;
+		} else {
+		    $this->_attrs ['url'] = url ( 'quick/companysearch',$oldValue);
+		}
+		$this->_attrs ["mode"] = "remote";
+		$this->_attrs ['textField'] = $this->_extract ( 'textField', 'company_name' );
+		$this->_attrs ['idField'] = $idfield;
+	}
+}

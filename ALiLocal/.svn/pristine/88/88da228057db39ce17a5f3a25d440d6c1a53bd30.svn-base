@@ -1,0 +1,13 @@
+<?php
+class Controller_Warehouse extends Controller_Abstract {
+	/**
+	 * 包裹入库
+	 */
+	function actionCheckin() {
+	}
+	/**
+	 * 包裹出库
+	 */
+	function actionactionCheckout() {
+	}
+}

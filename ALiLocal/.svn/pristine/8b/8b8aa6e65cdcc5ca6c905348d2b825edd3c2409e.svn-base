@@ -1,0 +1,80 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    新建问题件
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'订单管理' => '','问题件列表' => url ( 'order/issue' ),'新建问题件' => '' 
+	) 
+) )?>
+<form method="post">
+    <div class="FarSearch">
+		<table>
+			<tbody>
+				<tr>
+					<th>阿里单号</th>
+					<td>
+						<input type="text" Style="width: 200px"
+							name="ali_order_no"
+							id="ali_order_no"
+							value=""
+							required="required" />
+					</td>
+				</tr>
+				<tr>
+				    <th>问题类型</th>
+				    <td>
+				    	<label><input type="radio" name="issue_type" value="1" > 取件异常件</label>
+				        <label><input type="radio" name="issue_type" value="2" > 库内异常件</label>
+				        <label><input type="radio" name="issue_type" value="3" checked> 渠道异常件</label>
+				    </td>
+				</tr>
+				<tr>
+				    <th>详情</th>
+				    <td>
+				        <textarea name="detail" rows="3" Style="width: 400px"></textarea>
+				    </td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="FarTool text-center">
+		<button type="submit" class="btn btn-primary">
+			<i class="icon-save"></i>
+			保存
+		</button>
+	</div>
+</form>
+<script type="text/javascript">
+$('body').on('keydown', 'input, select', function(e) {
+	if (e.keyCode == 13) {
+		return enter2tab(this,e);
+	}
+});
+$(function(){
+	$('form').submit(function(){
+		var flag=true;
+		$.ajax({
+			url:'<?php echo url('/checkissueparcelalino')?>',
+			data:{ali_order_no:$("#ali_order_no").val()},
+			type:'post',
+			async:false,
+			success:function(data){
+				if(data=='false'){
+					flag=false;
+					$.messager.alert('','阿里订单号不存在');
+				}
+			}
+		})
+		return flag;
+	})
+	
+})
+</script>
+<?PHP $this->_endblock();?>
+

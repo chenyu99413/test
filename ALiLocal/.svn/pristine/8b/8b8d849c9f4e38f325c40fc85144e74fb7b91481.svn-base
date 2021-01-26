@@ -1,0 +1,44 @@
+<div style="overflow: scroll; height: 420px;" id="scroll-fee-list-talbe">
+	<table class="FarTable" style="margin: 0; width: 380; table-layout: fixed;"
+		id="fee-list-talbe">
+		<thead>
+			<tr>
+				<th style="width: 50px;">No.</th>
+				<th style="width: 150px;"><?php echo request('fee_type','1')==1?'客户':'渠道'?></th>
+				<th style="width: 150px;">总金额</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php if(request('fee_type','1')==1):?>
+			<tr>
+				<td style="text-align: center;">1</td>
+				<td style="text-align: center;">阿里巴巴</td>
+				<td style="text-align: center;"><?php echo $totals?></td>
+			</tr>
+		<?php else:?>
+			<?php $pageTotal = 0;?>
+			<?php foreach ($totals as $key => $total):?>
+			<?php $pageTotal += $total['sum_amount'];?>
+			<tr>
+				<td style="text-align: center;"><?php echo $key+1?></td>
+				<td style="text-align: center;"><?php echo $total['channel_name']?$total['channel_name']:'无'?></td>
+				<td style="text-align: center;"><?php echo $total['sum_amount']?></td>
+			</tr>
+			<?php endforeach;?>
+			<tr>
+				<td style="text-align: center;">总计</td>
+				<td style="text-align: center;"></td>
+				<td style="text-align: center;"><?php echo $pageTotal;?></td>
+			</tr>
+		<?php endif;?>
+		</tbody>
+	</table>
+</div>
+
+<script type="text/javascript">
+$('#fee-list-talbe').floatThead({
+    scrollContainer: function($table){
+        return $table.closest('#scroll-fee-list-talbe');
+    }
+});
+</script>

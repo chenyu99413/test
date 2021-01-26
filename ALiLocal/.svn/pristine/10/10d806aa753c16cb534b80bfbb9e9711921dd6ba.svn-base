@@ -1,0 +1,60 @@
+<?php
+class Controller_Account extends Controller_Abstract {
+	/**
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 账号---产品---渠道同步
+	 */
+	function actionSync() {
+		if(request_is_post()){
+			$account=json_decode(Helper_Curl::get1('http://kuaijian.far800.com/index.php?controller=cron&action=getaccount'),true);
+			if(count($account)){
+				Accountsync::find()->getAll()->destroy();
+				foreach ($account as $value){
+					$account_sync=new Accountsync();
+					$account_sync->changeProps(array(
+						'account'=>$value['print_account'] ,
+						'product_id'=>$value['product_id'] ,
+						'product_code'=>$value['product_code'] ,
+						'product_name'=>$value['product_name'] ,
+						'channel_id'=>$value['channel_id'] ,
+						'channel_name'=>$value['channel_name'] ,
+						'fail_time'=>$value['fail_time'] ,
+						'operator'=>MyApp::CurrentUser('staff_name')
+					));
+					$account_sync->save();
+				}
+			}
+		}
+		$this->_view['account']=Accountsync::find()->getAll();
+	}
+	
+	function actionDetail() {
+	    $account=request('account');
+	    $upsaccount=UPSAccount::find('account=?',$account)->getOne();
+	    if(request_is_post()){
+	       if ($upsaccount->isNewRecord()) {
+	           exit('error account');
+	       }
+	       //信息保存
+	       $upsaccount->aname=trim(strtoupper(request('aname')));
+	       $upsaccount->state=trim(strtoupper(request('state')));
+	       $upsaccount->city=trim(strtoupper(request('city')));
+	       $upsaccount->postcode=trim(request('postcode'));
+	       $upsaccount->name=trim(strtoupper(request('name')));
+	       $upsaccount->phone=trim(request('phone'));
+	       $upsaccount->address=trim(strtoupper(request('address')));
+	       $upsaccount->city_cn=trim(request('city_cn'));
+	       $upsaccount->sender_cn=trim(request('sender_cn'));
+	       $upsaccount->business_code=trim(request('business_code'));
+	       $upsaccount->address_cn=trim(request('address_cn'));
+	       $upsaccount->credit_code=trim(strtoupper(request('credit_code')));
+	       $upsaccount->save();
+	       return $this->_redirectMessage('发件人信息修改', '保存成功', url('/detail',array('account'=>$upsaccount->account)));
+	    }
+	    $this->_view['account']=$upsaccount;
+	}
+}

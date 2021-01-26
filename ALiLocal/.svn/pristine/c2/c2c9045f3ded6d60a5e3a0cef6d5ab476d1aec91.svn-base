@@ -1,0 +1,114 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>逾期报告用户编辑<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<?php
+
+if ($user->user_id) {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'系统设置' => '',
+			'逾期报告用户管理' => url ( 'user/overdue' ),
+			'逾期报告用户编辑' => url ( '/setoverdue', array (
+				'id' => $user->user_id 
+			) ) 
+		) 
+	) );
+} 
+?>
+<form method="POST" onsubmit="return Save();">
+	<div class="row-fluid">
+		<div class="span7 FarSearch">
+			<table>
+				<tbody>
+					<tr>
+						<th width=80 >工号</th>
+						<td width=120>
+							<?php echo $user->user_account;?>
+						</td>
+					</tr>
+					<tr>
+						<th>姓名</th>
+						<td>
+							<?php echo $user->user_name?>
+						</td>
+					</tr>
+					<tr>
+						<th class="required-title">邮箱</th>
+						<td>
+							<input style="width: 200px;" type="text" name="email" autocomplete="off"
+								value="<?php echo $user->email?>" required="required" />
+						</td>
+					</tr>
+					<tr>
+						<th class="required-title">逾期报告天数</th>
+						<td>
+							<?php
+								echo Q::control ( "dropdownbox", "dropdownbox_account_period", array (
+									"name" => "account_period",
+									"items" => array (
+										"0" => "0天","30" => "30天","60" => "60天"
+									),
+									"value" =>$user->account_period 
+								) )?>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<div class="row text-center">
+				<a class="btn btn-inverse" href="<?php echo url('user/overdue')?>">
+					<i class="icon-reply"></i>
+					返回
+				</a>
+				<button class="btn btn-primary" type="submit">
+					<i class="icon-save"></i>
+					保存
+				</button>
+			</div>
+		</div>
+		<div class="span5">
+			逾期报告相关部门
+			<label style="margin-left: 4px;">
+				<input id="check_all" type="checkbox" style="margin-top: -4px;"
+					onclick="CheckAll(this);" />
+				全选
+			</label>
+			<div class="easyui-panel" style="padding: 5px">
+				<ul id="relevant_tree" class="easyui-tree"
+					data-options="url:'<?php echo url('common/departmenttree3',$departments)?>',method:'get',checkbox:true,cascadeCheck:false"></ul>
+			</div>
+		</div>
+	</div>
+	<input id="relevant_hidden" type="hidden" name="overduedepartments" />
+	<input type="hidden" name="user_id" value="<?php echo $user->user_id?>" />
+</form>
+
+<script type="text/javascript">
+	/**
+	 * 全选
+	 */
+	function CheckAll(obj){
+		var check = obj.checked ? "check" : "uncheck";
+		var roots = $("#relevant_tree").tree("getRoots");
+		for(var i=0;i<roots.length;i++){
+			var notes = $("#relevant_tree").tree("getChildren", roots[i]);
+			for(var i=0;i<notes.length;i++){
+				$("#relevant_tree").tree(check,notes[i].target);
+			}
+		}
+	}
+
+	/**
+     * 保存 
+	 */
+	function Save(){
+		if($("#relevant_tree").tree('getChecked').length > 0){
+			//相关部门
+			var relevant = "";
+			$($("#relevant_tree").tree("getChecked")).each(function(){
+				relevant += $(this)[0].id+",";
+			});
+			$("#relevant_hidden").val(relevant.substring(0,relevant.length-1));
+		}
+	}
+</script>
+<?PHP $this->_endblock();?>

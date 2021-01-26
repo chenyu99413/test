@@ -1,0 +1,16 @@
+[{"url":"user\/index","param":null,"name":"工作台","children":null}
+,{"url":"#","param":null,"name":"业务管理","children":
+	[{"url":"waybill\/search","param":null,"name":"票件查询","children":null}
+	,{"url":"scanned\/search","param":null,"name":"扫描件导入","children":null}
+	,{"url":"quick\/price","param":null,"name":"报价速查","children":null}
+	,{"url":"quick\/costs","param":null,"name":"成本速查","children":null}
+	,{"url":"quick\/costscheck","param":null,"name":"成本核查","children":null}
+	,{"url":"waybill\/subcode","param":null,"name":"子单号录入","children":null}
+	,{"url":"waybill\/scancheck","param":null,"name":"扫描对比","children":null}
+	,{"url":"print\/barcode","param":null,"name":"条码打印","children":null}
+	,{"url":"scanned\/manage","param":null,"name":"扫描包管理","children":null}
+	,{"url":"quick\/upsprint","param":null,"name":"电子打单","children":null}
+	,{"url":"quick\/upsprintlist","param":null,"name":"内部电子打单列表","children":null}
+	,{"url":"quick\/clientprintlist","param":null,"name":"客户电子打单列表","children":null}
+	]}
+]

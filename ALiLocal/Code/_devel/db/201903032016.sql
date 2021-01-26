@@ -1,0 +1,1 @@
+ALTER TABLE `tb_order` ADD COLUMN `record_order_date`  int NULL COMMENT '发件日' AFTER `delivery_time`;

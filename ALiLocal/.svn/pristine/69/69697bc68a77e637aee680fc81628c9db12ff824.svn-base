@@ -1,0 +1,133 @@
+<?php
+class Controller_Staff extends Controller_Abstract {
+	
+	/**
+	 * 工作台
+	 */
+	function actionIndex() {
+		
+	}
+	/**
+	 * 用户登录
+	 */
+	function actionLogin(){
+	    if(request_is_post()){
+	        $staff=Staff::find('staff_code=?',request('staff_code'))->getOne();
+	        session_start();
+	        // 将登录用户的信息存入 SESSION，以便应用程序记住用户的登录状态
+	        $this->_app->changeCurrentUser ( $staff->toArray (), "MEMBER" );
+	        // 登录成功后，重定向浏览器
+	        return $this->_redirect ( url ( "staff/index" ) );
+	    }
+	}
+	/**
+	 * 校验用户登录信息
+	 */
+	function actioncheck(){
+	    $message='true';
+	    if ((post ( "account" ) == '') || (post ( "password" ) == '')) {
+	        $message = "用户名和密码不能为空";
+	    }
+	    $staff = Staff::find ( "staff_code = ?", request('account') )->getOne ();
+	    if ($staff->isNewRecord ()) {
+	        $message='用户名不存在';
+	    }
+	    if ($staff->status!='1') {
+	        $message='账号已停用';
+	    }
+	    if (!$staff->checkPassword ( request('password') )) {
+	        $message='密码错误';
+	    }
+	    echo $message;
+	    exit();
+	}
+	/**
+	 * 用户注销
+	 */
+	function actionLoginout() {
+	    session_start();
+	    $this->_app->cleanCurrentUser ();
+	    return $this->_redirectMessage('注销登录','成功', url ( 'staff/login' ) );
+	}
+	/**
+	 * 员工查询
+	 */
+	function actionSearch() {
+	    $staffs=Staff::find();
+	    if(request('staff_name')){
+	        $staffs->where('staff_name=?',request('staff_name'));
+	    }
+	    $staffs=$staffs->getAll();
+	    $this->_view['staffs']=$staffs;
+	}
+	/**
+	 * 员工编辑
+	 */
+	function actionEdit(){
+	    $staff=Staff::find('staff_id=?',request('staff_id'))->getOne();
+	    $staffrole = array ();
+	    if (request ( "staff_id" ) != null) {
+	        $staffrole = StaffRole::find ( "staff_id = ?", $staff->staff_id )->getAll ();
+	    }
+	    // 保存
+	    if (request_is_post ()) {
+	        $conn = QDB::getConn ();
+	        $conn->startTrans ();
+	        // 用户
+	        $staff->staff_code = request('staff_code');
+	        $staff->staff_name = request('staff_name');
+	        $staff->department_id = request('department');
+	        if(request('password')!=$staff->password){
+	            $staff->password = request('password');
+	        }
+            $staff->status = "1";
+            $staff->save ();
+            // 权限角色
+            if (request ( "role" ) != null || strlen ( request ( "role" ) ) > 0) {
+                StaffRole::meta ()->destroyWhere ( "staff_id = ?", $staff->staff_id );
+                $content='';
+                foreach ( request ( "role" ) as $value ) {
+                    $staffrole = new StaffRole ();
+                    $staffrole->role_id = $value;
+                    $staffrole->staff_id = $staff->staff_id;
+                    $staffrole->save ();
+                }
+            }
+            $conn->completeTrans ();
+            return $this->_redirectMessage ( "用户保存", "保存成功", url ( "staff/edit", array (
+                "staff_id" => $staff->staff_id
+            ) ) );
+	    }
+	    // 显示角色
+	    $staffrole_id = Helper_Array::getCols ( $staffrole, "role_id" );
+	    $roles = array ();
+	    foreach ( Role::find ()->getAll () as $value ) {
+	        if (in_array ( $value->role_id, $staffrole_id )) {
+	            $roles [] = array (
+	                "id" => $value->role_id,
+	                "name" => $value->role_name,
+	                "checked" => true
+	            );
+	        } else {
+	            $roles [] = array (
+	                "id" => $value->role_id,
+	                "name" => $value->role_name,
+	                "checked" => false
+	            );
+	        }
+	    }
+	    $this->_view ["roles"] = $roles;
+	    $this->_view['staff']=$staff;
+	}
+	/**
+	 * 停职操作
+	 */
+	function actionInterdicted() {
+	    if (request ( "staff_id" ) != null) {
+	        $staff = staff::find ( "staff_id = ?", request ( "staff_id" ) )->getOne ();
+	        $staff->status = request ( "status" );
+	        $staff->save ();
+	    }
+	    return $this->_redirectMessage ( "用户状态", "保存成功", url ( "staff/search" ) );
+	}
+}

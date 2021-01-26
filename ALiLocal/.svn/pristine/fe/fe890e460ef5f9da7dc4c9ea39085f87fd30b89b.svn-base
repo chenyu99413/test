@@ -1,0 +1,209 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    退件
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script>
+$(function () {
+	if($('#cargo_direction1').val()=='2' || $("#cargo_direction1").val()=='3' || $("#cargo_direction1").val()=='4'){
+		$("#consignee_name").attr("readonly","readonly");
+        $("#consignee_phone").attr("readonly","readonly");
+        $("#consignee_address").attr("readonly","readonly");
+        $("#express_no").attr("readonly","readonly");
+        $("#remark").attr("placeholder","可填，非必填项");
+    }
+});
+</script>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'订单管理' => '','退件列表' => url ( 'order/returnlist' ),'退件明细' => '' 
+	) 
+) )?>
+<form method="post">
+    <div class="FarSearch">
+		<table <?php if(request('return_id')):?>style="width: 90%"<?php else :?>style="width: 70%"<?php endif;?>>
+           <tbody>
+               <tr>
+                   <?php if(request('return_id')):?>
+                   <th>退件编号</th><td><?php echo $return->return_no?></td>
+                   <?php endif;?>
+                   <th>阿里单号</th><td><?php echo $return->ali_order_no?$return->ali_order_no:request('ali_order_no')?></td>
+                   <th>退件范围</th>
+                   <td>
+                    <?php
+						echo Q::control ( "dropdownbox", "return_status", array (
+							"items" => array('1'=>'全退','2'=>'部分退'),
+						    "value" => $return->return_status,
+							"style" => "width:70%"
+						) )?>
+                   </td>
+                   <?php if(!request('return_id')):?>
+                   <th>退件状态</th>
+                   <td>
+                    <?php
+						echo Q::control ( "dropdownbox", "state", array (
+							"items" => array('1'=>'待退','2'=>'已退'),
+						    "value" => $return->state,
+							"style" => "width:70%"
+						) )?>
+                   </td>
+                   <?php endif;?>
+               </tr>
+               <?php if(request('return_id')):?>
+                <tr>
+                   <th>发起人</th><td><?php echo $return->return_operator?></td>
+                   <th>发起时间</th><td><?php echo Helper_Util::strDate('Y-m-d H:i', $return->create_time)?></td>
+                   <th>退件状态</th>
+                   <td>
+                    <?php
+						echo Q::control ( "dropdownbox", "state", array (
+							"items" => array('1'=>'待退','2'=>'已退'),
+						    "value" => $return->state,
+							"style" => "width:70%"
+						) )?>
+                   </td>
+               </tr>
+               <?php endif;?>
+               <tr>
+                   <th>收件人</th>
+					<td>
+						<input id="consignee_name" name="consignee_name" type="text" style="width: 100%" required
+							value="<?php echo $return->consignee_name?$return->consignee_name:$order->return_name1.' '.$order->return_name2?>">
+					</td>
+					<th>收件人手机号</th>
+					<td>
+						<input id="consignee_phone" name="consignee_phone" type="text" style="width: 100%" required
+							value="<?php echo $return->consignee_phone?$return->consignee_phone:$order->return_mobile?>">
+					</td>
+					<th>货物流向</th>
+                   <td>
+                    <?php
+						echo Q::control ( "dropdownbox", "cargo_direction", array (
+							"items" => array('1'=>'快递退货','2'=>'换单重发','3'=>'班车退回','4'=>'客户自取'),
+						    "value" => $return->cargo_direction,
+							"style" => "width:70%"
+						) )?>
+                   </td>
+               </tr>
+               <tr>
+                   <th>收件人地址</th>
+					<td colspan="3">
+						<input id="consignee_address" name="consignee_address" type="text" style="width: 100%" required
+							value="<?php echo $return->consignee_address?$return->consignee_address:$order->return_state_region_code.' '.$order->return_city.' '.$order->return_street1.' '.$order->return_street2?>">
+					</td>
+					<th>新ALS订单号</th>
+                   <td>
+                   <input name="related_ali_order_no" type="text" value="<?php echo $return->order->related_ali_order_no?>">
+                   </td>
+               </tr>
+               <tr>
+                   <th>快递单号</th>
+					<td>
+						<input id="express_no" name="express_no" type="text" style="width: 100%" required
+							value="<?php echo $return->express_no?>">
+					</td>
+					<th>快递公司</th>
+					<td>
+						<?php
+						echo Q::control ( "dropdownbox", "express_company", array (
+							"items" => array('圆通'=>'圆通','申通'=>'申通','顺丰'=>'顺丰','韵达'=>'韵达','中通'=>'中通','EMS'=>'EMS','天天'=>'天天','FAR'=>'FAR'),
+						    "value" => $return->express_company,
+							"style" => "width: 70%"
+						) )?>
+					</td>
+					<th></th>
+                   <td></td>
+               </tr>
+               <tr>
+                    <th>备注</th>
+                    <td>
+                        <input id="remark" name='remark' type='text' style="width: 260%;height:60px" value="<?php echo $return->remark?>" placeholder=''>
+                    </td>
+               </tr>
+           </tbody>
+        </table>
+        <div class="FarTool text-center">
+        	<button class="btn btn-small btn-success" id="search">
+                                        保存
+       		</button>
+       	</div>
+     </div>
+     <input type='hidden' value="<?php echo $return->ali_order_no?$return->ali_order_no:request('ali_order_no')?>" name="ali_order_no" >
+     <input type='hidden' value="<?php echo $return->cargo_direction?>" id='cargo_direction1' name="cargo_direction1" >
+     <input type='hidden' value="<?php echo $order->order_id?>" id='order_id' name="order_id" >
+</form>  
+<script type="text/javascript">
+$("#cargo_direction").click(function(){
+    if($("#cargo_direction").val()=='2' || $("#cargo_direction").val()=='3' || $("#cargo_direction").val()=='4'){
+    	$("#consignee_name").attr("readonly","readonly");
+        $("#consignee_phone").attr("readonly","readonly");
+        $("#consignee_address").attr("readonly","readonly");
+        $("#express_no").attr("readonly","readonly");
+        $("#remark").attr("placeholder","可填，非必填项");
+    }else if($("#cargo_direction").val()=='1'){
+    	$("#consignee_name").removeAttr("readonly");
+        $("#consignee_phone").removeAttr("readonly");
+        $("#consignee_address").removeAttr("readonly");
+        $("#express_no").removeAttr("readonly");
+    }
+});
+$(function(){
+	$('form').submit(function(){
+		if($("input[name=related_ali_order_no]").val()!=''){
+			var related_ali_order_no=$("input[name=related_ali_order_no]").val();
+			var ali_order_no= $("#ali_order_no").val();
+			if(ali_order_no == related_ali_order_no){
+				$.messager.alert('', '关联的阿里单号不能为当前阿里单号');
+				return false;
+			}
+			var state=true;
+			$.ajax({
+				url:'<?php echo url('/checkrelatedaliorderno')?>',
+				data:{related_ali_order_no:related_ali_order_no,order_id:$("#order_id").val()},
+				type:'post',
+				async:false,
+				success:function(data){
+					if(data!='success'){
+						state=false;
+						$.messager.alert('', '关联的阿里单号不存在');
+					}
+				}
+			})
+			if(!state){
+				return false;
+			}
+		}
+		
+		if($("#cargo_direction").val()=='2'){
+			if($("input[name=related_ali_order_no]").val()==''){
+				$.messager.alert('', '换单重发，需填写新ALS订单号');
+				return false;
+			}else{
+				var state=true;
+				$.ajax({
+					url:'<?php echo url('/checkrelatedaliordernonew')?>',
+					data:{related_ali_order_no:related_ali_order_no,order_id:$("#order_id").val()},
+					type:'post',
+					async:false,
+					success:function(data){
+						if(data!='success'){
+							state=false;
+							$.messager.alert('', '关联的阿里单号订单状态不是未入库');
+						}
+					}
+				})
+				if(!state){
+					return false;
+				}
+			}
+		}
+		
+    })
+})
+</script>  
+<?PHP $this->_endblock();?>
+

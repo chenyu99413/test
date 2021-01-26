@@ -1,0 +1,259 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    订单轨迹
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <style type="text/css">
+        .table>tbody>tr>td{
+            border:0px;
+        }
+        .tracking_el {
+        		float:right;margin:8px 0 0 0;
+        }
+        td {
+         word-break: break-all;
+        }
+         
+    </style>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php if (!request_is_ajax()):?>
+<?php
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'业务管理' => '',
+			'订单查询' => url ( 'order/search' ),
+			'订单轨迹' => ''
+		) 
+	) );
+?>
+<p style="clear: both;color:red">
+阿里单号：<?php echo $order->ali_order_no?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+泛远单号：<a target="_blank" href="http://www.far800.com/track?waybillNo=<?php echo $order->far_no?>"><?php echo $order->far_no?></a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+目的国：<?php echo $order->consignee_country_code?>
+</p>
+<?php endif?>
+<form method="POST" onsubmit=" return checktime();">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th class="required-title">轨迹代码</th>
+					<td>
+						<?php
+						echo Q::control ( "dropdownbox", "tracking_code", array (
+							"items" => $trace_code,
+						    "value" => request ( "tracking_code" ),
+							"style" => "width:200px" ,
+						    "empty"=>true,
+						    "required"=>'required'
+						) )?>
+					</td>
+					<th class="required-title">轨迹时间</th>
+					<td>
+						<input class="easyui-datetimebox"
+						name="trace_time" value=""
+						style="width: 150px"/>
+					</td>
+					<th class="required-title">地点</th>
+					<td>
+						<input name="location" type="text" style="width: 100px"
+							value="<?php echo request('location')?>">
+					</td>
+					<th class="required-title">时区号</th>
+					<td>
+						<input  required="required" style="width: 80px;" type="text" maxlength="32" name="timezone" />
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="offset5 span2">
+	   <button class="btn btn-small btn-success" id="search">
+                                保存
+       </button>
+	</div>
+	<input type="hidden" name="order_id" value="<?php echo $order->order_id?>">
+</form>  
+<div class="row">
+	<div class="span6">
+	<h4 style="clear: both;"> 订单轨迹信息<font color="red">(例如：西一区录入-1，东一区，录入1)</font></h4>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th class="" style="width:110px;">轨迹代码</th>
+				<th class="">轨迹时间</th>
+				<th class="">地点</th>
+				<th style="width:110px;">中文描述信息</th>
+				<th style="">时区</th>
+				<th style="">操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php foreach ($list as $temp):?>
+			<tr>
+				<td><?php echo $temp->tracking_code?></td>
+				<td nowrap="nowrap"><?php echo Helper_Util::strDate('m-d H:i', $temp->trace_time)?></td>
+				<td nowrap="nowrap"><?php echo $temp->location?></td>
+				<td><?php echo ($order->service_code=='EMS-FY' && $temp->tracking_code=='F_CARRIER_PICKUP_RT_5035')?'包裹重新安排转运,转EMS【'.$order->tracking_no.'】': Tracking::$trace_code_cn[$temp->tracking_code]?></td>
+				<td nowrap="nowrap"><?php echo $temp->timezone?></td>
+				<td nowrap="nowrap">
+					<?php if ($temp->confirm_flag <1):?>
+					<a class="btn btn-mini btn-info" onclick="tracedetail(this)" data='<?php echo $temp->tracking_id?>' href="javascript:void(0)">
+						<i class="icon icon-edit"></i>
+					</a>
+					<a class="btn btn-mini btn-info" href="<?php echo url('/confirm',array('tracking_id'=>$temp->tracking_id,'code'=>'trace'))?>">
+						<i class="icon icon-ok"></i>
+					</a>
+					<a class="btn btn-mini btn-danger" href="<?php echo url('/ignore',array('tracking_id'=>$temp->tracking_id,'code'=>'trace'))?>">
+						忽略
+					</a>
+					
+					<?php elseif ($temp->confirm_flag =='1' and $temp->send_flag !=1):?>
+						发送中
+					<?php elseif ($temp->send_flag =='1'):?>
+					   已发阿里
+					<?php elseif ($temp->confirm_flag =='2'):?>
+					   已忽略
+					<?php endif;?>
+					<span class="tracking_el" id="tracking_<?php echo $temp->tracking_id?>"></span>
+				</td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	</div>
+	<div class="span6">
+	<h4><a target="_blank" href="http://www.far800.com/track?waybillNo=<?php echo $order->tracking_no?>"><?php echo $order->tracking_no?></a> 轨迹
+	&nbsp;&nbsp;&nbsp;&nbsp;
+	<a class="btn btn-mini" href="<?php echo url('order/newIssueParcel',array('ali_order_no'=>$order->ali_order_no))?>" target="_blank">问题</a>
+	<?php $acount=$order->getACount();if ($acount):?>
+	(
+		<a target="_blank" href="<?php echo url('order/issue',array('ali_order_no'=>$order->ali_order_no,'parcel_flag'=>1))?>">
+			<?php echo $acount?>
+		</a>
+	)
+	<?php endif;?>
+	</h4>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th class="">时间</th>
+				<th class="">地点</th>
+				<th>详情</th>
+				<th>时区</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php foreach ($routes as $rt):?>
+		<tr>
+			<td nowrap="nowrap" ><span id="route_<?php echo $rt->id?>"></span><?php echo date('Ymd H:i',$rt->time)?></td>
+			<td nowrap="nowrap"><?php echo $rt->location?></td>
+			<td><?php echo $rt->description?></td>
+			<td nowrap="nowrap"><?php echo str_replace(" "," <br>",$rt->guessTimeZone())?></td>
+		</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	</div>
+</div>
+<div id="window" class="easyui-window" title="轨迹编辑" data-options="modal:true,closed:true" style="width:900px;height:200px;padding:10px;">
+    <form method="post" action="<?php echo url('order/tracedetail')?>">
+        <table>
+            <tr>
+                <th class="required-title">轨迹时间</th>
+					<td>
+						<input class="easyui-datetimebox"
+						name="edit_trace_time"
+						id="edit_trace_time"
+						value=""
+						style="width: 150px"/>
+					</td>
+					<th class="required-title">地点</th>
+					<td>
+						<input name="location" id="location" type="text" style="width: 100px"
+							value="">
+					</td>
+					<th class="required-title">时区号</th>
+					<td>
+						<input  required="required" id="timezone" style="width: 80px;" type="text" maxlength="32" name="timezone" />
+					</td>
+            </tr>
+            <tr>
+            	<th class="required-title">中文描述信息</th>
+					<td colspan="5">
+						<input name="trace_desc_cn" id="trace_desc_cn" type="text" style="width: 95%" required="required"
+							value="">
+					</td>
+            </tr>
+            <tr>
+            <th class="">英文描述信息</th>
+					<td colspan="5">
+						<input name="trace_desc_en" id="trace_desc_en" type="text" style="width: 700px;" 
+							value="">
+					</td>
+            </tr>
+        </table>
+        <div class="FarTool text-center" style="margin-top:0;margin-right:60px;">
+    		<button class="btn btn-primary btn-small" type="submit">
+    			<i class="icon-save"></i>
+    			保存
+    		</button>
+	    </div>
+	<input type="hidden" name="tracking_id" value='' id="tracking_id">
+    </form>
+</div>
+<?PHP $this->_endblock();?>
+<script type="text/javascript">
+//检查时间是否填写
+function checktime(){
+	var time =$('.textbox-value').val();
+	if(time.length<1){
+		$.messager.alert('Error','请填写轨迹时间');
+		return false;
+	}else{
+		return true;
+	}
+}
+//轨迹编辑
+function tracedetail(obj){
+	var tracking_id=$(obj).attr('data');
+	$.ajax({
+		url:'<?php echo url('/gettrace')?>',
+		data:{tracking_id:tracking_id},
+		type:'post',
+		dataType:'json',
+		success:function(data){
+			var date=new Date(parseInt(data.trace_time) * 1000);
+			var year = date.getFullYear(),
+			month = date.getMonth() + 1,
+			day = date.getDate(),
+			hour = date.getHours(),
+			minute = date.getMinutes(),
+			second = date.getSeconds();
+			if(second<10){
+				second='0'+second;
+			}
+			$('#window').window({
+			    title:data.tracking_code,
+			});
+			//写入窗口信息
+			$('#edit_trace_time').datetimebox('setValue',year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second);//设值
+			$('#location').val(data.location);
+			$('#trace_desc_cn').val(data.trace_desc_cn);
+			$('#trace_desc_en').val(data.trace_desc_en);
+			
+			$('#timezone').val(data.timezone);
+			$('#tracking_id').val(data.tracking_id);
+			$('#window').window('open');
+		}
+	});
+	
+}
+<?php $color=255;foreach ($list as $temp):?>
+<?php if ($temp->route_id && !request_is_ajax()):?>
+<?php $color+=200;?>
+jqSimpleConnect.connect('#tracking_<?php echo $temp->tracking_id?>','#route_<?php echo $temp->route_id?>',{color:'#<?php echo base_convert($color,10,16)?>',radius:5});
+<?php endif;?>
+<?php endforeach;?>
+</script>

@@ -1,0 +1,1 @@
+ALTER TABLE `tb_code_currency` ADD `start_date` INT(11) NOT NULL COMMENT '汇率设置时间' AFTER `rate`;

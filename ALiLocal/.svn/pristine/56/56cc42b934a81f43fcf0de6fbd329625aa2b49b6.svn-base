@@ -1,0 +1,40 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>
+客户列表
+<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="post">
+	<div class="FarTool">
+		<a class="btn btn-success" target="_blank" href="<?php echo url('/edit')?>">
+			<i class="icon-plus"></i>
+			新建
+		</a>
+	</div>
+	<table class="FarTable" style="width:60%;">
+		<thead>
+			<tr>
+				<th>客户名称</th>
+				<th width=160>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+    		<?php foreach ($customers as $customer):?>
+    		<tr>
+				<td>
+					<a target="_blank" href="<?php echo url('/edit',array('customer_id'=>$customer->customer_id))?>"><?php echo $customer->customer?></a>
+				</td>
+				<td>
+					<a class="btn btn-mini" target="_blank"
+						href="<?php echo url('/edit',array('customer_id'=>$customer->customer_id))?>">
+						<i class="icon-edit"></i>
+						编辑
+					</a>
+				</td>
+			</tr>
+    		<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+<script type="text/javascript">
+</script>
+<?PHP $this->_endblock();?>

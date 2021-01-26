@@ -1,0 +1,196 @@
+<?php
+
+/**
+ * 末端渠道轨迹跟踪信息
+ * @author firzen
+ *
+ */
+class Route extends QDB_ActiveRecord_Abstract {
+	
+	/**
+	 * 返回对象的定义
+	 *
+	 * @static
+	 *
+	 * @return array
+	 */
+	static function __define() {
+		return array (
+			
+			// 用什么数据表保存对象
+			'table_name' => 'tb_routes',
+			
+			// 指定数据表记录字段与对象属性之间的映射关系
+			// 没有在此处指定的属性，QeePHP 会自动设置将属性映射为对象的可读写属性
+			'props' => array (
+			),
+			'validations' => array (),
+			'create_autofill' => array (
+				'create_time'=>self::AUTOFILL_TIMESTAMP
+			),
+			'update_autofill' => array (
+			),
+		);
+	}
+	
+	/**
+	 * 开启一个查询，查找符合条件的对象或对象集合
+	 *
+	 * @static
+	 *
+	 * @return QDB_Select
+	 */
+	static function find() {
+		$args = func_get_args ();
+		return QDB_ActiveRecord_Meta::instance ( __CLASS__ )->findByArgs ( $args );
+	}
+	
+	/**
+	 * 返回当前 ActiveRecord 类的元数据对象
+	 *
+	 * @static
+	 *
+	 * @return QDB_ActiveRecord_Meta
+	 */
+	static function meta() {
+		return QDB_ActiveRecord_Meta::instance ( __CLASS__ );
+	}
+	
+	/* ------------------ 以上是自动生成的代码，不能修改 ------------------ */
+	/**
+	 * 去重保存，主要估计时间从签收倒序传入
+	 * @param unknown $args
+	 * @return void|QDB_ActiveRecord_Abstract
+	 */
+	static function checkAndSave($args){
+		$md5=md5($args['tracking_no'].$args['time'].$args['location'].$args['description']);
+		if (self::find('md5=?',$md5)->getCount()){
+			return;
+		}
+		$obj=new self($args);
+		$obj->md5=$md5;
+		return $obj->save();
+		//@todo 监测签收情况，同时修改订单状态
+		
+	}
+	/**
+	 * 国家匹配
+	 * @param string $countryNameOrCodeWordTwo
+	 * @return boolean|string
+	 */
+	static function countryMatch($countryNameOrCodeWordTwo){
+		$countryNameOrCodeWordTwo=trim($countryNameOrCodeWordTwo);
+		if ($countryNameOrCodeWordTwo=='United States'){
+			$countryNameOrCodeWordTwo='US';
+		}
+		if (strlen($countryNameOrCodeWordTwo)==2){
+			$c=Country::find('code_word_two=?',$countryNameOrCodeWordTwo)->getOne();
+		}else {
+			$c=Country::find('english_name like ?',$countryNameOrCodeWordTwo)->getOne();
+		}
+		if ($c->isNewRecord()){
+			return false;
+		}
+		return $c->code_word_two;
+	}
+	function guessTimeZone(){
+		$arr=explode(',',$this->location);
+		$country=trim(array_pop($arr));
+		$city=trim(array_shift($arr));
+		if ($country=='United States'){
+			$country='US';
+		}
+		if ($country=='Hong Kong'){
+			$country='CN';
+		}
+		try {
+			$r= CityTimezone::match($country,$city);
+		}catch (Exception $ex){
+			return $ex->getMessage();
+		}
+		return $r;
+	}
+	/**
+	 * 生成阿里轨迹
+	 * @param int $lastTime UTC+8
+	 * @param Order $order
+	 */
+	function generateTrace($lastTime,$order){
+		//@todo 自动生成阿里轨迹记录
+		$tz=$this->guessTimeZone();
+		if (is_int($tz)){
+			$utc8=$this->time+(8-$tz)*3600;
+			$locs=explode(',',$this->location);
+			if (empty($locs)){
+				QLog::log('No location');
+				// 没有地址
+				return false;
+			}
+			// 国家检查
+			$countryName=array_pop($locs);
+			if ($order->consignee_country_code !=self::countryMatch($countryName)){
+				QLog::log('Country mismatch');
+				// 只匹配目的国家
+				return false;
+			}
+			$qty=Orderpackage::find('order_id=?',$order->order_id)->getSum('quantity');
+			$dpm='上海';
+			if ($order->department_id ==6){
+				$dpm='杭州';
+			}elseif ($order->department_id == 8){
+				$dpm='义乌';
+			}
+			if ($utc8 > $lastTime ){
+				foreach (self::$matchCodeUPS as $condition => $code){
+					$condition=str_replace('*','.*?',$condition);
+					if (preg_match('/^'.$condition.'$/i',$this->description)){
+						$tr=new Tracking();
+						$tr->changeProps(array(
+							'order_id'=>$order->order_id,
+							'far_no'=>$order->far_no,
+							'tracking_code'=>$code,
+							'timezone'=>$tz,
+							'confirm_flag'=>0,
+							'trace_time'=>$this->time,
+							'location'=>$locs[0],
+							'quantity'=>$qty,
+							'trace_desc_cn'=>Tracking::$trace_code_cn[$code],
+							'route_id'=>$this->id
+						));
+						$tr->save();
+						// 如果是签收，那么还要生成签收事件
+						if ($code=='S_DELIVERY_SIGNED' && Event::find('order_id =? and event_code ="DELIVERY"',$order->order_id)->getCount() ==0){
+							$evt=new Event();
+							$evt->changeProps(array(
+								'order_id'=>$order->order_id,
+								'event_code'=>'DELIVERY',
+								'event_time'=>$this->time,
+								'event_location'=>$locs[0],
+								'location'=>$locs[0],
+								'timezone'=>$tz,
+								'confirm_flag'=>0,
+							));
+							$evt->save();
+						}
+						// @todo 把订单改成签收状态
+					}
+				}
+			}else {
+				QLog::log('Time-');
+			}
+		}
+	}
+	/**
+	 * UPS 轨迹自动匹配字典，*表示任意内容
+	 * @var array
+	 */
+	static $matchCodeUPS=array(
+		'Processed for clearance'=>'S_CLEARANCE_COMPLETE',
+		'Clearance event'=>'S_CLEARANCE_COMPLETE',
+		'Arrival Scan'=>'S_TH_IN',
+		'Departure Scan'=>'S_TH_OUT',
+		'Out For Delivery*'=>'S_DELIVERY_SCHEDULED',
+		'Destination Scan'=>'S_TH_IN_LAST',
+		'DELIVERED*'=>'S_DELIVERY_SIGNED'
+	);
+}

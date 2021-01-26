@@ -1,0 +1,306 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+取件订单列表
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<form method="POST" id="pickup_list">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>取件网点</th>
+					<td>
+						<?php
+    					echo Q::control("dropdownbox", "pick_company", array(
+    						"items" => $relevant_department_names,
+    						"value" => request('pick_company'),
+    						"style" => "width: 150px",
+    						"empty" => "true"
+    					))?>
+					</td>
+					<th>阿里单号</th>
+					<td>   
+                        <textarea id="ali_order_no" name="ali_order_no" rows="" placeholder="每行一个单号" style="width: 120px"><?php echo request("ali_order_no")?></textarea>
+					</td>
+					<th>客重</th>
+                  	<td><input style="width: 50px" type="text" id="weight_cost_out_start" name="weight_cost_out_start"  value="<?php echo  request('weight_cost_out_start')?>">
+                        -
+                        <input style="width: 50px" type="text" id="weight_cost_out_end" name="weight_cost_out_end"  value="<?php echo  request('weight_cost_out_end')?>"  >
+                   	</td>
+                   	<th>产品</th>
+                  	<td><?php
+                        echo Q::control ( 'dropdownbox', 'service_code', array (
+                        'items'=>Helper_Array::toHashmap(Order::find("ali_testing_order !='1'")->setColumns('service_code')->asArray()->getall(),'service_code','service_code'),
+                        'empty'=>true,
+                        'value' => request('service_code'),
+                        ) )?>
+                   	</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <button type="submit" name="export" class="btn btn-small btn-info" value="exportlist">
+							<i class="icon-download"></i>
+							导出
+					   </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="tabs-container " style="min-width: 1148px;">
+		<?php
+		echo Q::control ( "tabs", "description", array (
+			"tabs" => $tabs,"active_id" => $active_id 
+		) );
+		?>
+		<div class="tabs-panels">
+			<div class="panel-body panel-body-noheader panel-body-noborder"
+				style="padding: 0px;">
+            </div>
+		</div>
+        <table class="FarTable">
+            <thead>
+        		<tr>
+        		    <th><input type="checkbox" id="checkall"
+						onclick="SelectAll(this,'checkbox_');getIds();"></th>
+        			<th>序号</th>
+    				<th>阿里订单号</th>
+    				<th width="60px">订单日期</th>
+    				<th width="60px">取件日期</th>
+    				<th>取件网点</th>
+    				<th>省</th>
+    				<th>市</th>
+    				<th width="200px">地址</th>
+    				<th>邮编</th>
+    				<th>姓名</th>
+    				<th>手机号</th>
+    				<th>邮箱</th>
+    				<th>件数</th>
+    				<th>产品</th>
+    				<th>报关</th>
+    				<th>强制报关</th>
+    				<th>客重</th>
+    				<th style="width:80px;">操作</th>
+    			</tr>
+    		</thead>
+    		<tbody>
+            	<?php $i=1;?>
+            	<?php foreach ($orders as $p):?>
+            	<?php  $item_count=0;
+            		foreach ($p->packages as $package){
+            			$item_count+=$package->quantity;
+            		}
+            	?>
+    		    <tr id="<?php echo $p->order_id ?>" style="<?php echo ($active_id == 5 && request ( "parameters" ) == "together" && $p->order_status == 1)?'background-color:#B0E0E6;':''?>">
+    		    <td style="text-align: center"><input type="checkbox"  class="checkbox_"  value="<?php echo $p->order_id ?>" /></td>
+    			<td><?php echo $i++ ?></td>
+    			<td><a  target="_blank" href="<?php echo url('order/detail', array('order_id' => $p->order_id))?>"> <?php echo $p->ali_order_no ?>
+            		</a>
+            	</td>
+    			<td><?php echo Helper_Util::strDate('m-d H:i', $p->create_time)?></td>
+    			<td><?php echo Helper_Util::strDate('m-d H:i', $p->pick_up_time)?></td>
+    			<td><?php echo $p->pick_company?></td>
+    			<td><?php echo $p->sender_state_region_code?></td>
+    			<td ><?php echo $p->sender_city?></td>
+    			<td ><?php echo $p->sender_street1.' '.$p->sender_street2?></td>
+    			<td ><?php echo $p->sender_postal_code?></td>
+    			<td><?php echo $p->sender_name1?></td>
+    			<td><?php echo $p->sender_mobile?></td>
+    			<td><?php echo $p->sender_email?></td>
+    			<td><?php echo $item_count?></td>
+    			<td ><?php echo $p->service_product->product_chinese_name?></td>
+    			<td><?php echo $p->declaration_type=='DL'?'是':'否'?></td>
+    			<td><?php echo ($p->declaration_type<>'DL' && ($p->total_amount>700 || $p->weight_actual_in>70))?'是':'否'?></td>
+    			<td><?php echo $p->weight_income_ali?></td>
+    			<td><a class="btn btn-mini" href="javascript:void(0);"
+    					onclick="EditRow([{},{},{},{},{},{},{},{},{'type':'text'},{},{},{},{},{},{},{},{},{}],this);">
+    					<i class="icon-pencil"></i>
+    					编辑
+    				</a></td>
+        		</tr>
+        	    <?php endforeach;?>
+    		</tbody>
+    	</table>
+	</div>
+	<input id="parameters" type="hidden" name="parameters" value="<?php echo $parameters?>">
+	<input type="hidden" id="order_ids" name="order_ids" />
+	<input type="hidden" id="hidden_address">
+	<input type="hidden" id="hidden_id">
+	<?php if (in_array($parameters, array('no_package','assign','take'))):?>
+	<div><span>修改状态：</span>
+	   <?php
+		echo Q::control("dropdownbox", "status", array(
+			"items" => array('1'=>'未分派','14'=>'已分派','15'=>'已取件'),
+			"style" => "width: 150px",
+		))?>
+		<a class="btn btn-mini btn-success" style="width:50px" href="javascript:void(0)" onclick="changestatus()"> 确定 </a>
+	</div>
+	<?php endif;?>
+	<div><span>设置取件网点：</span>
+	   <?php
+		   echo Q::control("dropdownbox", "set_pick_company", array(
+		   	"items" => $relevant_department_names,
+		   	"value" => request('set_pick_company'),
+		   	"style" => "width: 150px",
+		   	"empty" => "true"
+	    ))?>
+	    <a class="btn btn-mini btn-success" style="width:50px" href="javascript:void(0)" onclick="setpickcompany()"> 确定 </a>
+	</div>
+</form>
+<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+<script type="text/javascript">
+/**
+ *  点击tabs设置隐藏框值 
+ */	 
+function TabSwitch(code){
+	$("#parameters").val(code);
+	$("#pickup_list").trigger("submit");
+}
+/**
+ * 获取订单id
+ */
+function getIds(){
+	var ids = "";
+	$(".checkbox_:checked").each(function (obj){
+		ids += $(this).val() + ",";
+	});
+	ids = ids.substr(0,ids.length-1);
+	$("#order_ids").val(ids);
+}
+/**
+ * 选择数据
+ */
+$(".checkbox_").click(function(e){
+	getIds();
+	e.stopPropagation();
+});
+/**
+ * 修改状态
+ */
+function changestatus(){
+	//检查是否勾选
+	if($("#order_ids").val()){
+		$.ajax({
+			url:'<?php echo url('/changestatus')?>',
+			data:{order_ids:$("#order_ids").val(),status:$("#status").val()},
+			type:'post',
+			success:function(data){
+				if(data== 'success'){
+					window.location.href='<?php echo url('/search')?>';
+				}
+				if(data== 'error'){
+					$.messager.alert('修改状态','修改失败，订单状态不符合');
+				}
+			}
+		});
+	}else{
+		$.messager.alert('修改状态','请先勾选订单数据');
+	}
+}
+/**
+ * 批量设置取件网点
+ */
+function setpickcompany(){
+	if($("#order_ids").val() == ''){
+		$.messager.alert('设置取件网点','请先勾选订单数据');
+		return false;
+	}
+	if($("#set_pick_company").val() == ''){
+		$.messager.alert('批量设置取件网点','请选择取件网点');
+		return false;
+	}
+	//检查是否勾选
+	$.ajax({
+		url:'<?php echo url('/setpickcompany')?>',
+		data:{order_ids:$("#order_ids").val(),set_pick_company:$("#set_pick_company").val()},
+		type:'post',
+		success:function(data){
+			if(data== 'success'){
+				window.location.href='<?php echo url('/search')?>';
+			}
+			if(data== 'error'){
+				$.messager.alert('批量设置取件网点','修改失败，数据错误');
+			}
+		}
+	});
+}
+var tr_id=null;
+/**
+ * 地址JSON数据
+ */
+function GetAddressJSON(obj,name){
+	var id = "";
+	if(tr_id!=null){
+		id=tr_id;
+	}else{
+		id=$(obj).attr("id")==undefined?"":$(obj).attr("id");
+	}
+	var json="";
+	var address=$(obj).children().eq(8).text();
+	json+='{"id":"'+id
+		+'","address":"'+address+'"},';
+	json="["+json.substring(0,json.length-1)+"]";
+	$("#hidden_address").val(json);
+	$("#hidden_id").val(id);
+}
+/**
+ * 保存地址
+ */
+function SaveAddress(obj,name){
+	var result="";
+	// JSON数据
+	GetAddressJSON(obj,name);
+	//提交数据
+	$.ajax({
+		url:"<?php echo url('pickup/saveaddress')?>",
+		type:"POST",
+		data:{"order_id":$("#hidden_id").val(),
+			"address":$("#hidden_address").val()},
+		async : false,
+		success:function(msg){
+			result = msg;
+		}
+	});
+	if(result != 'success'){
+		return result;
+	}else{
+		return true;
+	}
+}
+/**
+ * 回调
+ */
+function CallBack(obj,name){
+	MessagerProgress("载入");
+	//计算应收的合计
+	var flag = true;
+	while(flag){
+		var msg = SaveAddress(obj,name);
+		if(msg!=true){
+			if(confirm(msg+"\n保存失败请确认票件是否正确,点击[确定]重新保存 或点击[取消]撤销本次操作.")){
+				flag = true;
+			}else{
+				flag = false;
+				window.location.reload();
+			}
+		}else{
+			flag = false;
+			window.location.reload();
+		}
+	}
+	
+	tr_id=null;
+
+	MessagerProgress("close");
+}
+</script>
+<?PHP $this->_endblock();?>
+

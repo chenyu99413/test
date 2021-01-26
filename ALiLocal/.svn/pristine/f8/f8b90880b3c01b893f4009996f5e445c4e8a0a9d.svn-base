@@ -1,0 +1,2265 @@
+<?php
+class Controller_Warehouse extends Controller_Abstract {
+	/**
+	 * 包裹入库
+	 */
+	function actionIn() {
+	}
+	function actionInScan() {
+		header ( 'Content-Type:application/json' );
+		$ret = array (
+			'code' => '1000',
+			'msg' => '',
+			'sound' => 'cuowu.mp3',
+			'data' => '',
+			'status' => false
+		);
+		$order=Order::find();
+		$count1 = Order::find ( 'ali_order_no = ?', request ( 'scan_no' ) )->getCount ();
+		if($count1==1){
+			$order=$order->where('ali_order_no = ?', request ( 'scan_no' ))->getOne();
+		}else{
+			$alireference=Alireference::find('reference_no=?', request ( 'scan_no' ))->getOne();
+			if($alireference->isNewRecord()){
+				$order=$order->where( '1!=1' )->getOne();
+			}else{
+				$count2=Alireference::find('reference_no=?', request ( 'scan_no' ))->getCount ();
+				if($count2 > 1){
+					$ret ['msg'] = '请拆包';
+					$ret ['sound'] = 'qingchaibao.mp3';
+					//查询订单信息
+					$ali_no_list=Alireference::find('tb_ali_reference.reference_no=? ',request ( 'scan_no' ))
+					->joinLeft('tb_order', '*','tb_ali_reference.order_id=tb_order.order_id')
+					->joinLeft('tb_order_package', '*','tb_ali_reference.order_id=tb_order_package.order_id')
+					->group('tb_order.ali_order_no')->sum('quantity','package_count')->columns('tb_order.ali_order_no')->asArray()->getAll();
+					$ret['info']=$ali_no_list;
+					$ret['sum']['package_count']=Helper_Array::sumBy($ali_no_list,'package_count');
+					$ret['sum']['order_count']=$count2;
+					return json_encode ( $ret );
+				}elseif ($count2==1){
+					$count3=Alireference::find('order_id=?', $alireference->order_id)->getCount ();
+					if($count3 > 1){
+						$ret ['msg'] = '请合并包裹';
+						$ret ['sound'] = 'hebingbaoguo.mp3';
+						return json_encode ( $ret );
+					}
+					$order=$order->where( 'reference_no = ? and order_status !="2"', request ( 'scan_no' ) )->getOne();
+				}
+			}
+		}
+		if ($order->isNewRecord ()) {
+			$ret ['msg'] = '单号错误，或包裹数据不存在';
+			return json_encode ( $ret );
+		}
+		$err_status = array (
+			2 => '已取消',
+			3 => '已退货',
+			4 => '已付款',
+			5 => '已入库',
+			6 => '已出库',
+			7 => '待发送',
+			8 => '已发送',
+			9 => '已签收',
+			10 => '已查验',
+			11 => '待退货',
+			12 => '扣件',
+		    13 => '已结束'
+		);
+		if (array_key_exists ( $order->order_status, $err_status )) {
+		    $ret ['msg'] = '订单状态为【' . $err_status [$order->order_status] . '】';
+		    if($order->order_status=='2'){
+		        $ret ['sound'] = 'dingdanyiquxiao.mp3';
+		    }else if($order->order_status=='12'){
+		        $ret ['sound'] = 'yikoujianqinglianxikefuzhongxinchuli.mp3';
+		    }
+			return json_encode ( $ret );
+		}
+		$order_packages = Orderpackage::find ( 'order_id = ?', $order->order_id )->getAll ();
+		$far_packages = Farpackage::find ( 'order_id = ?', $order->order_id )->getAll ();
+		$product = Product::find('product_name=?',$order->service_code)->getOne();
+		$ret ['code'] = '0';
+		if($order->service_code=='Express_Standard_Global'){
+    		$ret ['msg'] = '扫描成功，共 ' . Helper_Array::sumBy ( $order_packages->toArray (), 'quantity' ) . ' 个包裹';
+    		$ret ['sound'] = 'chenggongqingkaishichengzhong.mp3';
+		}else {
+		    $ret ['msg'] = 'EMS，扫描成功，共 ' . Helper_Array::sumBy ( $order_packages->toArray (), 'quantity' ) . ' 个包裹';
+		    $ret ['sound'] = 'emschenggongqingkaishichengzhong.mp3';
+		}
+		$ret ['data'] = array (
+			'order' => $order->toArray (),
+			'order_package' => $order_packages->toArray (),
+			'far_package' => $far_packages->toArray (),
+		    'product' => $product->toArray()
+		);
+		$ret ['status'] = true;
+		
+		return json_encode ( $ret );
+		exit ();
+	}
+	/**
+	 * 入库 保存
+	 */
+	function actionInSave() {
+		header ( 'Content-Type:application/json' );
+		$arr = json_decode ( request ( 'jsonstr' ), true );
+		QLog::log ( print_r ( $arr, true ) );
+		$ret = array (
+			'code' => '1000',
+			'msg' => '',
+			'sound' => 'rukushibai.mp3',
+			'data' => '',
+			'status' => false
+		);
+		try {
+			$order = Order::find ( 'order_id = ?', $arr ['order_id'] )->getOne ();
+			if ($order->isNewRecord ()) {
+				$ret ['msg'] = '单号错误，或包裹数据不存在';
+				return json_encode ( $ret );
+			}
+			$is_jipao = 0;
+			$total_weight_income_in=0;//计费重
+			$total_weight_actual_in = 0; // 实重总重
+			Farpackage::meta ()->deleteWhere ( 'order_id=?', $order->order_id );
+			foreach ( $arr ['package_list'] as $value ) {
+				if ($value ['jipao'] > $value ['weight']) {
+					$is_jipao = 1;
+					$total_weight_income_in +=($value ['jipao'] >20 && $order->service_code=='Express_Standard_Global') ? ceil($value ['jipao'])* $value ['quantity']: ceil($value ['jipao']/0.5)*0.5* $value ['quantity'];
+				}else {
+					$total_weight_income_in +=($value ['weight']>20 && $order->service_code=='Express_Standard_Global') ? ceil($value ['weight']) * $value ['quantity']:ceil($value ['weight']/0.5)*0.5*$value ['quantity'];
+				}
+				$total_weight_actual_in += $value ['weight'] * $value ['quantity'];
+				$far_package = new Farpackage ();
+				$far_package->order_id = $order->order_id;
+				$far_package->weight = $value ['weight'];
+				$far_package->length = $value ['length'];
+				$far_package->width = $value ['width'];
+				$far_package->height = $value ['height'];
+				$far_package->quantity = $value ['quantity'];
+				$far_package->save ();
+			}
+			$order->volumn_chargeable = $is_jipao;
+			$order->weight_income_in = ($total_weight_income_in>20 && $order->service_code=='Express_Standard_Global') ? ceil($total_weight_income_in):$total_weight_income_in;
+			$order->weight_actual_in = $total_weight_actual_in;
+			$order->save ();
+
+			$fee_item_code = Helper_Array::toHashmap ( FeeItem::find ()->setColumns ( 'item_code,sub_code,item_name' )
+				->asArray ()
+				->getAll (), 'item_code' );
+			$quote = new Helper_Quote ();
+			$receivable = $quote->receivable ( $order, $order->weight_income_in, $arr ['EX0003'], $arr ['EX0002'], $arr ['EX0034'] );
+			if(!count($receivable)){
+				$ret ['msg'] = '无法计算价格';
+				$ret ['weight_income_in']=$total_weight_income_in;
+				return json_encode ( $ret );
+			}
+			Fee::meta ()->deleteWhere ( 'fee_type=1 and order_id=?', $order->order_id );
+			QLog::log ( print_r ( $receivable, true ) );
+			foreach ( $receivable as $key => $value ) {
+				if ($value ['fee']) {
+					$fee = new Fee ( array (
+						'order_id' => $order->order_id,
+						'fee_type' => 1,
+						'fee_item_code' => $fee_item_code [$key] ['sub_code'],
+						'fee_item_name' => $fee_item_code [$key] ['item_name'],
+						'quantity' => $value ['quantity'],
+						'amount' => $value ['fee']
+					) );
+					$fee->save ();
+				}
+			}
+			if(count($arr ['package_list'])==1){
+			    if($arr ['package_list']['package0']['length']==22 && $arr ['package_list']['package0']['width']==22 && $arr ['package_list']['package0']['height']==2.22 && $arr ['package_list']['package0']['quantity']==1){
+			        if($order->service_code=='Express_Standard_Global'){
+			            $order->packing_type='PAK';
+			        }
+			    }
+			}
+			$order->order_status = '5'; // 5 入库
+			if($order->service_code=="EMS-FY"){
+			    $order->add_data_status='1';
+			}
+			$order->department_id = MyApp::currentUser('department_id');
+			$order->far_warehouse_in_time=time();
+			$order->far_warehouse_in_operator=MyApp::currentUser('staff_name');
+			$order->save ();
+		} catch ( Exception $e ) {
+			$ret ['msg'] = '发生异常，请稍后重新操作此单【' . $arr ['aliorderno'] . '】';
+			return json_encode ( $ret );
+		}
+
+		if ($order->declaration_type == 'DL' || $order->total_amount > 700 || $order->weight_actual_in > 70) {
+			$ret ['msg'] = '报关件，请操作下一单';
+			$ret ['sound'] = 'baoguanjian.mp3';
+		} else {
+			$ret ['msg'] = '入库成功，请操作下一单';
+			$ret ['sound'] = 'rukuchenggong.mp3';
+		}
+		$ret ['code'] = '0';
+		$ret ['data'] = array ();
+		$ret ['status'] = true;
+		$ret ['weight_income_in']=$total_weight_income_in;
+		return json_encode ( $ret );
+		exit ();
+	}
+	/**
+	 * 入库打印
+	 */
+	function actionInFarLabel() {
+		header ( 'Content-Type:application/json' );
+		$order = Order::find ( 'order_id = ?', request ( 'orderid' ) )->getOne ();
+		$json_arr = array ();
+		$json_arr ['ali_order_no'] = $order->ali_order_no;
+		$fofn='';
+		if ($order->declaration_type == 'DL') {
+			$fofn = '/FO';
+		} elseif ($order->total_amount > 700 || $order->weight_actual_in > 70) {
+			$fofn = '/FN';
+		}
+		$json_arr ['SP'] = $order->volumn_chargeable ? 'P'.$fofn : 'S'.$fofn;
+		return json_encode ( $json_arr );
+		exit ();
+	}
+	/**
+	 * confirm
+	 */
+	function actionConfirm() {
+		$in_nos = Order::find ( 'order_status=5 and department_id=?',MyApp::currentUser('department_id') )->setColumns ( 'ali_order_no' )
+			->getAll ()
+			->getCols ( 'ali_order_no' );
+		$this->_view ['in_nos'] = $in_nos;
+	}
+	/**
+	 * confirm save
+	 */
+	function actionConfirmSave() {
+		header ( 'Content-Type:application/json' );
+		$arr = json_decode ( request ( 'jsonstr' ), true );
+		QLog::log ( print_r ( $arr, true ) );
+		$ret = array (
+			'code' => '1000',
+			'msg' => '错误',
+			'sound' => 'cuowu.mp3',
+			'data' => '',
+			'status' => false
+		);
+		try {
+			$event_location = '';
+			$department = Department::find ( 'department_id=?', MyApp::currentUser ( 'department_id' ) )->getOne ();
+			if ($department->department_name == '杭州仓') {
+				$event_location = '杭州';
+			} elseif ($department->department_name == '义乌仓') {
+				$event_location = '义乌';
+			} elseif ($department->department_name == '上海仓') {
+				$event_location = '上海';
+			}elseif ($department->department_name == '广州仓') {
+				$event_location = '广州';
+			}
+			// WAREHOUSE_INBOUND (CONFIRM-300s)\CHECK_WEIGHT (CONFIRM-150s)\CONFIRM
+			foreach ( $arr ['reason_nos'] as $value ) {
+				$order = Order::find ( 'ali_order_no = ?', $value ['no'] )->getOne ();
+				if (! $order->isNewRecord ()) {
+					$event_time = time ();
+					$this->eventSave ( $order->order_id, 'WAREHOUSE_INBOUND', $event_time - 300, $event_location );
+					$this->eventSave ( $order->order_id, 'CHECK_WEIGHT', $event_time - 150, $event_location );
+					$this->eventSave ( $order->order_id, 'CONFIRM', $event_time, $event_location,$value ['reason'] );
+				}
+				//已查验
+				$order->order_status='11';
+				$order->save();
+			}
+			foreach ( $arr ['in_nos'] as $value ) {
+				$order = Order::find ( 'ali_order_no = ?', $value )->getOne ();
+				if (! $order->isNewRecord ()) {
+					$event_time = time ();
+					$this->eventSave ( $order->order_id, 'WAREHOUSE_INBOUND', $event_time - 300, $event_location );
+					$this->eventSave ( $order->order_id, 'CHECK_WEIGHT', $event_time - 150, $event_location );
+					$this->eventSave ( $order->order_id, 'CONFIRM', $event_time, $event_location );
+				}
+				//待退货
+				$order->order_status='10';
+				$order->save();
+			}
+		} catch ( Exception $e ) {
+			$ret ['msg'] = '系统异常，请稍后重试';
+			return json_encode ( $ret );
+			exit ();
+		}
+
+		$ret ['code'] = '0';
+		$ret ['msg'] = '完成';
+		$ret ['sound'] = 'chayanxinxibaocunwancheng.mp3';
+		$ret ['data'] = array ();
+		$ret ['status'] = true;
+
+		return json_encode ( $ret );
+		exit ();
+	}
+	/**
+	 * event
+	 */
+	function eventSave($order_id, $event_code, $event_time, $event_location,$reason=NULL) {
+		$event = Event::find ( 'order_id=? and event_code="CONFIRM"', $order_id )->getOne ();
+		$event->order_id = $order_id;
+		$event->event_code = $event_code;
+		$event->event_time = $event_time;
+		$event->event_location = $event_location;
+		$event->reason = $reason;
+		$event->timezone = '8';
+		$event->confirm_flag = '1';
+		$event->operator =MyApp::currentUser('staff_name');
+		$event->save ();
+	}
+	/**
+	 * 判断订单是否含有泡货和电池
+	 */
+	function actionCheckorder(){
+	    $order=Order::find('ali_order_no=?',request('ali_order_no'))->getOne();
+	    $data=array();
+	    if($order->isNewRecord()){
+	        $data['message']='notexist';
+	    }else{
+	        $flag=true;
+	    	if($order->department_id!=MyApp::currentUser('department_id')){
+				$data['message']='notsamewarehouse';
+				echo json_encode($data);
+				exit;
+			}
+			//燃油
+			$product=Product::find('product_name=?',$order->service_code)->getOne();
+			if(!$product->isNewRecord()){
+				$fuel=Networkfuel::find('network_id=? and effective_date<=? and fail_date>=?',$product->network_id,time(),time())->getOne();
+				if($fuel->isNewRecord()){
+					$data['message']='fuelnotexist';
+					echo json_encode($data);
+					exit;
+				}
+			}
+			
+	        foreach ($order->product as $product){
+	            if($product->has_battery=='1'){
+	                $flag=false;
+	            }
+	        }
+	        if($flag){
+	            if($order->order_status=='6'){
+	                $data['message']='checkout';
+	            }else{
+    	            if($order->order_status!='4'){
+    	                $data['message']='notpay';
+    	            }else{
+    	                $package_sum=Faroutpackage::find('order_id=?',$order->order_id)->getAll();
+    	                if($order->add_data_status!='1' || count($package_sum)<1){
+    	                    $data['message']='incomplete';
+    	                }
+    	            }
+	            }
+	        }else{
+	            $data['message']='hasbattery';
+	        }
+	    }
+	    $data['channel_id']=$order->channel_id;
+	    echo json_encode($data);
+	    exit();
+	}
+	/**
+	 * 包裹出库
+	 */
+	function actionCheckout() {
+	    if(request_is_post()){
+	        $order=Order::find('ali_order_no=?',request('ali_order_no'))->getOne();
+	        $data=array();
+	        //获取订单总重
+	        $total_weight='';
+	        $package_sum=Faroutpackage::find('order_id=?',$order->order_id)->getAll();
+	        foreach ($package_sum as $v){
+                $total_weight+=$v->weight_out*$v->quantity_out;
+	        }
+	        //将重量存入order中
+	        $order->weight_actual_out=sprintf('%.1f',$total_weight);
+            $order->save();
+            //获取产品
+            $product=Product::find('product_name=?',$order->service_code)->getOne();
+            if($product->isNewRecord()){
+                $data['message']='productnotexist';
+            }else{
+            	//填写了渠道和运单号
+                if(strlen($order->channel_id)>0 && strlen($order->tracking_no)>0){
+                	self::saveoutevents($order);
+                	$data['account']='';
+                	$data['message']='true';
+                	//计算应付
+                	//获取异形包装费
+                	$special_fee_c_t=Fee::find("order_id=? and fee_type='2' and fee_item_code='logisticsExpressASP_EX0034'",$order->order_id)->getOne();
+                	$special_count_c_t=0;
+                	if(!$special_fee_c_t->isNewRecord()){
+                		$special_count_c_t=$special_fee_c_t->quantity;
+                	}
+                	//删除应付费用
+                	Fee::find("order_id=? and fee_type='2'",$order->order_id)->getAll()->destroy();
+                	//查找渠道成本
+                	$channelcost_c_t=ChannelCost::find('product_id=? and channel_id=?',$product->product_id,$order->channel_id)->getOne();
+                	if(!$channelcost_c_t->isNewRecord()){
+                		$channelcostppr_c_t=Channelcostppr::find("channel_cost_id=? and effective_time<=? and invalid_time>=?",$channelcost_c_t->channel_cost_id,time(),time())->getOne();
+                		if(!$channelcostppr_c_t->isNewRecord()){
+                			$network_c_t=Network::find("network_code=? ",$order->channel->network_code)->getOne();
+                			$quote= new Helper_Quote();
+                			$price_c_t=$quote->payment($order, $channelcostppr_c_t,$network_c_t->network_id,$special_count_c_t);
+                			if(count($price_c_t) && count($price_c_t['price_info'])){
+                				foreach ($price_c_t['price_info']['fee_item'] as $key=>$fee_item){
+                					//判断费用项中是否存在费用
+                					if($fee_item['fee']!='0'){
+                						//获取fee_sub_code
+                						$fee_sub_code=FeeItem::find('sub_code=?',$key)->getOne();
+                						$fee= new Fee();
+                						$fee->changeProps(array(
+                							'order_id'=>$order->order_id,
+                							'fee_type'=>'2',
+                							'fee_item_code'=>$fee_sub_code->sub_code,
+                							'fee_item_name'=>$fee_sub_code->item_name,
+                							'quantity'=>$fee_item['quantity'],
+                							'amount'=>$fee_item['fee'],
+                						));
+                						$fee->save();
+                					}
+                				}
+                				//保存计费重量
+                				if($price_c_t['price_info']['total_weight']){
+                					$order->weight_cost_out=$price_c_t['price_info']['total_weight'];
+                					//标签重量
+                					$order->weight_label=$price_c_t['price_info']['weight_label'];
+                					$order->save();
+                				}
+                			}
+                		}
+                	}
+                	//只选择了渠道，没有填写末端单号
+                }elseif($order->channel_id >0 && !$order->tracking_no){
+                	//首先判断渠道里的网络是不是UPS
+                	$channel_c=Channel::find("channel_id=?",$order->channel_id)->getOne();
+                	if(!$channel_c->isNewRecord() && ($channel_c->network_code=='UPS' || $channel_c->network_code=='EMS')){
+                		//查找渠道对应的渠道成本
+                		$channelcost_c=ChannelCost::find('product_id=? and channel_id=?',$product->product_id,$order->channel_id)->getOne();
+                		if (!$channelcost_c->isNewRecord()){
+                			$channelcostppr_c=Channelcostppr::find("channel_cost_id=? and effective_time<=? and invalid_time>=?",$channelcost_c->channel_cost_id,time(),time())->getOne();
+                			if(!$channelcostppr_c->isNewRecord()){
+                				//先查找分区
+                				$partion_c=Partition::find("partition_manage_id=? and country_code_two=?",$channelcostppr_c->partition_manage_id,$order->consignee_country_code)->getOne();
+                				//渠道重量
+                				$weight_cost_out=0;
+                				//标签重
+                				$label_weight=0;
+                				//如果包裹类型是PAK将实重算作计费重
+                				if($order->packing_type=='PAK'){
+                					foreach ($order->faroutpackages as $v){
+                						$weight_cost_out+=$v->weight_out*$v->quantity_out;
+                					}
+                					$label_weight=$weight_cost_out;
+                					$weight_cost_out=sprintf("%.1f",$weight_cost_out);
+                					//PAK类型的时候，计费重大于 0.5的整数倍0.1以内，自动向下取整到0.5的整数倍
+                					if($label_weight>0.5 && (floor($label_weight/0.5)*0.5+0.1)>$label_weight){
+                						$label_weight=floor($label_weight/0.5)*0.5;
+                					}else{
+                						$label_weight=sprintf("%.1f",$label_weight);
+                					}
+                				}else{
+                					//获取渠道成本中计泡系数
+                					$ratio=$channelcost_c->ratio;
+                					foreach ($order->faroutpackages as $faroutpackage){
+                					    if($order->service_code=='EMS-FY' && floor($faroutpackage->length_out)<60 && floor($faroutpackage->width_out)<60 && floor($faroutpackage->height_out)<60){
+                					        $volumn_weight="0";
+                					    }else {
+                					        $volumn_weight=floor($faroutpackage->length_out)*floor($faroutpackage->width_out)*floor($faroutpackage->height_out)/$ratio;
+                					    }
+                						if($volumn_weight>$faroutpackage->weight_out){
+                							$label_weight+=$volumn_weight*$faroutpackage->quantity_out;
+                							$weight_cost_out+=ceil($volumn_weight/0.5)*0.5*$faroutpackage->quantity_out;
+                						}else{
+                							$label_weight+=$faroutpackage->weight_out*$faroutpackage->quantity_out;
+                							$weight_cost_out+=ceil($faroutpackage->weight_out/0.5)*0.5*$faroutpackage->quantity_out;
+                						}
+                					}
+                					//大于20公斤
+                					if($label_weight>20){
+                						if((floor($label_weight)+0.1)>$label_weight){
+                							$label_weight=floor($label_weight);
+                						}else{
+                							$label_weight=ceil($label_weight);
+                						}
+                					}else{
+                						if((floor($label_weight/0.5)*0.5+0.1)>$label_weight){
+                							$label_weight=floor($label_weight/0.5)*0.5;
+                						}else{
+                							$label_weight=ceil($label_weight/0.5)*0.5;
+                						}
+                					}
+                					$weight_cost_out=($weight_cost_out>20 && $order->service_code=='Express_Standard_Global') ? ceil($weight_cost_out):$weight_cost_out;
+                				}
+                				$packing=$order->packing_type=='PAK'?"BOX":$order->packing_type;
+                				$price_c=Price::find("price_manage_id=? and partition_code=? and boxing_type=? and start_weight<? and end_weight>=? ",$channelcostppr_c->price_manage_id,$partion_c->partition_code,$packing,$weight_cost_out,$weight_cost_out)->getOne();
+                				if(!$price_c->isNewRecord()){
+                				    $account_sync_c=Accountsync::find("product_code=?",$price_c->account)->getOne();
+                				    if(!$account_sync_c->isNewRecord() || $product->network->network_code=='EMS'){
+                						$account_c=$account_sync_c->account;
+                						if(!$account_c){
+                						    $account_c="EMS";
+                						}
+                						//调用打单方法
+                						$order->weight_label=$label_weight;
+                						$view=$this->Getlabel($order, $account_c);
+                						if($view['errormessage']!=''){
+                							//渠道获取面单失败
+                							$data['message']=$view['errormessage'];
+                						}else{
+                							//获取异形包装费
+                							$special_fee_c=Fee::find("order_id=? and fee_type='2' and fee_item_code='logisticsExpressASP_EX0034'",$order->order_id)->getOne();
+                							$special_count_c=0;
+                							if(!$special_fee_c->isNewRecord()){
+                								$special_count_c=$special_fee_c->quantity;
+                							}
+                							//删除原有费用
+                							Fee::find("order_id=? and fee_type='2'",$order->order_id)->getAll()->destroy();
+                							$network_c=Network::find("network_code=? ",$order->channel->network_code)->getOne();
+                							$quote= new Helper_Quote();
+                							$fees_c=$quote->payment($order, $channelcostppr_c,$network_c->network_id,$special_count_c);
+                							if(count($fees_c) && count($fees_c['price_info'])){
+                								foreach ($fees_c['price_info']['fee_item'] as $key=>$fee_item){
+                									//判断费用项中是否存在费用
+                									if($fee_item['fee']!='0'){
+                										//获取fee_sub_code
+                										$fee_sub_code=FeeItem::find('sub_code=?',$key)->getOne();
+                										$fee= new Fee();
+                										$fee->changeProps(array(
+                											'order_id'=>$order->order_id,
+                											'fee_type'=>'2',
+                											'fee_item_code'=>$fee_sub_code->sub_code,
+                											'fee_item_name'=>$fee_sub_code->item_name,
+                											'quantity'=>$fee_item['quantity'],
+                											'amount'=>$fee_item['fee'],
+                										));
+                										$fee->save();
+                									}
+                								}
+                							}
+                							//保存计费重量
+                							$order->weight_cost_out=$weight_cost_out;
+                							//保存标签重
+                							$order->weight_label=$label_weight;
+                							//存入打单账号
+                							$order->account=$account_c;
+                							self::saveoutevents($order);
+                							$data['account']=$view['account'];
+                							$data['message']='true';
+                						}
+                					}else{
+                						$data['message']="pricenotexist";
+                					}
+                				}else{
+                					$data['message']="pricenotexist";
+                				}
+                			}else{
+                				$data['message']="channelnotexist";
+                			}
+                		}else{
+                			$data['message']="channelnotexist";
+                		}
+                		//非UPS渠道,只计算费用，不生成面单
+                	}else{
+                		//获取异形包装费
+                		$special_fee_c=Fee::find("order_id=? and fee_type='2' and fee_item_code='logisticsExpressASP_EX0034'",$order->order_id)->getOne();
+                		$special_count_c=0;
+                		if(!$special_fee_c->isNewRecord()){
+                			$special_count_c=$special_fee_c->quantity;
+                		}
+                		//删除原有费用
+                		Fee::find("order_id=? and fee_type='2'",$order->order_id)->getAll()->destroy();
+                		$network_c=Network::find("network_code=? ",$order->channel->network_code)->getOne();
+                		$channelcost_c=ChannelCost::find('product_id=? and channel_id=?',$product->product_id,$order->channel_id)->getOne();
+                		if (!$channelcost_c->isNewRecord()){
+                			$channelcostppr_c=Channelcostppr::find("channel_cost_id=? and effective_time<=? and invalid_time>=?",$channelcost_c->channel_cost_id,time(),time())->getOne();
+                			$quote= new Helper_Quote();
+                			$fees_c=$quote->payment($order, $channelcostppr_c,$network_c->network_id,$special_count_c);
+                			if(count($fees_c) && count($fees_c['price_info'])){
+                				//存入成本费用
+                				foreach ($fees_c['price_info']['fee_item'] as $key=>$fee_item){
+                					//判断费用项中是否存在费用
+                					if($fee_item['fee']!='0'){
+                						//获取fee_sub_code
+                						$fee_sub_code=FeeItem::find('sub_code=?',$key)->getOne();
+                						$fee= new Fee();
+                						$fee->changeProps(array(
+                							'order_id'=>$order->order_id,
+                							'fee_type'=>'2',
+                							'fee_item_code'=>$fee_sub_code->sub_code,
+                							'fee_item_name'=>$fee_sub_code->item_name,
+                							'quantity'=>$fee_item['quantity'],
+                							'amount'=>$fee_item['fee'],
+                						));
+                						$fee->save();
+                					}
+                				}
+                				//保存计费重量
+                				if($fees_c['price_info']['total_weight']){
+                					$order->weight_cost_out=$fees_c['price_info']['total_weight'];
+                					$order->weight_label=$fees_c['price_info']['weight_label'];
+                					$order->save();
+                				}
+                			}
+                		}
+                		self::saveoutevents($order);
+                		$data['account']='';
+                		$data['message']='true';
+                	}
+                }else{
+                    //获取渠道成本
+                    $channelcost=ChannelCost::find('product_id=?',$product->product_id)->getAll();
+                    if(count($channelcost)<=0){
+                        $data['message']='channelnotexist';
+                    }else{
+                        //计算成本价格
+                        $price_array=array();
+                        $price_info_array=array();
+                        foreach ($channelcost as $temp){
+                            //判断渠道可用部门和禁用部门
+                            $available_department_ids=Helper_Array::getCols(Channeldepartmentavailable::find('channel_id=?',$temp->channel_id)->getAll(), 'department_id');
+                            $disabled_department=Channeldepartmentdisable::find('channel_id=? and department_id=? and effect_time <= ? and failure_time >= ?',$temp->channel_id,$order->department_id,time(),time())->getOne();
+                            if((count($available_department_ids)>0 && !in_array($order->department_id, $available_department_ids)) || !$disabled_department->isNewRecord()){
+                                continue;
+                            }
+                            //获取价格-偏派-分区表
+                            $channelcostppr=Channelcostppr::find('channel_cost_id=? and effective_time<=? and invalid_time>=?',$temp->channel_cost_id,time(),time())->getOne();
+                            if($channelcostppr->isNewRecord()){
+                                continue;
+                            }else{
+                                //获取异形包装费
+                                $special_fee=Fee::find("order_id=? and fee_type='2' and fee_item_code='logisticsExpressASP_EX0034'",$order->order_id)->getOne();
+                                if($special_fee->isNewRecord()){
+                                    $special_count=0;
+                                }else{
+                                    $special_count=$special_fee->quantity;
+                                }
+                                $network=Network::find("network_code=? ",$temp->channel->network_code)->getOne();
+                                $quote= new Helper_Quote();
+                                $price=$quote->payment($order, $channelcostppr,$network->network_id,$special_count);
+                                if(count($price)<=0){
+                                    continue;
+                                }
+                                if(!$price['public_price']){
+                                    continue;
+                                }
+                                $price_array[$channelcostppr->channel_cost_p_p_r_id]=$price['public_price'];
+                                $price_info_array[$channelcostppr->channel_cost_p_p_r_id]=$price['price_info'];
+                            }
+                        }
+                        //判断是否有查询失败的报价
+                        if( max($price_array)==0){
+                            $data['message']='pricenotexist';
+                        }else{
+                            //获取最小的价格和价格表id
+                            $channel_cost_p_p_r_id=array_search(min($price_array), $price_array);
+                            //实际此时是产品代码proudct_code
+                            $account_name=$price_info_array[$channel_cost_p_p_r_id]['account'];
+                            $account_sync=Accountsync::find('product_code=?',$account_name)->getOne();
+                            if(!$account_sync->isNewRecord() && $product->network->network_code !='EMS'){
+                                $account_name=$account_sync->account;
+                            }elseif($product->network->network_code=='EMS') {
+                                $account_name='EMS';
+                            }
+                            //将计费重存入order中
+                            $order->weight_cost_out=$price_info_array[$channel_cost_p_p_r_id]['total_weight'];
+                            //将标签重存入order中
+                            $order->weight_label=$price_info_array[$channel_cost_p_p_r_id]['weight_label'];
+                            $order->save();
+                            //调用打单方法
+                            $view=$this->Getlabel($order, $account_name);
+                            if($view['errormessage']!=''){
+                                //渠道获取面单失败
+                                $data['message']=$view['errormessage'];
+                            }else{//结束
+                                //删除原有费用
+                                Fee::find("order_id=? and fee_type='2'",$order->order_id)->getAll()->destroy();
+                                //存入成本费用
+                                foreach ($price_info_array[$channel_cost_p_p_r_id]['fee_item'] as $key=>$fee_item){
+                                    //判断费用项中是否存在费用
+                                    if($fee_item['fee']!='0'){
+                                        //获取fee_sub_code
+                                        $fee_sub_code=FeeItem::find('sub_code=?',$key)->getOne();
+                                        $fee= new Fee();
+                                        $fee->changeProps(array(
+                                            'order_id'=>$order->order_id,
+                                            'fee_type'=>'2',
+                                            'fee_item_code'=>$fee_sub_code->sub_code,
+                                            'fee_item_name'=>$fee_sub_code->item_name,
+                                            'quantity'=>$fee_item['quantity'],
+                                            'amount'=>$fee_item['fee'],
+                                        ));
+                                        $fee->save();
+                                    }
+                                }
+                                //保存出库渠道
+                                $channel_cost_p_p_r=Channelcostppr::find('channel_cost_p_p_r_id=?',$channel_cost_p_p_r_id)->getOne();
+                                $channel_cost=ChannelCost::find('channel_cost_id=?',$channel_cost_p_p_r->channel_cost_id)->getOne();
+                                $order->channel_id=$channel_cost->channel_id;
+                                //存入打单账号
+                                $order->account=$account_name;
+                               	self::saveoutevents($order);
+                                $data['account']=$view['account'];
+                                $data['message']='true';
+                            }
+                        }
+                    }
+                }
+            }
+            $fee_in=Fee::find('order_id=? and fee_type= "1"',$order->order_id)->getSum('amount');
+            $fee_out=Fee::find('order_id=? and fee_type= "2"',$order->order_id)->getSum('amount');
+            $order->profit=$fee_in-$fee_out;
+            $order->save();
+	        echo json_encode($data);
+	        exit();
+	    }
+	}
+	/**
+	 * 包裹比对
+	 */
+	function actionComparison() {
+	        $select = Order::find ( 'order_status = ?', '6' )->Joinright ( 'tb_sub_code', 'sub_code', 'tb_order.order_id=tb_sub_code.order_id' );
+	        $account = Order::channelgroup();
+	        $first_key='';
+	        foreach ($account as $key=>$value){
+	            $first_key=$key;
+	            break;
+	        }
+	        $account=$account[request ( 'account',$first_key)];
+	        $select->where ( 'channel_id in (?)', $account );
+	        $order = $select->asArray ()
+	        ->getAll ();
+	        //提交修改
+	        $order_id = array ();
+	        if (request ( 'sub_code' )) {
+	            $sub_code = explode ( "\r\n", request ( 'sub_code' ) );
+	            foreach ( $order as $v ) {
+	                $orders [] = $v ['order_id'];
+	            }
+	            $orders = array_unique ( $orders );
+	            foreach ( $orders as $v1 ) {
+	                $code = Subcode::find ( 'order_id=?', $v1 )->getAll ();
+	                foreach ( $code as $v2 ) {
+	                    if (! in_array ( $v2->sub_code, $sub_code )) {
+	                        $order_id [] = $v2->order_id;
+	                        continue 2;
+	                    }
+	                }
+	                $o = Order::find ( 'order_id=?', $v1 )->getOne ();
+	                $o->order_status = '7';
+	                $o->sort = request ( 'sort' );
+	                $o->record_order_date = strtotime(request ( 'record_order_date' ));
+	                $o->save ();
+	            }
+	            if (count ( $order_id )) {
+	                $select = Order::find ( 'tb_order.order_id in (?)', $order_id )->Joinright ( 'tb_sub_code', 'sub_code', 'tb_order.order_id=tb_sub_code.order_id' );
+	                $order_id = $select->asArray ()
+	                ->getAll ();
+	                $this->_view ['order_id'] = $order_id;
+	            } else {
+	                return $this->_redirectMessage ( '核对成功', '成功', url ( '/comparison' ), 3 );
+	            }
+	        }
+	        $this->_view ['order'] = $order;
+	}
+	/**
+	 * 批量修改
+	 * 
+	 */
+	function actionBatchupdate(){
+		if (request ( 'ali_order_no' )) {
+			$ali_order_no = explode ( "\r\n", request ( 'ali_order_no' ) );
+			if (count ( $ali_order_no )) {
+				Order::meta ()->updateDbWhere ( array (
+					'packing_type' => request ( 'packing_type' ) 
+				), 'ali_order_no in (?)', $ali_order_no );
+			}
+			return $this->_redirectMessage ( '修改成功', '成功', url ( '/batchupdate' ), 2 );
+		}
+	}
+	/**
+	 * 获取面单
+	 */
+	function Getlabel($order,$account_name){
+	    if($account_name=='EMS'){
+	        $data=self::ems($order);
+	    }else {
+    	    if($account_name=='4F1R24'){
+    	        $data=self::runfeng($order);
+    	    }else{
+    	        $account=UPSAccount::find("account = ?",$account_name)->getOne();
+    	        if(!$account->isNewRecord()){
+    	            $data=self::ups($order,$account);
+    	        }else{
+    	            $data['errormessage']=$account_name.'账号不存在';
+    	        }
+    	    }
+	    }
+        return $data;
+	}
+	/**
+	 * 润峯账号渠道
+	 */
+	static function runfeng($order){
+	    //登录润峯API
+	    $account='18962528018@159.com';//登录名
+	    $pwd='123456';//登录密码
+	    $api_url='www.runforint.com:8000';//api url地址
+	    $login_resquest=array(
+	        'Name'=>$account,
+	        'Pwd'=>md5($pwd)
+	    );
+	    $tks=array();
+	    $login_response=Helper_Curl::post($api_url.'/api/Login', json_encode($login_resquest),array(
+	        'Content-Type: application/json'
+	    ));
+	    $login_response=json_decode($login_response,true);
+	    if(!isset($login_response['Token'])){
+	        $view['errormessage']='API认证失败！请联系管理员！';
+	    }else{
+	        $token=$login_response['Token'];
+	        //润峯WayBillUnite API
+	        $items=array();
+	        $invoice=array('items'=>array(),'total'=>'');
+	        //获取总重量
+	        $total_weight=$order->weight_label;
+	        $quantity=0;
+	        foreach ($order->product as $value){
+	        	$quantity+=$value->product_quantity;
+	        }
+	        foreach ($order->product as $v){
+	        	//传给润峯的商品信息
+	            $items[]=array(
+	                'Goods'=>$v->product_name_en_far,
+	                'GoodsCn'=>$v->product_name_far,
+	                'Currency'=>$order->currency_code,
+	                'Count'=>$v->product_quantity,
+	                'UnitPrice'=>$v->declaration_price,
+	                'SubWeight'=>$quantity>0?(floor($total_weight/$quantity*10000))/10000*$v->product_quantity:"0.1",
+	                'HsCode'=>$v->hs_code_far,
+	                'Label'=>'',
+	                'Sku'=>'',
+	            );
+	            //FAR做Invoice
+	            $invoice['items'][]=array(
+	                'quantity'=>$v->product_quantity,
+	                'unit'=>$v->product_unit,
+	                'name'=>$v->product_name_en_far,
+	                'hscode'=>$v->hs_code_far,
+	                'country'=>'CN',
+	                'price'=>$v->declaration_price,
+	                'itotal'=>round($v->product_quantity*$v->declaration_price,2).' '.$order->currency_code,
+	                'material'=>$v->material_use,
+	            );
+	            $invoice['total']+=round($v->product_quantity*$v->declaration_price,2);
+	        }
+	        //获取包裹类型
+	        $package_type=$order->packing_type;
+	        $state='';
+	        //判断收件国家是否是US和CA
+	        if($order->consignee_country_code=='US' || $order->consignee_country_code=='CA'){
+	            //将收件人州转为二字码
+	            $states=Uscaprovince::find('province_name=?',strtolower(str_replace(' ','',$order->consignee_state_region_code)))->getOne();
+	            if($states->isNewRecord()){
+	                $view['errormessage']=$order->consignee_country_code.'中不存在'.$order->consignee_state_region_code.'州/省';
+	                return $view;
+	            }else{
+	                $state=$states->province_code_two;
+	            }
+	        }else{
+	            $state=$order->consignee_country_code;
+	        }
+	        //判断收件人税号是否存在
+	        $vat='';
+	        if($order->tax_payer_id){
+	            $vat=' VAT:'.$order->tax_payer_id;
+	        }
+	        $far_package_count=Faroutpackage::find('order_id=?',$order->order_id)->sum('quantity_out','sum_quantity')->getAll();
+	        $waybill_request=array(
+	            "Token"=>$token,
+	            "WayBillUniteRequestData"=>array(
+	                'LogisticalName'=>$package_type=='DOC'?'UPS文件':'UPS红单01',
+	                'IsPackage'=>$package_type=='DOC'?'0':'1',
+	                'Country'=>$order->consignee_country_code,
+	                'RepertoryName'=>'义乌仓',
+	                'ReferNum'=>'',
+	                'Email'=>$order->consignee_email,
+	                'Province'=>$state,
+	                'City'=>$order->consignee_city,
+	                'ContactName'=>trim($order->consignee_name1),
+	                'PostCode'=>$order->consignee_postal_code,
+	                'ContactAddress'=>trim($order->consignee_street1.' '.$order->consignee_street2.$vat),
+	                'ContactTel'=>$order->consignee_mobile,
+	                'ContactCompany'=>trim($order->consignee_name2)?trim($order->consignee_name2):trim($order->consignee_name1),
+	                'PackageCount'=>$far_package_count['sum_quantity'],
+	                'IsDeclare'=>'0',
+	                'WayBillUniteRequestInfoDatas'=>$items,
+	            ),
+	        );
+	    }
+	    QLog::log($order->ali_order_no.json_encode($waybill_request));
+	    $waybill_response=Helper_Curl::post($api_url.'/api/WayBillUnite', json_encode($waybill_request),array(
+	        'Content-Type: application/json'
+	    ));
+	    $waybill_response=json_decode($waybill_response,true);
+	    if($waybill_response['Code']=='1'){
+	        $tks[]=$waybill_response['WayBillUniteResponseData']['LogisticalNum'];
+	        $dir=Q::ini('upload_tmp_dir');
+	        @Helper_Filesys::mkdirs($dir);
+	        $target=$dir.DS.$waybill_response['WayBillUniteResponseData']['LogisticalNum'].'.pdf';
+	        //将面单存储到本地
+	        $source=trim(file_get_contents('http://www.runforint.com:8000/api/PrintFile?fileurl='.$waybill_response['WayBillUniteResponseData']['LogisticalNumUrl'].'&token='.$token.'&size=0'));
+	        file_put_contents($target,$source);
+	        $png_target=$dir.DS.$tks[0].'.png';
+	        $source=trim(file_get_contents('http://wms.checkout2cn.com/link/barcode/html/image.php?filetype=PNG&dpi=90&scale=20&rotation=0&font_family=0&font_size=0&thickness=70&start=C&code=BCGcode128&text='.$tks[0]));
+	        file_put_contents($png_target,$source);
+	        Helper_PDF::split($target,$target.'.pdf','F','O',array('chapter3'=>$png_target));
+	        exec("/usr/bin/convert -density 300 -depth 8 -quality 85 {$target}.pdf -append {$target}.pdf.jpg");
+	        $watermarkpath=array('chapter1'=>_INDEX_DIR_.'/public/img/chapter1.gif','chapter2'=>_INDEX_DIR_.'/public/img/chapter2.gif');
+	        Helper_PDF::split($target,$target,'F','H',$watermarkpath);//保留一半的面单
+	        //将pdf转为jpg格式
+	        exec("/usr/bin/convert -density 300 -depth 8 -quality 85 {$target} -append {$target}.jpg");
+	        //扫描图片中条形码获取物流单号
+	        $image = new ZBarCodeImage($target.'.jpg');
+	        $scanner = new ZBarCodeScanner();
+	        $barcode = $scanner->scan($image);
+	        $barcode=Helper_Array::getCols($barcode, 'data');
+	        $barcode=array_unique(array_reverse($barcode));
+	        //存入sub_code表中
+	        //删除原有的子单
+	        Subcode::find('order_id=?',$order->order_id)->getAll()->destroy();
+	        foreach ($barcode as $temp){
+	            if(strlen($temp)=='18'){
+	                $order_subcode=new Subcode();
+	                $order_subcode->changeProps(array(
+	                    'order_id'=>$order->order_id,
+	                    'sub_code'=>$temp
+	                ));
+	                $order_subcode->save();
+	            }
+	        }
+	        //将tracking_number存入order中
+	        $order->tracking_no=$tks[0];
+	        $order->save();
+	        //将invoice存储到本地
+	        $jsonFile=$dir.DS.$waybill_response['WayBillUniteResponseData']['LogisticalNum'].'.json';
+	        $shipper=array(
+	        'account'=>'4F1R24',
+	        'aname'=>'RunFeng Network Technology Co.',
+	        'name'=>'SuZhou RunFeng Network Technology Co., Ltd.（YiWu branch）',
+	        'address'=>'No. 41 HanChun Two area BeiYuan Street Yiwu',
+	        'city'=>'YIWU',
+	        'postcode'=>'322000',
+	        'phone'=>'17802119771'
+	            );
+	        $chapter1='http://'.$_SERVER["HTTP_HOST"].'/public/img/chapter1.gif';
+	        $chapter2='http://'.$_SERVER["HTTP_HOST"].'/public/img/chapter2.gif';
+	        $copy_label='http://'.$_SERVER["HTTP_HOST"].'/_tmp/upload/'.$tks[0].'.pdf.pdf.jpg';
+	        file_put_contents($jsonFile, json_encode(array(
+	            'invoice'=>$invoice,
+	            'shipmentid'=>self::creatShipid($tks[0]),
+	            'shipper'=>$shipper,
+	            'itemcount'=>$far_package_count['sum_quantity'],
+	            'br_account'=>'',
+	            'weight'=>$total_weight,
+	            'total_weight'=>$total_weight,
+	            'aname'=>trim($order->consignee_name1),
+	            'name'=>trim($order->consignee_name2)?trim($order->consignee_name2):trim($order->consignee_name1),
+	            'email'=>$order->consignee_email,
+	            'phone'=>$order->consignee_mobile,
+	            'countrycode'=>$order->consignee_country_code,
+	            'countryname'=>Country::find('code_word_two=?',$order->consignee_country_code)->getOne()->english_name,
+	            'state'=>$state,
+	            'city'=>$order->consignee_city,
+	            'postcode'=>$order->consignee_postal_code,
+	            'address'=>$order->consignee_street1.' '.$order->consignee_street2.$vat,
+	            'chapter1'=>$chapter1,
+	            'chapter2'=>$chapter2,
+	            'copy_label'=>$copy_label,
+	            'freight'=>'0',
+	            'ref1'=>'',
+	            'ref2'=>'',
+	            'poc_line1'=>'',
+	            'poc_line2'=>'',
+	            'poc_line3'=>'',
+	            'tks'=>$tks[0],
+	            'ali_order_no'=>$order->ali_order_no
+	        )));
+	        $view['errormessage']='';
+	        $view['account']='RF';
+	    }else{
+	        $view['errormessage']=$waybill_response['WayBillUniteResponseError']['Info'];
+	    }
+	    return $view;
+	}
+	
+	/*
+	 * ems账号渠道
+	 */
+	static function ems($order){
+        $url="http://115.159.160.253:8082/createOrderApi.htm";
+	    $invoice=array();
+	    foreach ($order->product as $p){
+             $invoice[]=array(
+    	        "invoice_amount"=> $p->product_quantity*$p->declaration_price,
+    	        "invoice_pcs"=> $p->product_quantity,
+    	        "invoice_title"=> $p->product_name_en,
+    	        "invoice_weight"=> "",
+    	        "item_id"=>"",
+    	        "item_transactionid"=> "",
+    	        "sku"=> $p->product_name,
+    	        "sku_code"=> ""
+    	    );
+	    }
+	    $arr=array(
+	        "buyerid"=> "",
+	        "consignee_address"=> $order->consignee_street1.$order->consignee_street2,
+	        "consignee_city"=> $order->consignee_city,
+	        "consignee_mobile"=> $order->consignee_mobile,
+	        "order_returnsign"=>"Y",
+	        "consignee_name"=> $order->consignee_name1,
+	        "trade_type"=> "ZYXT",
+	        "consignee_postcode"=> $order->consignee_postal_code,
+	        "consignee_state"=> $order->consignee_state_region_code ? $order->consignee_state_region_code : $order->consignee_city,
+	        "consignee_telephone"=> $order->consignee_telephone ? $order->consignee_telephone : '',
+	        "country"=> $order->consignee_country_code,
+			"customer_id"=> "23225",
+	        "customer_userid"=> "19945",
+	        "orderInvoiceParam"=> $invoice,
+	        "order_customerinvoicecode"=> $order->ali_order_no,
+	        "product_id"=> "4653",
+	        "weight"=> $order->weight_label,
+	        "product_imagepath"=> ""
+	    );
+	    $return=Helper_Curl::post($url, 'param='.json_encode($arr));
+	    $return=json_decode($return,true);
+	    if($return['ack']=='true'){
+	        $order->tracking_no=$return['tracking_number'];
+	        $order->ems_order_id=$return['order_id'];
+	        $order->save();
+	        $labelurl='http://115.159.160.253:8089/order/FastRpt/PDF_NEW.aspx?PrintType=A4&order_id=';
+	        $dir=Q::ini('upload_tmp_dir');
+	        @Helper_Filesys::mkdirs($dir);
+	        $target=$dir.DS.$return['tracking_number'].'.pdf';
+	        $source=trim(file_get_contents($labelurl.$return['order_id']));
+	        file_put_contents($target,$source);
+	        $view['errormessage']='';
+	        $view['account']='EMS';
+	    }else {
+	        $view['errormessage']=urldecode($return['message']);
+	    }
+	    return $view;
+	}
+	/**
+	 * UPS账号渠道
+	 */
+	static function ups($order,$account)
+	{
+	    // invoice
+	    $invoice=array('items'=>array(),'total'=>'');
+	    $order_product=Orderproduct::find('order_id=?',$order->order_id)->getOne();
+	    $desc=$order_product->product_name_en;
+	    foreach ($order->product as $v){
+            $invoice['items'][]=array(
+                'quantity'=>$v->product_quantity,
+                'unit'=>$v->product_unit,
+                'name'=>$v->product_name_en_far,
+                'hscode'=>$v->hs_code_far,
+                'country'=>'CN',
+                'price'=>$v->declaration_price,
+                'itotal'=>round($v->product_quantity*$v->declaration_price,2).' '.$order->currency_code,
+                'material'=>$v->material_use,
+            );
+            $invoice['total']+=round($v->product_quantity*$v->declaration_price,2);
+	    }
+	    $package=array();
+	    // 参考编码
+	    $refno=array();
+	    $ref1='';
+	    //台州富轩账号要加一个订单号放到ref1上
+	    if($account->account=='79YE39'){
+	    	$ref1=Helper_Curl::get1('http://kuaijian.far800.com/index.php?controller=cron&action=gettzrefno');
+	    	$refno[]=array(
+	    		'Code'=>'IK',
+				'Value'=>$ref1
+	    	);
+	    }
+	    $ref2='';
+	    //富轩账号要加一个订单号
+	    if($account->account=='4FV328'){
+	        $ref2=Helper_Curl::get1('http://kuaijian.far800.com/index.php?controller=cron&action=getrefno');
+	        $refno[]=array(
+	            'Code'=>'PO',
+	            'Value'=>$ref2
+	        );
+	    }
+	    $far_package_count=Faroutpackage::find('order_id=?',$order->order_id)->sum('quantity_out','sum_quantity')->getAll();
+	    //获取包裹类型
+        $package_type=$order->packing_type;
+	    $package_code=($package_type=='DOC')?'04':'02';
+	    //一票多件
+	    $total_weight=$order->weight_label;
+	    for($i=0;$i<$far_package_count['sum_quantity'] ;$i++){
+	        $package[]= array(
+	            'Description' => trim($desc,';'),
+	            'PackageWeight' => array(
+	                'UnitOfMeasurement' => array(
+	                    'Code' => 'KGS',
+	                    'Description' => 'Kilograms'
+	                ),
+	                'Weight' => strval(floor($total_weight/$far_package_count['sum_quantity']*10000)/10000),
+	            ),
+	            'Packaging' => array(
+	                'Code' => $package_code,
+	            ),
+	            'ReferenceNumber'=>$refno,
+	        );
+	    }
+	    // 付款方式
+	    $shipmentCharge = array();
+        // 三方
+	    if ($account->tp_account){
+			$shipmentCharge[]= array(
+				 'Type'=>'01',
+				 'BillThirdParty'=>array(
+					 'AccountNumber' => $account->tp_account,
+					 'Address'=>array(
+					 	'PostalCode'=>$account->tp_postalcode,
+					 	'CountryCode'=>$account->tp_countrycode
+					 )
+				 )
+			 );
+	    }else {
+			// 预付
+			$shipmentCharge[]=array(
+				'BillShipper' => array(
+					'AccountNumber' => $account->account
+				),
+				'Type' => '01'
+			);
+		}
+        $state='';
+        //判断收件国家是否是US和CA
+        if($order->consignee_country_code=='US' || $order->consignee_country_code=='CA'){
+            //将收件人州转为二字码
+            $states=Uscaprovince::find('province_name=?',strtolower(str_replace(' ','',$order->consignee_state_region_code)))->getOne();
+            if($states->isNewRecord()){
+                $view['errormessage']=$order->consignee_country_code.'中不存在'.$order->consignee_state_region_code.'州';
+                return $view;
+            }else{
+                $state=$states->province_code_two;
+            }
+        }
+        //判断收件人税号是否存在
+        $vat='';
+        if($order->tax_payer_id){
+            $vat=' VAT:'.$order->tax_payer_id;
+        }
+	    $address=self::splitAddress($order->consignee_street1.' '.$order->consignee_street2.$vat);
+	    if(count($address)>3){
+	       $view['errormessage']='收件人地址超长';
+	       return $view;
+	    }
+	    $data = array(
+	        'UPSSecurity' => array(
+	            'ServiceAccessToken' => array(
+	                'AccessLicenseNumber' => $account->license
+	            ),
+	            'UsernameToken' => array(
+	                'Password' => $account->pwd,
+	                'Username' => $account->userid
+	            )
+	        ),
+	        'ShipmentRequest' => array(
+	            'Request' => array(
+	                'RequestOption' => 'nonvalidate',
+	                'TransactionReference' => array(
+	                    'CustomerContext' => 'iBayTest'
+	                )
+	            ),
+	            'Shipment' => array(
+	                'Description' => trim($desc,';'),
+	                'Package' =>$package,
+	                'PaymentInformation' => array(
+	                    //预付
+	                    'ShipmentCharge' =>$shipmentCharge,
+	                ),
+	                'Service' => array(
+	                    'Code' => '65',
+	                    'Description' => '2',
+	                ),
+	                'Shipper' => array(
+	                    'Address' => array(
+	                        'AddressLine' => self::splitAddress($account->address),
+	                        'City' => $account->city,
+	                        'CountryCode' => $account->countrycode,
+	                        'PostalCode' => $account->postcode,
+	                        'StateProvinceCode' => $account->state
+	                    ),
+	                    'AttentionName' => $account->aname,
+	                    'Name' => $account->name,
+	                    'Phone' => array(
+	                        'Number' => $account->phone
+	                    ),
+	                    'ShipperNumber' => $account->account
+	                ),
+	                'ShipTo' => array(
+	                    'Address' => array(
+	                        'AddressLine' => $address,
+	                        'City' => $order->consignee_city,
+	                        'CountryCode' => $order->consignee_country_code,
+	                        'PostalCode' => $order->consignee_postal_code,
+	                        'StateProvinceCode' => $state
+	                    ),
+	                    'AttentionName' => trim($order->consignee_name1),
+	                    'Name' => trim($order->consignee_name2)?trim($order->consignee_name2):trim($order->consignee_name1),
+	                    'EMailAddress'=>$order->consignee_email,
+	                    'Phone' => array(
+	                        'Number' => $order->consignee_mobile
+	                    )
+	                ),
+	                'ShipmentRatingOptions' => array(
+	                    'NegotiatedRatesIndicator' => '0'
+	                )
+	            ),
+	            'LabelSpecification' => array(
+	                'LabelImageFormat' => array(
+	                    'Code' => 'GIF'
+	                )
+	            )
+	        )
+	    );
+	    if ($state==''){
+	        unset($data['ShipmentRequest']['Shipment']['ShipTo']['Address']['StateProvinceCode']);
+	    }
+	    if ($package_code=='04'){
+	        $data['ShipmentRequest']['Shipment']['DocumentsOnlyIndicator']= (object)array();
+	    }
+	    QLog::log($order->ali_order_no.json_encode($data));
+// 	    $endpoint='https://wwwcie.ups.com';
+	    $endpoint='https://onlinetools.ups.com';
+	    set_time_limit(400);
+	    Helper_Curl::$connecttimeout=300;
+	    Helper_Curl::$timeout=300;
+	    $r=Helper_Curl::post($endpoint.'/rest/Ship', json_encode($data),array(
+	        'Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept',
+	        'Access-Control-Allow-Methods: POST',
+	        'Access-Control-Allow-Origin: *',
+	        'Content-Type: application/json'
+	    ));
+	    // 		echo $r;
+	    $r=json_decode($r,true);
+	    $dir=Q::ini('upload_tmp_dir');
+	    @Helper_Filesys::mkdirs($dir);
+	    $tks=array();
+	    if (isset($r['ShipmentResponse']['Response']['ResponseStatus']['Code']) && $r['ShipmentResponse']['Response']['ResponseStatus']['Code']==1){
+	        $pkg=$r['ShipmentResponse']['ShipmentResults']['PackageResults'];
+	        if (isset($pkg['TrackingNumber'])){
+	            $pkg=array($pkg);
+	        }
+	        $subcode1=array('waybillcode'=>$pkg[0]['TrackingNumber']);
+	        $subcode2=array('waybillcode'=>$pkg[0]['TrackingNumber']);
+	        for ($n=1;$n<11;$n++){
+	            $subcode1['info'][$n]=array(
+	                'subcode'=>isset($pkg[$n]['TrackingNumber'])?($n+1).'. '.$pkg[$n]['TrackingNumber']:''
+	            );
+	        }
+	        if(count($pkg)>11){
+	            for ($m=11;$m<count($pkg);$m++){
+	                $subcode2['info'][]=array(
+	                    'subcode'=>($m+1).'. '.$pkg[$m]['TrackingNumber']
+	                );
+	            }
+	        }
+	        //删除原有的子单
+	        Subcode::find('order_id=?',$order->order_id)->getAll()->destroy();
+	        foreach ($pkg as $tr){
+	            $tks[]=$tr['TrackingNumber'];
+	            $target=$dir.DS.$tr['TrackingNumber'].'.pdf';
+	            $source=$dir.DS.$tr['TrackingNumber'].'.gif';
+	            file_put_contents($source, base64_decode($tr['ShippingLabel']['GraphicImage']));
+	            Helper_PDF::upslabel($source,$target);
+	            //存入sub_code表中
+	            $order_subcode=new Subcode();
+	            $order_subcode->changeProps(array(
+	                'order_id'=>$order->order_id,
+	                'sub_code'=>$tr['TrackingNumber']
+	            ));
+	            $order_subcode->save();
+	        }
+	        foreach ($tks as $fname){
+	            $filenames []=$dir.DS.$fname.'.pdf';
+	        }
+	        $watermarkpath=array('chapter1'=>_INDEX_DIR_.'/public/img/chapter1.gif','chapter2'=>_INDEX_DIR_.'/public/img/chapter2.gif');
+	        if($account->account=='73X574' || $account->account=='5315WW' || $account->account=='0032F1' || $account->account=='79YE39' || $account->account=='5119E4'){
+	            $watermarkpath=array();
+	        }
+	        @Helper_PDF::merge($filenames,$dir.DS.$tks[0].'.pdf','file',$watermarkpath);
+	        //将tracking_number存入order中
+	        $order->tracking_no=$tks[0];
+	        $order->save();
+	        $jsonFile=$dir.DS.$tks[0].'.json';
+	        // ups copy
+            $poc_line1='SDT(F/D)';
+            if ($account->tp_account){
+                $tp_country=($account->tp_countrycode=='KR')?'KOREA,SOUTH':$account->tp_countrycode;
+                $poc_line2="Bill Transportation to Third Party\r\nBill Transportation Charges To:{$account->tp_account}\r\nCompany Name:{$account->tp_cname}\r\nCountry/Territory:{$tp_country}\r\n";
+                $poc_line2_cn="第三方支付运输费用\r\n运输费用付款人：{$account->tp_account}\r\n公司名称：{$account->tp_cname}\r\n国家/地区：{$tp_country}\r\n";
+            }else {
+                $poc_line2='Bill Transportation to Shipper '.$account->account."\r\n";
+                $poc_line2_cn="发件人支付运输费用".$account->account."\r\n";
+            }
+            $poc_line3='Bill Duty and Tax to Receiver';
+            $poc_line3_cn="收件人支付关税和税款";
+            if($account->account=='4FV328'){
+                $specialInstruction='';
+                $weight_table='';
+            }else{
+                if($order->packing_type=='BOX'){
+                    $specialInstruction='';
+                    //判断包裹数量
+                    if($far_package_count['sum_quantity']<=5){
+                        $weight_table='';
+                        $far_packages=Faroutpackage::find('order_id=?',$order->order_id)->getAll();
+                        foreach ($far_packages as $value){
+                            $weight_table.=$value->length_out.'*'.$value->width_out.'*'.$value->height_out.'*'.$value->quantity_out.'\r\n';
+                        }
+                    }else{
+                        $weight_table='详见重量对比表';
+                    }
+                }else{
+                    $specialInstruction='PAK';
+                    $weight_table='';
+                }
+            }
+            //判断是否是高价
+            $hv='';
+            if($order->declaration_type=='DL' || $order->total_amount > 700 || $order->weight_actual_in > 70){
+                $hv='HV';
+            }
+            //判断电子章
+            if($account->account!='73X574' && $account->account!='5315WW' && $account->account!='0032F1' && $account->account!='5119E4' && $account->account!='79YE39'){
+                $chapter1='http://'.$_SERVER["HTTP_HOST"].'/public/img/chapter1.gif';
+                $chapter2='http://'.$_SERVER["HTTP_HOST"].'/public/img/chapter2.gif';
+            }else{
+                $chapter1='';
+                $chapter2='';
+            }
+	        file_put_contents($jsonFile, json_encode(array(
+	            'invoice'=>$invoice,
+	            'shipmentid'=>self::creatShipid($tks[0]),
+	            'shipper'=>$account->toArray(),
+	            'servicecode'=>'65',
+	            'service'=>'1P',
+	            'service_name'=>'EXPRESS SAVER',
+	            'documentOnly'=>$package_code=='04' ?'[X] DOCUMENTS ONLY':'',
+	            'specialInstruction'=>$specialInstruction,
+	            'weight_table'=>$weight_table,
+	            'hv'=>$hv,
+	            'chapter1'=>$chapter1,
+	            'chapter2'=>$chapter2,
+	            'taxddp'=>'1',
+	            'itemcount'=>$far_package_count['sum_quantity'],
+	            'dfu'=>'',
+	            'weight'=>$total_weight,
+	            'total_weight'=>$total_weight,
+	            'description'=>trim($desc,';'),
+	            'aname'=>trim($order->consignee_name1),
+	            'name'=>trim($order->consignee_name2)?trim($order->consignee_name2):trim($order->consignee_name1),
+	            'email'=>$order->consignee_email,
+	            'phone'=>$order->consignee_mobile,
+	            'countrycode'=>$order->consignee_country_code,
+	            'countryname'=>Country::find('code_word_two=?',$order->consignee_country_code)->getOne()->english_name,
+	            'state'=>$state,
+	            'city'=>$order->consignee_city,
+	            'postcode'=>$order->consignee_postal_code,
+	            'ref1'=>$ref1,
+	            'ref2'=>$ref2,
+	            'address'=>$order->consignee_street1.' '.$order->consignee_street2.$vat,
+	            'freight'=>'0',
+	            'tks'=>$tks[0],
+	            'ali_order_no'=>$order->ali_order_no,
+	            'subcode1'=>$subcode1,
+	            'subcode2'=>$subcode2,
+	            'poc_line1'=>'[X] '.$poc_line1,
+	            'poc_line2'=>'[X] '.$poc_line2.'[X] '.$poc_line3,
+	            'poc_line3'=>'',
+	            'poc_line2_cn'=>'[X] '.$poc_line2_cn.'[X] '.$poc_line3_cn,
+	            'shipmentCharge'=>$r['ShipmentResponse']['ShipmentResults']['ShipmentCharges'],
+	        )));
+	        $view['errormessage']='';
+	        $view['account']='UPS';
+	    }else {
+	        $view['errormessage']=isset($r['Fault']['detail']['Errors']['ErrorDetail']['PrimaryErrorCode']['Description'])?$r['Fault']['detail']['Errors']['ErrorDetail']['PrimaryErrorCode']['Description']:$r;
+	    }
+	    return $view;
+	}
+	
+	/*
+	 *  @todo 分拆地址1、2、3，现在只有分拆1、2
+	 *  增加电子邮件
+	 */
+	
+	static function splitAddress($addr){
+	    $addr=str_replace(" ",' ',$addr);
+	    $arr=explode(" ",$addr);
+	    $ret=array();
+	    $line='';
+	    foreach ($arr as $word){
+	        if (strlen($line.' '.$word)< 34){
+	            $line.=' '.$word;
+	        }else {
+	            $ret[]=trim($line);
+	            $line=$word;
+	        }
+	    }
+	    if ($line){
+	        $ret[]=$line;
+	    }
+	    return $ret;
+	}
+	/**
+	 * 导出高价数据时生成shipid
+	 */
+	static function creatShipid($waybillcode){
+	    $waybillcode=trim($waybillcode);
+	    if(strlen($waybillcode)<17){
+	        return $waybillcode;
+	    }
+	    $acc=substr($waybillcode,2,6);
+	    $num=substr($waybillcode,10,7);
+	    $num26=strtoupper(base_convert((int)$num, 10, 26));
+	    $dict1=array(
+	        "0"=>"0","1"=>"1","2"=>"2","3"=>"3","4"=>"4","5"=>"5","6"=>"6","7"=>"7","8"=>"8","9"=>"9","A"=>"10","B"=>"11","C"=>"12","D"=>"13","E"=>"14","F"=>"15","G"=>"16","H"=>"17","I"=>"18","J"=>"19","K"=>"20","L"=>"21","M"=>"22","N"=>"23","O"=>"24","P"=>"25"
+	    );
+	    $dict2=array("3","4","7","8","9","B","C","D","F","G","H","J","K","L","M","N","P","Q","R","S","T","V","W","X","Y","Z");
+	    $r='';
+	    if(strlen($num26)<5){
+	        for($k=0;$k<5-strlen($num26);$k++){
+	            $r.='3';
+	        }
+	    }
+	    $re=null;
+	    for ($i=0;$i<strlen($num26);$i++){
+	        $re[]=substr($num26,$i,1);
+	        	
+	    }
+	    for ($j=0;$j<count($re);$j++){
+	        if(isset($num26[$j])){
+	            $r.=$dict2[$dict1[$num26[$j]]];
+	        }
+	    }
+	    return $acc.$r;
+	}
+	/**
+	 * 获取物流单号
+	 */
+	function actionGettrackingno(){
+	    $order=Order::find('ali_order_no=?',request('ali_order_no'))->getOne();
+	    $channel=Channel::find('channel_id=?',$order->channel_id)->getOne();
+	    //获取sub_code个数
+	    $sub_code=Subcode::find('order_id=?',$order->order_id)->getAll();
+	    $data=array(
+	        'tracking_no'=>$order->tracking_no,
+	        'country'=>$order->consignee_country_code,
+	        'sub_code_count'=>count($sub_code),
+	        'network_code'=>$channel->network_code
+	    );
+	    echo json_encode($data);
+	    exit();
+	}
+	
+	/**
+	 * 单票核查
+	 */
+	function actionconfirmone(){
+		if(request("ali_order_no")){
+			$data=array();
+			$order=Order::find("ali_order_no=?",request("ali_order_no"))->getOne();
+			if($order->isNewRecord()){
+				$data['message']='notexists';
+			}else{
+				if($order->department_id!=MyApp::currentUser('department_id')){
+					$data['message']='notsamewarehouse';
+				}elseif($order->order_status=='10'){
+					//已核查
+					$data['message']='confirmed';
+				}elseif ($order->order_status=='12'){
+					//已扣件
+					$data['message']='issued';
+				}else if ($order->order_status=='5'){
+				    $data['success_message']='';
+				    if($order->service_code=='EMS-FY'){
+				        //ems
+				        $country=Country::find("code_word_two=?",$order->consignee_country_code)->getOne();
+				        $data['ems_message']='ems';
+				        $data['country']=$country->chinese_name;
+				        $data['amount']=$order->total_amount;
+				    }
+				    if($order->total_amount > 700 || $order->weight_actual_in > 70){
+				        //强制报关件
+				        $data['success_message']='mandatory_declaration';
+				    }
+				    if ($order->declaration_type=='DL'){
+				        //报关件
+				        $data['success_message']='declaration';
+				    }
+				    $info=array();
+				    $flag=false;
+					foreach ($order->product as $product){
+						if($order->consignee_country_code=='US'){
+							if(strlen($product->product_name_far)){
+								if(strstr($product->product_name_far, '眼镜') || strstr($product->product_name_far, '太阳镜')){
+									$flag=true;
+								}
+							}else{
+								if (strstr($product->product_name, '眼镜') || strstr($product->product_name, '太阳镜')){
+									$flag=true;
+								}
+							}
+						}
+						$info[]=array(
+							"product_name"=>$product->product_name_far?$product->product_name_far:$product->product_name,
+							"product_name_en"=>$product->product_name_en_far?$product->product_name_en_far:$product->product_name_en,
+							"product_quantity"=>$product->product_quantity,
+							"declaration_price"=>$product->declaration_price
+						);
+					}
+					if($flag){
+					    //核查FDA证书
+					    $data['success_message']='checkfda';
+					}
+					if($order->consignee_country_code=='BR'){
+					    //检查税号
+					    $data['success_message']='taxno';
+					}
+					$data['message']='success';
+					$data['product']=$info;
+					$data['destination']=$order->consignee_country_code;
+				}else{
+				    $data['message']='error';
+				}
+			}
+			echo json_encode($data);
+			exit();
+		}
+	}
+	/**
+	 * 核查成功
+	 */
+	function actionSaveconfirmone(){
+	    $order=Order::find("ali_order_no=? and order_status =?",request("ali_order_no"),Order::STATUS_IN)->getOne();
+	    if ($order->isNewRecord()){
+	    		exit();
+	    }
+	   	$event_location = '';
+		$department = Department::find ( 'department_id=?', MyApp::currentUser ( 'department_id' ) )->getOne ();
+		if ($department->department_name == '杭州仓') {
+			$event_location = '杭州';
+		} elseif ($department->department_name == '义乌仓') {
+			$event_location = '义乌';
+		} elseif ($department->department_name == '上海仓') {
+			$event_location = '上海';
+		}elseif ($department->department_name == '广州仓') {
+			$event_location = '广州';
+		}
+		$in=Event::find('order_id= ? and event_code="WAREHOUSE_INBOUND"',$order->order_id)->getOne();
+		if($in->isNewRecord()){
+			$event_time = time ();
+			$warehouse_in_time=$event_time- rand(5, 7)*60+rand(1, 59);
+			$this->eventSave ( $order->order_id, 'WAREHOUSE_INBOUND', $warehouse_in_time, $event_location );
+			$this->eventSave ( $order->order_id, 'CHECK_WEIGHT', $event_time- rand(2, 3)*60+rand(1, 59), $event_location );
+			$this->eventSave ( $order->order_id, 'CONFIRM', $event_time, $event_location );
+			//已查验
+			$order->order_status='10';
+			//出库时间
+			$order->warehouse_in_time =$warehouse_in_time;
+			//核查时间
+			$order->warehouse_confirm_time =$event_time;
+			$order->save();
+		}
+	    exit();
+	}
+	/**
+	 * 扣件
+	 */
+	function actionSavehold(){
+	    $order=Order::find("ali_order_no=?",request("ali_order_no"))->getOne();
+	    $order->order_status='12';
+	    $order->order_status_copy='5';
+	    $order->save();
+	    //存入一条问题件记录
+	    $now='ISSUE'.date('Ym');
+	    $seq = Helper_Seq::nextVal ( $now );
+	    if ($seq < 1) {
+	        Helper_Seq::addSeq ( $now );
+	        $seq = 1;
+	    }
+	    $seq=str_pad($seq,4,"0",STR_PAD_LEFT);
+	    $abnormal_parcel_no=date('Ym').$seq;
+	    $abnormal= new Abnormalparcel();
+	    $abnormal->changeProps(array(
+	        'ali_order_no'=>request('ali_order_no'),
+	        'abnormal_parcel_no'=>$abnormal_parcel_no,
+	        'abnormal_parcel_operator'=>MyApp::currentUser('staff_name'),
+	        'issue_type'=>'2',
+	        'issue_content'=>request('reason')
+	    ));
+	    $abnormal->save();
+	    //存入最新跟进
+	    $abnormal_history= new Abnormalparcelhistory();
+	    $abnormal_history->changeProps(array(
+	        'abnormal_parcel_id'=>$abnormal->abnormal_parcel_id,
+	        'follow_up_content'=>request('reason'),
+	        'follow_up_operator'=>MyApp::currentUser('staff_name')
+	    ));
+	    $abnormal_history->save();
+	    exit();
+	}
+	/**
+	 * 重量对比表
+	 */
+	function actionWeighttable(){
+	    $order=Order::find('ali_order_no = ?',request('ali_order_no'))->getOne();
+	    $sub_codes=Subcode::find("order_id=? and sub_code!= ?",$order->order_id,$order->tracking_no)->getAll();
+	    $first_sub_code=Subcode::find("order_id=? and sub_code= ?",$order->order_id,$order->tracking_no)->getOne();
+	    $data=array();
+	    $first_volume_weight=$first_sub_code['length']*$first_sub_code['width']*$first_sub_code['height']/5000;
+	    $first_width=$first_sub_code['width']<=0?'      ':$first_sub_code['width'];
+	    $data[1]=array(
+	        'barcode_url'=>'http://wms.checkout2cn.com/link/barcode/html/image.php?filetype=PNG&dpi=90&scale=1&rotation=0&font_family=0&font_size=8&thickness=55&start=A&code=BCGcode128&text='.$order->tracking_no,
+	        'tracking_no'=>$order->tracking_no,
+	        'actual_weight'=>$first_sub_code['weight'],
+	        'size'=>$first_sub_code['length'].' X '.$first_width.' X '.$first_sub_code['height'],
+	        'volume_weight'=>$first_volume_weight<=0?'':$first_volume_weight,
+	        'max_weight'=>($first_volume_weight>$first_sub_code['weight'])?$first_volume_weight:$first_sub_code['weight'],
+	    );
+	    $page=request('page');
+	    $key='2';
+	    for ($j=($page-1)*14;$j<$page*14;$j++){
+	        if(isset($sub_codes[$j])){
+	            $volume_weight=$sub_codes[$j]['length']*$sub_codes[$j]['width']*$sub_codes[$j]['height']/5000;
+	            $width=$sub_codes[$j]['width']<=0?'      ':$sub_codes[$j]['width'];
+	            $data[$key]=array(
+	                'barcode_url'=>'http://wms.checkout2cn.com/link/barcode/html/image.php?filetype=PNG&dpi=90&scale=1&rotation=0&font_family=0&font_size=8&thickness=55&start=A&code=BCGcode128&text='.$sub_codes[$j]['sub_code'],
+	                'tracking_no'=>$sub_codes[$j]['sub_code'],
+	                'actual_weight'=>$sub_codes[$j]['weight'],
+	                'size'=>$sub_codes[$j]['length'].' X '.$width.' X '.$sub_codes[$j]['height'],
+	                'volume_weight'=>$volume_weight<=0?'':$first_volume_weight,
+	                'max_weight'=>($volume_weight>$sub_codes[$j]['weight'])?$volume_weight:$sub_codes[$j]['weight'],
+	            );
+	        }else{
+	            $data[$key]=array(
+	                'barcode_url'=>'',
+	                'tracking_no'=>'',
+	                'actual_weight'=>'',
+	                'size'=>'',
+	                'volume_weight'=>'',
+	                'max_weight'=>'',
+	            );
+	        }
+	        $key++;
+	    }
+	    echo json_encode($data);die();
+	}
+	/**
+	 * 打印重量对比表
+	 */
+	function actionprintweighttable(){
+	    if(request_is_post()){
+	        $data=array();
+	        $order=Order::find('ali_order_no=?',request('order_no'))->getOne();
+	        if($order->isNewRecord()){
+	            //查询子单信息
+	            $subcode=Subcode::find('sub_code=?',request('order_no'))->getOne();
+	            if($subcode->isNewRecord()){
+	                $data['message']='notexist';
+	                $data['sub_code_count']='';
+	                $data['ali_order_no']='';
+	            }else{
+	                $order=Order::find('order_id=?',$subcode->order_id)->getOne();
+	                $data['message']='';
+	                $data['sub_code_count']=Subcode::find('order_id=?',$order->order_id)->getAll()->count();
+	                $data['ali_order_no']=$order->ali_order_no;
+	            }
+	        }else{
+                $data['message']='';
+                $data['sub_code_count']=Subcode::find('order_id=?',$order->order_id)->getAll()->count();
+                $data['ali_order_no']=$order->ali_order_no;
+	        }
+	        echo json_encode($data);
+	        exit();
+	    }
+	}
+	/**
+	 * 托盘列表
+	 */
+	function actionPalletlist(){
+	    $palletlist=Pallet::find();
+	    //日期
+	    if(request("start_date")){
+	        $palletlist->where("create_time >=?",strtotime(request("start_date").' 00:00:00'));
+	    }
+	    if (request("end_date")){
+	        $palletlist->where("create_time <=?",strtotime(request("end_date").' 23:59:59'));
+	    }
+	    //阿里单号
+	    if(request('pallet_no')){
+	        $palletlist->where('pallet_no=?',request('pallet_no'));
+	    }
+	    if(request('action')=='new_pallet'){
+	        //生成托盘号
+	        $now='PALLET'.date('Ymd');
+	        $seq = Helper_Seq::nextVal ( $now );
+	        if ($seq < 1) {
+	            Helper_Seq::addSeq ( $now );
+	            $seq = 1;
+	        }
+	        $seq=str_pad($seq,4,"0",STR_PAD_LEFT);
+	        $pallet_no='T'.date('ymd').$seq;
+	        //托盘表生成新纪录
+	        $pallet=new Pallet(array(
+	            'pallet_no'=>$pallet_no,
+	            'channel_name'=>request('channel_name'),
+	            'operator'=>MyApp::currentUser('staff_name')
+	        ));
+	        $pallet->save();
+	        return $this->_redirect(url('/Palletlist'));
+	    }
+	    $pagination = null;
+	    $palletlist=$palletlist->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), 30 )
+	    ->fetchPagination ( $pagination )
+	    ->order('pallet_id desc')->getAll();
+	    $this->_view['palletlist']=$palletlist;
+	    $this->_view['pagination']=$pagination;
+	}
+	/**
+	 * 出库打托
+	 */
+	function actionPallet(){
+	    $pallet=Pallet::find('pallet_id=?',request('pallet_id'))->getOne();
+	    $this->_view['pallet']=$pallet;
+	}
+	/**
+	 * 判断运单号数量以及与上一个单号是否属于同一个订单
+	 */
+	function actiongetpackagecount(){
+	    $subcode=Subcode::find('sub_code=?',request('tracking_code'))->getOne();
+	    $data=array();
+	    if($subcode->isNewRecord()){
+	        $data['status']='error';
+	        $data['count']='';
+	        $data['message']='notexits';
+	        $data['same']='false';
+	    }else if($subcode->pallet_no){
+	        $data['status']='error';
+	        $data['count']='';
+	        $data['message']='scanned';
+	        $data['same']='false';
+	    }else{
+	        //获取打单账号
+	        $channel_group=order::channelgroup();
+	        $order=Order::find('order_id=?',$subcode->order_id)->getOne();
+	        $pallet=Pallet::find('pallet_no=?',request('pallet_no'))->getOne();
+	        if(!in_array($order->channel_id, $channel_group[$pallet->channel_name])){
+	            $data['status']='error';
+	            $data['count']='';
+	            $data['message']='channel_wrong';
+	            $data['same']='false';
+	        }else{
+	            //根据order_id判断订单是否是一票多件
+	            $subcode_all=Subcode::find('order_id=?',$subcode->order_id)->getAll();
+	            if(count($subcode_all)>1){//一票多件
+	                $data['status']='success';
+	                $data['count']=count($subcode_all);
+	                //判断与上一个运单是否属于一个订单
+	                $last_tracking_code=Subcode::find('sub_code=?',request('last_tracking_code'))->getOne();
+	                if($last_tracking_code->order_id==$subcode->order_id){//同一订单
+	                    $data['message']='录入结果：成功';
+	                    $data['same']='true';
+	                    //判断是否勾选锁定选项
+	                    if(request('status')=='checked'){
+	                        //写入上一个单号长宽高
+	                        $subcode->weight=$last_tracking_code->weight;
+	                        $subcode->length=$last_tracking_code->length;
+	                        $subcode->width=$last_tracking_code->width;
+	                        $subcode->height=$last_tracking_code->height;
+	                        $subcode->save();
+	                    }
+	                }else{//不同订单
+	                    $data['message']='';
+	                    $data['same']='false';
+	                }
+	            }else{
+	                $data['status']='success';
+	                $data['count']='1';
+	                $data['message']='';
+	                $data['same']='false';
+	            }
+	        }
+	    }
+	    echo json_encode($data);
+	    exit();
+	}
+	/**
+	 * 保存托盘号和包裹长宽高
+	 */
+	function actionsavepackageinfo(){
+	    $subcode=Subcode::find('sub_code=?',request('tracking_code'))->getOne();
+        $subcode->weight=request('weight');
+        $subcode->length=request('length');
+        $subcode->width=request('width');
+        $subcode->height=request('height');
+        $subcode->save();
+        $data['status']='success';
+        $data['message']='';
+	    echo json_encode($data);
+	    exit();
+	}
+	/**
+	 * 保存托盘号
+	 */
+	function actionsavepalletno(){
+	    $pallet_nos=explode(';', trim(request('tracking_codes'),";"));
+	    //清除子单中原有托盘数据
+	    $old_subcodes=Subcode::find('pallet_no=?',request('pallet_no'))->getAll();
+	    foreach ($old_subcodes as $old_subcode){
+	        $old_subcode->pallet_no='';
+	        $old_subcode->save();
+	    }
+	    //写入新数据
+	    foreach ($pallet_nos as $temp){
+	        $subcode=Subcode::find('sub_code=?',$temp)->getOne();
+	        $subcode->pallet_no=request('pallet_no');
+	        $subcode->save();
+	    }
+	    exit();
+	}
+	/**
+	 * 打印托盘标签
+	 */
+	function actionprintpallet(){
+	    $data=array();
+	    $subcodes=Subcode::find('pallet_no=?',request('pallet_no'))->getAll();
+	    $pallet=Pallet::find('pallet_no=?',request('pallet_no'))->getOne();
+	    $data['pallet_no']=request('pallet_no');
+	    $data['quantity']=count($subcodes);
+	    $data['channel_name']=$pallet->channel_name;
+	    echo json_encode($data);
+	    die();
+	}
+	/**
+	 * PE和VG国家invoice
+	 */
+	function actionPeinvoice(){
+	    $order=Order::find('tracking_no=?',request('tracking_no'))->getOne();
+	    $channel=Channel::find('channel_id=?',$order->channel_id)->getOne();
+	    $warhouse_info=array();
+	    if($channel->network_code !='UPS' || !$order->account ){
+	    	//杭州仓
+	    	if($order->department_id==6){
+	    		$warhouse_info['name']="Far's warehouse in Hangzhou";
+	    		$warhouse_info['address']='1st Floor, No.43 Ganchang Road, Xiacheng District';
+	    		$warhouse_info['city']='Hangzhou';
+	    		$warhouse_info['state']='Zhejiang';
+	    		$warhouse_info['postcode']='310022';
+	    		$warhouse_info['phone']='0571-87834076';
+	    		//上海仓
+	    	}elseif ($order->department_id==7){
+	    		$warhouse_info['name']="Far's warehouse in Shanghai";
+	    		$warhouse_info['address']='No. 12, Jinshun Road, Zhuqiao Town, Pudong New Area';
+	    		$warhouse_info['city']='Shanghai';
+	    		$warhouse_info['state']='Shanghai';
+	    		$warhouse_info['postcode']='201323';
+	    		$warhouse_info['phone']='021-58590952';
+	    		//义乌仓
+	    	}elseif ($order->department_id==8){
+	    		$warhouse_info['name']="Far's warehouse in Yiwu";
+	    		$warhouse_info['address']='No.675-2 Airport Road';
+	    		$warhouse_info['city']='Yiwu';
+	    		$warhouse_info['state']='Zhejiang';
+	    		$warhouse_info['postcode']='322000';
+	    		$warhouse_info['phone']='0579-85119351';
+	    		//广州仓
+	    	}elseif ($order->department_id==22){
+	    		$warhouse_info['name']="Far's warehouse in Guangzhou";
+	    		$warhouse_info['address']='No.7-10, Heming Business Building, Baiyun Third Line, Helong Street, Baiyun District';
+	    		$warhouse_info['city']='Guangzhou';
+	    		$warhouse_info['state']='Guangdong';
+	    		$warhouse_info['postcode']='510440';
+	    		$warhouse_info['phone']='020-36301839';
+	    	}else{
+	    		$warhouse_info['name']="";
+	    		$warhouse_info['address']='';
+	    		$warhouse_info['city']='';
+	    		$warhouse_info['state']='';
+	    		$warhouse_info['postcode']='';
+	    		$warhouse_info['phone']='';
+	    	}
+	    }
+	    $account=UPSAccount::find('account=?',$order->account)->getOne();
+	    $invoice=array();
+	    $total_value=0;
+	    $order_product=Orderproduct::find('order_id=?',$order->order_id)->getOne();
+	    foreach ($order->product as $v){
+	        $invoice['items'][]=array(
+	            'desc'=>$v->product_name_en_far.' HS Code:'.$v->hs_code_far.' '.$v->material_use,
+	            'quantity'=>$v->product_quantity,
+	            'price'=>$v->declaration_price,
+	            'itotal'=>round($v->product_quantity*$v->declaration_price,2),
+	        );
+	        $total_value+=round($v->product_quantity*$v->declaration_price,2);
+	    }
+	    $data=array(
+	        'sender'=>$channel->network_code !='UPS'?$warhouse_info:$account->toArray(),
+	        'consignee_name'=>$order->consignee_name1,
+	        'consignee_company'=>$order->consignee_name2?$order->consignee_name2:$order->consignee_name1,
+	        'consignee_phone'=>$order->consignee_mobile,
+	        'consignee_city'=>$order->consignee_city,
+	        'consignee_country_code'=>$order->consignee_country_code,
+	        'consignee_country_name'=>Country::find('code_word_two=?',$order->consignee_country_code)->getOne()->english_name,
+	        'consignee_state'=>$order->consignee_state_region_code,
+	        'consignee_postal_code'=>$order->consignee_postal_code,
+	        'consignee_address'=>$order->consignee_street1.' '.$order->consignee_street2,
+	        'tax'=>$order->tax_payer_id,
+	        'invoice'=>$invoice,
+	        'total_value'=>$total_value,
+	        'tracking_no'=>$order->tracking_no
+	    );
+	    echo json_encode($data);
+	    exit();
+	}
+	
+	/**
+	 * 保存3个出库事件
+	 */
+	function saveoutevents($order){
+		//将订单状态改为已出库
+		$order->order_status='6';
+	    //判断三个出库事件
+		$events_out=Event::find('order_id=? and event_code in ("PALLETIZE","WAREHOUSE_OUTBOUND","CARRIER_PICKUP")',$order->order_id)->getAll();
+		if(!count($events_out)){
+			//存入3个事件
+			$department=Department::find('department_id=?',MyApp::currentUser('department_id'))->getOne();
+			if($department->department_name=='杭州仓'){
+				$location='杭州';
+			}elseif ($department->department_name=='义乌仓'){
+				$location='义乌';
+			}elseif ($department->department_name=='上海仓'){
+				$location='上海';
+			}elseif ($department->department_name=='广州仓'){
+				$location='广州';
+			}
+			$checkout_time=time();
+			if($location=='义乌'){
+			    $arr=array('US','CA','MX','PR');
+			    $date=date("H:i:s",$checkout_time);
+			    if(in_array($order->consignee_country_code, $arr) && '09:00:00'<=$date && $date<='12:00:00' && $order->channel->channelgroup->channel_group_name=='义乌OGP'){
+			        $checkout_time=$checkout_time-12*60*60;
+		        }
+			}
+			$palletize_event= new Event();
+			$palletize_event->changeProps(array(
+				'order_id'=>$order->order_id,
+				'event_code'=>'PALLETIZE',
+				'event_time'=>$checkout_time- rand(45, 55)*60+rand(1, 59),
+				'event_location'=>$location,
+				'timezone'=>'8',
+				'confirm_flag'=>'1',
+				'operator'=>MyApp::currentUser('staff_name')
+			));
+			$palletize_event->save();
+			//出库事件
+			$outbound_event= new Event();
+			$outbound_event->changeProps(array(
+				'order_id'=>$order->order_id,
+				'event_code'=>'WAREHOUSE_OUTBOUND',
+				'event_time'=>$checkout_time,
+				'event_location'=>$location,
+				'timezone'=>'8',
+				'confirm_flag'=>'1',
+				'operator'=>MyApp::currentUser('staff_name')
+			));
+			$outbound_event->save();
+			//承运商取件事件
+			$Hour=date("H",$checkout_time);
+			$carrier_time='';
+			if($Hour<22){
+				$carrier_time=$checkout_time+(30+rand(1, 7))*60+4*(rand(1, 7)+2);
+			}else{
+				$carrier_time=$checkout_time+24*60*60+(30+rand(1, 7))*60+4*(rand(1, 7)+2);
+			}
+			//EMS-FY:去掉承运商已取件事件，添加：S_TH_OUT轨迹
+			if($order->service_code!='EMS-FY'){
+				$pickup_event= new Event();
+				$pickup_event->changeProps(array(
+					'order_id'=>$order->order_id,
+					'event_code'=>'CARRIER_PICKUP',
+					'event_time'=>$carrier_time,
+					'location'=>$location,
+					'event_location'=>$location,
+					'timezone'=>'8',
+					'confirm_flag'=>'1'
+				));
+				$pickup_event->save();
+				//承运商取件时间
+				$order->carrier_pick_time=$carrier_time;
+			}else{
+				$quantity=Farpackage::find('order_id=?',$order->order_id)->sum('quantity','sum_quantity')->getAll();
+				$trace=new Tracking();
+				$trace->changeProps(array(
+					'order_id'=>$order->order_id,
+					'far_no'=>$order->far_no,
+					'tracking_code'=>'S_TH_OUT',
+					'location'=>$location,
+					'trace_desc_en'=>'In Transit to Export Port',
+					'trace_desc_cn'=>'货物中转清关口岸',
+					'timezone'=>8,
+					'confirm_flag'=>'1',
+					'quantity'=>$quantity['sum_quantity'],
+					'trace_time'=>strtotime(date("Y-m-d",$checkout_time))+19*60*60+rand(0, 30)*60+rand(0, 30)//出库当天的 19：X分Y秒（X，Y在0-30之间随机）
+				));
+				$trace->save();
+			}
+			//出库时间
+			$order->warehouse_out_time=$checkout_time;
+		}
+		$order->save();
+	}
+	/**
+	 * 文件上传
+	 */
+	function actionUpload(){
+        if (file_get_contents('php://input')) {
+            //创建文件路径
+            $filepath = Q::ini ( "upload_tmp_dir" ) . "/".request('name');
+            file_put_contents($filepath, file_get_contents('php://input'));
+        }
+	    exit();
+	}
+	/**
+	 * 交货数据导出
+	 */
+	function actionComparisonexport(){
+	    require_once _INDEX_DIR_ .'/_library/phpexcel/PHPExcel/Shared/PCLZip/pclzip.lib.php';
+	    $channel_group = Order::channelgroup();
+	    $first_key='';
+	    foreach ($channel_group as $key=>$value){
+	        $first_key=$key;
+	        break;
+	    }
+	    $channel_group=$channel_group[request ( 'channel_group',$first_key)];
+	    //发件日
+	    $record_order_date=request('record_order_date',date('Y-m-d',time()));
+	    $order_list=Order::find("order_status = '7'")
+	    ->where ( 'channel_id in (?) and record_order_date>=? and record_order_date<=? and sort=?', $channel_group ,strtotime($record_order_date.' 00:00:00'),strtotime($record_order_date.' 23:59:59'),request('sort','D3'))
+	    ->getAll();
+	    if(request('export')=='exportlist'){
+	    	set_time_limit(0);
+	        if(count($order_list)){
+	            $i=1;
+	            $tracking_nos=array();
+	            $no_list=array();
+	            foreach ($order_list as $v){
+	                $no_list[]=$v->tracking_no;
+	                if(floor($i/10)==($i/10)){
+	                    $tracking_nos[]=$no_list;
+	                    $no_list=array();
+	                }
+	                $i++;
+	            }
+	            if(count($no_list)){
+	                $tracking_nos[]=$no_list;
+	            }
+	            //合并invoice 和 copy
+	            $dir=Q::ini('upload_tmp_dir');
+	            foreach ($tracking_nos as $tracking_no){
+	                $filenames=array();
+	                foreach ($tracking_no as $v){
+	                    $filenames[]=$dir.DS.$v.'_invoice.pdf';
+	                    $filenames[]=$dir.DS.$v.'_copy_1.pdf';
+	                    if(file_exists($dir.DS.$v.'_copy_2.pdf')){
+	                        $filenames[]=$dir.DS.$v.'_copy_2.pdf';
+	                    }
+	                }
+	                Helper_PDF::merge($filenames,$dir.DS.$tracking_no[0].'_all.pdf','file');
+	                $target=$dir.DS.$tracking_no[0].'_all.pdf';
+	                //将pdf转为jpg格式
+	                exec("/usr/bin/convert -density 300 -depth 8 -quality 85 {$target} -append {$target}.tiff");
+	                $zip_file_names[]=$target.'.tiff';
+	            }
+	            //压缩文件
+	            $zip = new PclZip($zip_file_names[0].'.zip');
+	            $rs = $zip->create(implode(',', $zip_file_names), PCLZIP_OPT_REMOVE_PATH, $dir);
+	            if ($rs == 0) {
+	                return $this->_redirectMessage('导出tiff压缩包', "Error : " . $zip->errorInfo(true), url('/Comparisonexport'));
+	            }
+	            header('Content-Type:text/html;charset=utf-8');
+	            header('Content-disposition:attachment;filename='.request ( 'channel_group',$first_key).'_'.request('record_order_date',date('Y-m-d',time())).'_'.request('sort','D3').'.zip');
+	            $filesize = filesize($zip_file_names[0].'.zip');
+	            header('Content-length:'.$filesize);
+	            readfile($zip_file_names[0].'.zip');
+	        }else{
+	            return $this->_redirectMessage('导出tiff压缩包', '失败，数据为空', url('/Comparisonexport'));
+	        }
+	    }
+	    $this->_view['orders']=$order_list;
+	}
+	/**
+	 * 生成泛远面单
+	 */
+	function actionFarbillpdf(){
+    $order=Order::find('order_id=?',request('order_id'))->getOne();
+    $warhouse_info=array();
+    	//杭州仓
+    	if($order->department_id==6){
+    		$warhouse_info['name']="Far's warehouse in Hangzhou";
+    		$warhouse_info['address']='1st Floor, No.43 Ganchang Road, Xiacheng District, Hangzhou, Zhejiang, China  310022';
+    		$warhouse_info['contact']='Miss.Zhang';
+    		$warhouse_info['phone']='0571-87834076';
+    	//上海仓
+    	}elseif ($order->department_id==7){
+    		$warhouse_info['name']="Far's warehouse in Shanghai";
+    		$warhouse_info['address']='No. 12, Jinshun Road, Zhuqiao Town, Pudong New Area, Shanghai,China 201323';
+    		$warhouse_info['contact']='Mr.Gu';
+    		$warhouse_info['phone']='021-58590952';
+    	//义乌仓
+    	}elseif ($order->department_id==8){
+    		$warhouse_info['name']="Far's warehouse in Yiwu";
+    		$warhouse_info['address']='No.675-2 Airport Road, Yiwu City, Zhejiang Province,China 322000';
+    		$warhouse_info['contact']='Mr.Yang';
+    		$warhouse_info['phone']='0579-85119351';
+    		//广州仓
+    	}elseif ($order->department_id==22){
+    		$warhouse_info['name']="Far's warehouse in Guangzhou";
+    		$warhouse_info['address']='No.7-10, Heming Business Building, Baiyun Third Line, Helong Street, Baiyun District, Guangzhou City, Guangdong Province,China 510440';
+    		$warhouse_info['contact']='Miss.Li';
+    		$warhouse_info['phone']='020-36301839';
+    	}else{
+    		$warhouse_info['name']="";
+    		$warhouse_info['address']='';
+    		$warhouse_info['contact']='';
+    		$warhouse_info['phone']='';
+    	}
+    $invoice=array(); //产品清单
+    $total_value=0;
+    $i=1; 
+    foreach ($order->product as $v){
+    	if($i>=4){
+    		break;
+    	}
+        $invoice['items'][]=array( 
+        	'row'=>$v->product_name.' '.$v->product_name_en_far.' '.$v->hs_code_far,
+            'quantity'=>$v->product_quantity,
+            'price'=>$v->declaration_price,
+            'itotal'=>round($v->product_quantity*$v->declaration_price,2),
+        );
+        $i++;
+    }
+    $package_count=Farpackage::find('order_id=?',request('order_id'))->sum('quantity','sum_quantity')->getAll();
+    $total_packages=$package_count['sum_quantity'];//包裹总数
+    $data=array(
+    	'ali_order_no'=>$order->ali_order_no,
+    	'far_no'=>$order->far_no,
+        'sender'=>$warhouse_info,
+        'consignee_company'=>$order->consignee_name2,
+        'consignee_name'=>$order->consignee_name1,
+        'consignee_address1'=>$order->consignee_street1,
+        'consignee_address2'=>$order->consignee_street2,
+        'consignee_city'=>$order->consignee_city,
+        'consignee_postal_code'=>$order->consignee_postal_code,
+        'consignee_state'=>$order->consignee_state_region_code,
+        'consignee_phone'=>$order->consignee_mobile,
+        'consignee_country_code'=>$order->consignee_country_code,
+        'consignee_country_name'=>Country::find('code_word_two=?',$order->consignee_country_code)->getOne()->english_name,
+        'invoice'=>$invoice,
+        'total_value'=>$order->total_amount,
+        'total_packages'=>$total_packages,
+        'weight_cost_out'=>$order->weight_cost_out,
+    );
+    echo json_encode($data);
+    exit();
+	}
+	/**
+	 * EMS数据
+	 */
+	function actionEms(){
+	    $pagination = null;
+	    if(request_is_post()){
+    	    $order=Order::find("service_code = 'EMS-FY' ")
+    	    ->joinLeft('tb_order_product',null,'tb_order.order_id=tb_order_product.order_id')
+    	    ->joinLeft('tb_country',null,'tb_order.consignee_country_code=tb_country.code_word_two');
+    	    //日期查询
+    	    if(request("start_date")){
+    	        $order->where("tb_order.warehouse_out_time >= ?",strtotime(request("start_date").' 00:00:00'));
+            }
+            if(request("end_date")){
+                $order->where("tb_order.warehouse_out_time <= ?",strtotime(request("end_date").' 23:59:59'));
+            }
+            //仓库
+    	    if(request('department_id')){
+                $order->where('tb_order.department_id = ?',request('department_id'));
+            }
+            $order->columns('order_id','tb_order');
+            $order->columns('customs_country_code','tb_country');
+            $order->columns('product_name,product_quantity,declaration_price,hs_code','tb_order_product');
+            $list=$order->limitPage ( request ( 'page', 1 ), 30)->asArray()
+            ->fetchPagination ( $pagination )
+            ->order('order_id desc')->getAll();
+            $this->_view['order']=$list;
+            //导出文件
+            if (request('export')=='export') {
+                //设置导出表单head
+                $sheet = array ( array('电商平台代码','电商平台名称','原始订单编号','物流企业代码','物流企业运单号','订单商品运费',
+                    '收货人所在国家代码','企业商品货号','企业商品名称','商品数量（成交数量）','计量单位(成交单位)','币制代码','商品单价','HS编码','商品名称',
+                    '商品规格类型','商品条形码','总重量（单位：千克）','错误信息','仓库'
+                ));
+                $i=1;
+                foreach ($list as $value){
+                	$product_quantity_sum=Orderproduct::find('order_id=?',$value['order_id'])->getSum('product_quantity');
+                    $check_hs=Hs::find('HSCode=?',$value['hs_code'])->getOne();
+                    if($check_hs->isNewRecord()){
+                        $msg='HS编码错误';
+                    }else{
+                        $msg='';
+                    }
+                    $warehouse='';
+                    $department=Department::find('department_id=?',$value['department_id'])->getOne();
+                    if(!$department->isNewRecord()){
+                    	$warehouse=$department->department_name;
+                    }
+                    $sheet [] = array (
+                        '3201962D61',
+                        '南京欣惠捷电子商务有限公司',
+                        $value['ali_order_no'],
+                        '320198Z006',
+                        $value['tracking_no'],
+                        '0',
+                        $value['customs_country_code'],
+                        "'".date('Ymd').sprintf("%06d",$i++),
+                        $value['product_name'],
+                        $value['product_quantity'],
+                        "'".'011',
+                        '502',
+                        sprintf('%.2f',$value['declaration_price']),
+                        $value['hs_code'],
+                        $value['product_name'],
+                        '无规格型号',
+                        '无',
+                        sprintf('%.2f',$value['weight_actual_out']*$value['product_quantity']/$product_quantity_sum),
+                        $msg,
+                    	$warehouse
+                    );
+                }
+                //日期+阿里9610 申报数据（2019.06.25 阿里9610申报数据）
+                //Helper_Excel::array2xls(数据表，导出表名)
+                Helper_Excel::array2xls ( $sheet,date('Y.m.d',time()).' 阿里9610申报数据'.'.xlsx' );
+                exit();
+    	   }
+        }
+        $this->_view['pagination']=$pagination;
+	}
+}

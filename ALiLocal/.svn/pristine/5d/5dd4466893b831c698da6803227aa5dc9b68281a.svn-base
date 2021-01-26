@@ -1,0 +1,317 @@
+<?PHP $this->_extends("_layouts/default_layout"); ?>
+<?php $this->_block('title'); ?>产品编辑<?php $this->_endblock(); ?>
+<?PHP $this->_block("contents");?>
+<?php
+
+echo Q::control ( "path", "", array (
+	"path" => array (
+		"产品管理" => "",
+		"产品列表" => url ( "product/search" ),
+		"产品编辑" => "" 
+	) 
+) )?>
+
+<form method="post">
+	<div class="tabs-container">
+    	<?php echo Q::control("tabs", "tabs_product", array ("tabs" => $tabs,"active_id" => "0"))?>
+    	<div class="tabs-panels">
+			<div style="padding: 10px;">
+				<div class="row">
+					<div class="span8">
+						<div class="FarSearch">
+							<table>
+								<tbody>
+									<tr>
+										<th class="required-title" width="100">产品名称</th>
+										<td>
+											<input id="text_product_name" type="text"
+												name="product[product_name]" style="width:180px;"
+												value="<?php echo $product->product_name?>"
+												required="required" />
+										</td>
+										<th class="required-title">网络</th>
+										<td>
+											<?php
+											echo Q::control ( "dropdownbox", "dropdown_network", array (
+												"name" => "product[network_id]",
+												"items" => Helper_Array::toHashmap ( $networks, "network_id", "network_name" ),
+												"value" => $product->network_id,
+												"required" => "required",
+												"style" => "width: 150px",
+												"empty" => "true" 
+											) )?>
+										</td>
+										<th class="required-title">计泡系数</th>
+										<td>
+										  <input type="number" name="product[ratio]" value="<?php echo $product->ratio?>"/>
+									   </td>
+									</tr>
+									<tr>
+										<td align="left" colspan='2'>
+											<a class="btn btn-samll btn-success" onclick="add()"
+												href="javascript:void(0);">
+												<i class="icon-plus"></i>
+												新增产品-价格-分区-偏派体系
+											</a>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+							<table class="FarTable" id="myTable" style="width:99%">
+								<thead>
+									<tr>
+										<th class="required-title" width=160>公开价格表</th>
+										<th class="required-title" width=150>分区表</th>
+										<th class="required-title" width=120>偏派表</th>
+										<th class="required-title" width=80>生效日期&nbsp;&gt;=</th>
+										<th class="required-title" width=80>失效日期&nbsp;&lt;=</th>
+									</tr>
+								</thead>
+								<tbody>
+								    <?php if(strlen($product->product_id)):?>
+									<?php $productpprs= Productppr::find("product_id=?",$product->product_id)->getAll()?>
+									<?php if(count($productpprs)):?>
+									<?php foreach ($productpprs as $productppr):?>
+									<tr class="productppr">
+										<td>
+											<?php
+											echo Q::control ( "dropdownbox", "dropdown_price_manage", array (
+												"items" => Helper_Array::toHashmap ( PriceManage::find ()->getAll (), "price_manage_id", "price_name" ),
+												"value" => $productppr->price_manage_id,
+												"required" => "required",
+												"style" => "width: 190px",
+												"empty" => "true" 
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "dropdownbox", "dropdown_partition_manage", array (
+												"items" => Helper_Array::toHashmap ( PartitionManage::find ()->getAll (), "partition_manage_id", "partition_name" ),
+												"value" => $productppr->partition_manage_id,
+												"required" => "required",
+												"style" => "width: 150px",
+												"empty" => "true" 
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "dropdownbox", "dropdown_remote_manage", array (
+												"items" => Helper_Array::toHashmap ( RemoteManage::find ()->getAll (), "remote_manage_id", "remote_name" ),
+												"value" => $productppr->remote_manage_id,
+												"required" => "required",
+												"style" => "width: 120px",
+												"empty" => "true" 
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "datebox", "datebox_effective_time_".$productppr->product_p_p_r_id, array (
+												"value" => Helper_Util::strDate ( "Y-m-d", $productppr->effective_time ),
+												"style" => "width: 80px",
+												"required" => "required" 
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "datebox", "datebox_invalid_time_".$productppr->product_p_p_r_id, array (
+												"value" => Helper_Util::strDate ( "Y-m-d", $productppr->invalid_time ),
+												"required" => "required" ,
+											    "style"=>($productppr->invalid_time < Helper_Util::strDate("Y-m-d",time()))?"color:red;width: 80px":"width: 80px"
+											) )?>
+										</td>
+									</tr>
+									<?php endforeach;?>
+									<?php endif;?>
+									<?php endif;?>
+									<tr class="productppr_hidden" style="display:none">
+										<td><?php
+											echo Q::control ( "dropdownbox", "dropdown_price_manage_0", array (
+												"items" => Helper_Array::toHashmap ( PriceManage::find ()->getAll (), "price_manage_id", "price_name" ),
+												"value" => '',
+												"style" => "width: 190px",
+												"empty" => "true" 
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "dropdownbox", "dropdown_partition_manage_0", array (
+												"items" => Helper_Array::toHashmap ( PartitionManage::find ()->getAll (), "partition_manage_id", "partition_name" ),
+												"value" => '',
+												"style" => "width: 150px",
+												"empty" => "true" 
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "dropdownbox", "dropdown_remote_manage_0", array (
+												"items" => Helper_Array::toHashmap ( RemoteManage::find ()->getAll (), "remote_manage_id", "remote_name" ),
+												"value" => '',
+												"style" => "width: 120px",
+												"empty" => "true" 
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "datebox", "datebox_effective_time_0", array (
+												"value" => '',
+												"style" => "width: 80px",
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "datebox", "datebox_invalid_time_0", array (
+												"value" => '',
+												"style" => "width: 80px",
+											) )?>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<div class="FarTool text-center">
+							<a class="btn btn-inverse"
+								href="<?php echo url('product/search')?>">
+								<i class="icon-reply"></i>
+								返回
+							</a>
+							<button type="submit" class="btn btn-primary"
+								onclick="return Save();">
+								<i class="icon-save"></i>
+								保存
+							</button>
+						</div>
+						<h6 style="line-height:15px;margin-left:10px;">BAF（卖价燃油）</h6>
+						<table class="FarTable" style="width:70%;">
+							<thead>
+								<tr>
+									<th>费率</th>
+									<th>生效日期</th>
+									<th>失效日期</th>
+									<th width=160>操作</th>
+								</tr>
+							</thead>
+							<tbody>
+						        <?php foreach($product->productfuel as $productfuel):?>
+							    <tr id="<?php echo $productfuel->product_fuel_id?>">
+									<td style="text-align: right;"><?php echo $productfuel->rate;?></td>
+									<td style="text-align: center;"><?php echo Helper_Util::strDate('Y-m-d',$productfuel->effective_date);?></td>
+									<td style="text-align: center;"><?php echo Helper_Util::strDate('Y-m-d',$productfuel->fail_date);?></td>
+									<td>
+										<a class="btn btn-mini" href="javascript:void(0);"
+											onclick="EditRow([{'type':'number','precision':'4','min':'0','max':'1'},{'type':'date','required':'true'},{'type':'date','required':'true'}],this);">
+											<i class="icon-pencil"></i>
+											编辑
+										</a>
+										<a class="btn btn-mini btn-danger" href="javascript:void(0);"
+											onclick="DeleteRow(this);">
+											<i class="icon-trash"></i>
+											删除
+										</a>
+									</td>
+								</tr>
+							    <?php endforeach;?>
+							    <tr>
+									<td></td>
+									<td></td>
+									<td></td>
+									<td>
+										<a class="btn btn-mini btn-success" href="javascript:void(0);"
+											onclick="NewRow([{'type':'number','precision':'4','min':'0','max':'1'},{'type':'date','required':'true'},{'type':'date','required':'true'}],this);">
+											<i class="icon-plus"></i>
+											新建
+										</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<input id="hidden_product_p_p_r" type="hidden" name="productppr" />
+</form>
+
+<script type="text/javascript">
+
+//新增产品-价格-偏派-分区表格
+function add(){
+	$(".productppr_hidden").show();
+	$(".productppr_hidden").removeClass("productppr_hidden").addClass("productppr");
+}
+	/**
+	 * 保存 
+	 */
+	function Save(){
+		var result = "";
+		$.ajax({
+			url:"<?php echo url('common/checkproduct')?>",
+			type:"POST",
+			data:{"old_name":"<?php echo $product->product_name?>"
+				 ,"value_name":$("#text_product_name").val()},
+			async : false,
+			success:function(msg){
+				result = msg;
+			}
+		});
+		if(result != "true"){
+			$.messager.alert('Error',result);
+			return false;
+		}
+		//产品-价格-偏派-分区表格
+		var json="";
+		var product_id="<?php echo $product->product_id;?>";
+		$(".productppr").each(function(){
+			var price_manage_id=$(this).find('[name^=dropdown_price_manage]').val();
+			var partition_manage_id=$(this).find('[name^=dropdown_partition_manage]').val();
+			var remote_manage_id=$(this).find('[name^=dropdown_remote_manage]').val();
+			var effective_time=$(this).find('[name^=datebox_effective_time]').val();
+			var invalid_time=$(this).find('[name^=datebox_invalid_time]').val();
+				json+='{"product_id":"'+product_id
+				+'","price_manage_id":"'+price_manage_id
+				+'","partition_manage_id":"'+partition_manage_id
+				+'","remote_manage_id":"'+remote_manage_id
+				+'","effective_time":"'+effective_time
+				+'","invalid_time":"'+invalid_time+'"},';
+		});
+		json="["+json.substring(0,json.length-1)+"]";
+		$("#hidden_product_p_p_r").val(json);
+	}
+	/**
+	 * 回调 保存数据
+	 */
+	function CallBack(obj,name){
+		if(obj==null){
+			return false;
+		}
+		$.ajax({
+			url:"<?php echo url('product/productfuelsave')?>",
+			type:"POST",
+			data:{"product_id":"<?php echo request('id')?>",
+				"productfuel":{
+					"product_fuel_id":$(obj).attr("id")==undefined?"":$(obj).attr("id"),
+					"rate":$(obj).children().eq(0).text(),
+					"effective_date":$.trim($(obj).children().eq(1).text()),
+					"fail_date":$(obj).children().eq(2).text()}},
+			success:function(msg){
+				$(obj).attr("id",msg);
+			}
+		});
+	}
+		/**
+		 * 回调 删除数据
+		 */
+		function DeleteBefore(obj){
+			$.ajax({
+				url:"<?php echo url('product/fueldelete')?>",
+				type:"POST",
+				data:{"product_fuel_id":$(obj).attr("id")==undefined?"":$(obj).attr("id")},
+				success:function(msg){
+				}
+			});
+		}
+</script>
+
+<?PHP $this->_endblock();?>
+

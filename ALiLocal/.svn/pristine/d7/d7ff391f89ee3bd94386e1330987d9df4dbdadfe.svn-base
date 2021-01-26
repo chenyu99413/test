@@ -1,0 +1,93 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+ 无服务邮编
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<div>
+</div>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+					<th>邮编</th>
+					<td>
+						<input name="zip_code" type="text" style="width: 120px"
+							value="<?php echo request('zip_code')?>">
+					</td>
+					<th>城市</th>
+					<td>
+						<input name="city" type="text" style="width: 120px"
+							value="<?php echo request('city')?>">
+					</td>
+					<th>国家</th>
+					<td>
+						<input name="country_code" type="text" style="width: 120px"
+							value="<?php echo request('country_code')?>">
+					</td>
+					<th>产品</th>
+					<td>
+						<?php
+						echo Q::control ( "dropdownbox", "service_code", array (
+							"items" => Helper_Array::toHashmap ( Product::find ()->getAll (), "product_name", "product_name" ),
+							"value" => request('service_code'),
+							"style" => "width: 120px",
+							"empty" => "true" 
+						) )?>
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <a id="import" class="btn btn-small btn-warning" href="<?php echo url('product/import')?>">
+                    	<i class="icon-upload"></i>
+                    	导入
+                        </a>
+                        <button type="submit" name="do" value="导出" class="btn btn-small btn-warning" ><i class="icon-download"></i> 导出</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th style="width:100px;">No</th>
+				<th style="width:120px;">邮编</th>
+				<th style="width:120px;">城市</th>
+				<th style="width:120px;">国家</th>
+				<th style="">产品</th>
+				<th style="width:160px;">操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php $i=1; foreach ($noserivcelist as $temp):?>
+			<tr>
+				<td><?php echo $i++ ?></td>
+				<td><?php echo $temp->zip_code?></td>
+				<td><?php echo $temp->city?></td>
+				<td><?php echo $temp->country_code?></td>
+				<td><?php echo $temp->service_code?></td>
+				<td>
+				    <a class="btn btn-mini btn-danger" href="<?php echo url('product/delete', array('zip_code_id' => $temp->zip_code_id))?>">
+            	       <i class="icon-trash"></i>
+			                                         删除
+            	    </a>
+            	</td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+<div style="clear: both;"></div>
+<?PHP $this->_endblock();?>
+

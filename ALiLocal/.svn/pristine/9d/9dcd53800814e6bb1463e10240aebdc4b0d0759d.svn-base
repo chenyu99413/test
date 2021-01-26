@@ -1,0 +1,91 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+更改地址报表
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+    <?php //主体部分 ?>
+<form action="" method="post" class="FarSearch">
+<table>
+	<tbody>
+		<tr>
+			<th>
+				<?php
+                  echo Q::control ( 'dropdownlist', 'timetype', array (
+                  'items'=>array('1'=>'订单时间','2'=>'出库时间'),
+                  'value' => request('timetype'),
+                  'style'=>'width:85px'))?>
+			</th>
+			<td>
+				<?php
+				echo Q::control ( "datebox", "start_date", array (
+				"value" => request ( "start_date" ),
+				"style"=>"width:90px"))?>
+			</td>
+			<th>TO</th>
+			<td>
+				<?php
+				echo Q::control ( "datebox", "end_date", array (
+				"value" => request ( "end_date"),
+				"style"=>"width:90px"))?>
+			</td>
+				<td>
+				<button class="btn btn-primary btn-small" id="search">
+			    <i class="icon-search"></i>
+			                 搜索
+		        </button>
+		        <button type="submit" name="export" class="btn btn-small btn-info" value="exportlist">
+				<i class="icon-download"></i>
+				     导出
+				</button>
+				</td>
+			</tr>           
+		</tbody>           
+	</table>
+</form>
+<table class="FarTable">
+<thead>
+<tr>
+	<th>NO</th>
+	<th style="width:120px">阿里订单号</th>
+	<th style="width:100px" >订单时间</th>
+	<th style="width:100px">出库时间</th>
+	<th style="width:40px">件数</th>
+	<th style="width:120px">泛远单号</th>
+	<th style="width:60px">网络</th>
+	<th style="width:100px">末端运单号</th>
+	<th style="width:150px">应收地址更改费用</th>
+	<th style="width:240px">轨迹</th>
+</tr>
+</thead>
+	<tbody>
+	<?php $i=1;$status=Order::$status?>
+	<?php foreach ($orders as $order):?>
+		<tr>
+			<td><?php echo $i++ ?></td>
+			<td class="x_scroll x_scroll_td">
+			<a target="_blank"
+            href="<?php echo url('order/detail', array('order_id' => $order->order_id))?>">
+            <?php echo $order->ali_order_no ?>
+            </a>
+            </td>
+            <td align="center" title="<?php echo Helper_Util::strDate('m-d H:i:s', $order->create_time)?>"><?php echo Helper_Util::strDate('m-d H:i', $order->create_time)?></td>
+			<td align="center" title="<?php echo Helper_Util::strDate('m-d H:i:s', $order->warehouse_out_time)?>"><?php echo Helper_Util::strDate('m-d H:i', $order->warehouse_out_time)?></td>
+			<?php $a=Orderpackage::find("order_id = ?",$order->order_id)->getSum('quantity');?>
+			<td><?php echo $a ?></td>
+			<td><a target="_blank" href="<?php echo url('order/trace', array('order_id' => $order->order_id))?>"><?php echo $order->far_no?></a></td>
+            <td><?php echo $order->channel->network_code?></td>
+            <td><a target="_blank" href="<?php echo url('order/trace', array('order_id' => $order->order_id))?>"><?php echo $order->tracking_no?></a></td>
+			<td><?php echo ($a*73>280)?280:$a*73?></td>
+			<td><?php echo $order->address_change_info?></td>
+		</tr>
+	<?php endforeach;?>
+	</tbody>
+</table>
+    <?php $this->_control ( "pagination", "my-pagination", array ("pagination" => $pagination) );?>
+<script type="text/javascript">    
+</script>
+<?PHP $this->_endblock();?>

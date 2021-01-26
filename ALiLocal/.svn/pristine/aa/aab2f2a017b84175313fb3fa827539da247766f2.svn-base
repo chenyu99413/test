@@ -1,0 +1,91 @@
+<?php
+/**
+ * ALI api助手
+ *
+ * @author D23
+ *
+ */
+class Helper_ALI {
+    /**
+     * 获取签名
+     * @return string
+     */
+    function sign($url,$data,$action){
+        $secretKey='SOXMXPRN8oFi';
+        $urlpath=strstr($url, 'param2/');
+        $s=$urlpath.$action.'DTO'.$data;
+        $signature=strtoupper(bin2hex(hash_hmac('sha1',$s,$secretKey,true)));
+        return $signature;
+    }
+    /**
+     * notifyBizEvent
+     * @return string
+     */
+    function notifyBizEvent($order_id,$event_code){
+        $order=Order::find("order_id=?",$order_id)->getOne();
+        $notifyBizEvent=array();
+        if(!$order->isNewRecord()){
+            $event=Eventcode::find('event_code=?',$event_code)->getOne();
+            if(!$event->isNewRecord()){
+                $notifyBizEventDTO=array();
+                $notifyBizEvent=array('aliOrderNo'=>$order->ali_order_no,'eventTime'=>date(DATE_ISO8601,time()),'eventCode'=>$event_code,'status'=>'SUCCESS','reason'=>'');
+                //称重
+                if($event_code=='CHECK_WEIGHT'){
+                    foreach ($order->packages as $package){
+                    	$notifyBizEventDTO[]=array(
+                            'packageType'=>$package->package_type_far,
+                            'quantity'=>$package->quantity_far,
+                            'unit'=>$package->unit_far,
+                            'length'=>$package->length_far,
+                            'width'=>$package->width_far,
+                            'height'=>$package->height_far,
+                            'weight'=>$package->weight_far,
+                            'weightUnit'=>$package->weight_unit_far
+                        );
+                    }
+                    $notifyBizEvent['extInfo']=json_encode($notifyBizEventDTO);
+                    //核查
+                }elseif ($event_code=='CONFIRM'){
+                	$confirm_ext=array();
+                    $confirm_ext['trackNo']=$order->far_no;
+                    //目前默认批次是1
+                    $confirm_ext['batchId']='1';
+                    foreach ($order->fees as $fee){
+                    	$notifyBizEventDTO[]=array(
+                            'code'=>$fee->fee_item_code,
+                            'name'=>$fee->fee_item_name,
+                            'quantity'=>$fee->quantity
+                        );
+                    }
+                    $confirm_ext['chargeItemArray']=$notifyBizEventDTO;
+                    $notifyBizEvent['extInfo']=json_decode($confirm_ext);
+                    //承运商取件，出库之后操作
+                }elseif ($event_code=='CARRIER_PICKUP'){
+                    $notifyBizEvent['extInfo']['carrierName']='FAR';
+                    $notifyBizEvent['extInfo']['location']='上海';
+                }
+            }
+        }
+        return $notifyBizEvent;
+    }
+    /**
+     * notifyTrace
+     * @return string
+     */
+    function notifyTrace($tracking){
+        $order=Order::find('order_id=?',$tracking->order_id)->getOne();
+        $notifyTrace=array();
+        $notifyTrace['aliOrderNo']=$order->ali_order_no;
+        $notifyTrace['traceInfos']=array(
+            'location'=>$tracking->location,
+            'traceCode'=>$tracking->tracking_code,
+            'traceDescEn'=>$tracking->trace_desc_en,
+            'traceDescCn'=>$tracking->trace_desc_cn,
+            'operatorName'=>$tracking->operator_name,
+            'quantity'=>$tracking->quantity,
+            'traceTime'=>date(DATE_ISO8601,$tracking->trace_time)
+        );
+        return $notifyTrace;
+    }
+}
+class AlLException extends QException{}

@@ -1,0 +1,51 @@
+<?php
+/**
+ * 客户选择控件
+ *
+ * @author firzen
+ *        
+ */
+class Control_Customer extends Control_ComboGrid {
+	function _before_render() {
+		$columns = array (
+			array (
+				"field" => "customs_code",
+				"title" => "客户代码",
+				"width" => 50,
+				"align" => "center" 
+			),
+			array (
+				"field" => "customs_abbreviation",
+				"title" => "简称",
+				"width" => 70,
+				"align" => "center" 
+			),
+			array (
+				"field" => "customs_full_name",
+				"title" => "全称",
+				"width" => 140 
+			),
+			array (
+				"field" => "company_name_en",
+				"title" => "公司英文名称",
+				"width" => 200
+			)
+		);
+		$this->_attrs ["columns"] = $columns;
+		$url = $this->_extract ( "url" );
+		$oldValue=$this->_extract('oldValue');
+		if ($url) {
+			$this->_attrs ["url"] = $url;
+		} else {
+			$this->_attrs ["url"] = url ( "common/customsgridall" ,$oldValue);
+		}
+		$this->_attrs ["mode"] = "remote";
+		$this->_attrs ["textField"] = $this->_extract ( "textField", "customs_abbreviation" );
+		$this->_attrs ["idField"] = $this->_extract ( "idField", "customs_id" );
+		
+		$showChineseName = $this->_extract ( "showCode" );
+		if ($showChineseName) {
+			$this->_attrs ["onSelect"] = 'function(index,row){$("#' . $this->id () . '_addon").text(row.customs_code)}';
+		}
+	}
+}

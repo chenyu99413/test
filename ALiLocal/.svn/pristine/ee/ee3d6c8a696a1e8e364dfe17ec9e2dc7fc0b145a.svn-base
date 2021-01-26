@@ -1,0 +1,151 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.sound.js"></script>
+	
+<form action="" method="post" onsubmit="return checkdata();">
+	<table class="table table-bordered checkin-table-1 " style="margin-bottom: 10px;width:78%;">
+	<caption>随货单证核查</caption>
+		<tbody>
+			<tr>
+			    <th>总单号</th>
+				<td>
+					<input type="text" name="total_list_no" id="total_list_no" value="<?php echo request('total_list_no')?>" readonly="readonly">
+					<input type="hidden" name="flag" id="flag" value="<?php echo request('flag')?>">
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	<div class="row-fluid" style="width:100%">
+		<div class="span8">
+			<table class="table table-bordered">
+				<tr>
+					<th>总单货件<span>（<?php echo count($orders)?>）</span></th>
+					<th>扫描货件<span id="goods_count">（<?php echo count(@$goods)?count(@$goods):0?>）</span></th>
+					<th>核对成功<span id="id1_count">（<?php echo count(@$orders1)?count(@$orders1):0?>）</span></th>
+					<th>有单无货<span id="id2_count">（<?php echo count(@$orders2)?count(@$orders2):0?>）</span></th>
+					<th>有货无单<span id="id3_count">（<?php echo count(@$orders3)?count(@$orders3):0?>）</span></th>
+				</tr>
+				<tr>
+					<td>
+						<textarea readonly id="order_id" style="width:200px; height:350px"><?php foreach($orders as $v){
+							echo $v->tracking_no.'&#10;';
+							}?></textarea>
+					</td>
+					<td><textarea style="width:200px; height:350px" id="goods" name="goods"><?php foreach($goods as $v){
+							echo $v->tracking_no.'&#10;';
+							}?></textarea></td>
+					<td><textarea style="width:200px; height:350px" id="id1" name="id1" readonly><?php foreach($orders1 as $v){
+							echo $v->tracking_no.'&#10;';
+							}?></textarea></td>
+					<td><textarea style="width:200px; height:350px" id="id2" name="id2" readonly><?php foreach($orders2 as $v){
+							echo $v->tracking_no.'&#10;';
+							}?></textarea></td>
+					<td><textarea style="width:200px; height:350px" id="id3" name="id3" readonly><?php foreach($orders3 as $v){
+							echo $v->tracking_no.'&#10;';
+							}?></textarea></td>
+				</tr>
+				<tr>
+					<td colspan="5" style="text-align:center;">
+						<input type="submit" class="btn btn-sm btn-info" value="提交">
+					</td>
+				</tr>
+			</table>
+		</div>
+	</div>   
+</form>
+<?PHP $this->_endblock();?>
+<script>
+
+$(function(){
+	document.getElementById("goods").select();
+	//扫描阿里单号
+})
+
+$('#goods').bind('keydown',function(e){
+	if(e.which==13){
+		//每次编辑都先清空原数据
+		$('#id1').val('');
+		$('#id2').val('');
+		$('#id3').val('');
+		var account = $('#order_id').val();
+		var arr1 = account.split('\n'); //arr1是单号
+		var arr1=$.grep(arr1,function(n,i){
+			return n;
+		},false)
+		console.log(arr1)
+		var goods = $(this).val();
+		var arr2 = goods.split('\n'); //arr2是货物
+		var arr2=$.grep(arr2,function(n,i){
+			return n;
+		},false)
+		console.log(arr2)
+		var j;
+		for(j=0;j<arr2.length;j++){
+			arr2[j]= arr2[j].toUpperCase();
+		}
+		for(j=0;j<arr1.length;j++){
+			arr1[j]= arr1[j].toUpperCase();
+		}
+		var i;
+		$.each(arr1,function(k,v){
+			i = $.inArray(v, arr2);
+			if(i == -1){
+				$('#id3').val($('#id3').val()+v+'\n')
+			}else{
+				$('#id1').val($('#id1').val()+v+'\n')
+			}
+		});
+		$.each(arr2,function(k,v){
+			i = $.inArray(v, arr1);
+			if(i == -1){
+				$('#id2').val($('#id2').val()+v+'\n')
+			}
+		});
+		if($("#goods").val().length>0){
+			$('#goods_count').html('（'+arr2.length+'）');
+		}
+		if($("#id1").val().length>0){
+			$('#id1_count').html('（'+$("#id1").val().trim('\n').split('\n').length+'）');
+		}else{
+			$('#id1_count').html('（0）');
+		}
+		if($("#id2").val().length>0){
+			$('#id2_count').html('（'+$("#id2").val().trim('\n').split('\n').length+'）');
+		}else{
+			$('#id2_count').html('（0）');
+		}
+		if($("#id3").val().length>0){
+			$('#id3_count').html('（'+$("#id3").val().trim('\n').split('\n').length+'）');
+		}else{
+			$('#id3_count').html('（0）');
+		}
+		// 判断最后录入的运单号是否存在
+		if($.inArray(arr2[arr2.length-1],arr1)>=0){
+			$.sound.play('<?php echo $_BASE_DIR?>public/sound/chenggong.mp3');
+		}else{
+			$.sound.play('<?php echo $_BASE_DIR?>public/sound/cuowu.mp3');
+		}
+	}
+	
+});
+
+
+function checkdata(){
+	var id1 = $('#id1').val();
+	var id2 = $('#id2').val();
+	if(id1==''&&id2==''){
+		$.messager.alert('', '请先核查！');
+		return false;
+	}
+
+	return true;
+	
+}
+</script>

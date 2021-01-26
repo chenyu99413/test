@@ -1,0 +1,1366 @@
+<?php
+class Controller_Airfrance extends Controller_Abstract {
+	/**
+	 * 主单号管理
+	 */
+	function actionMasterNumber() {
+		if(request("hidden_master_number")){
+			$m=MasterNumber::find("master_number=?",request("hidden_master_number"))->getOne();
+			if($m->used_flag=='1'){
+				$m->used_flag='0';
+				$m->save();
+			}
+		}
+		$select = MasterNumber::find ();
+		$page = request_is_post () ? 1 : request ( 'page' );
+
+		if (request ( 'master_number' )) {
+			$select->where ( 'master_number = ?', request ( 'master_number' ) );
+		}
+		if (request ( 'used_flag' ) != null) {
+			$select->where ( 'used_flag = ?', request ( 'used_flag' ) );
+		}
+
+		$mn = $select->limitPage ( $page, 30 )
+			->fetchPagination ( $this->_view ['pagination'] )
+			->order ( 'used_flag,master_number' )
+			->getAll ();
+		$this->_view ['mn'] = $mn;
+	}
+	/**
+	 * 主单号导入
+	 */
+	function actionMasterNumberImport() {
+		if (request_is_post ()) {
+			set_time_limit ( 300 );
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+
+			//读取数据
+			$uploader = new Helper_Uploader ();
+			if (Controller_Common::getFileExtName ( $uploader ) != "xls") {
+				return $this->_redirectMessage ( "主单号，导入失败", "文件类型不正确,请选择 .xls 类型的文件", url ( "airfrance/masternumber" ), 5 );
+			}
+			$data = @Helper_Excel::readFile ( Controller_Common::readFile ( $uploader ) )->toHeaderMap ();
+
+			//检查是否为空
+			if (empty ( $data ) || ! isset ( $data [0] ["主单号"] )) {
+				return $this->_redirectMessage ( "主单号，导入失败", "请检测模板是否正确", url ( "airfrance/masternumber" ), 5 );
+			}
+
+			//写入数据
+			foreach ( $data as $value ) {
+				$masternumber = MasterNumber::find ( "master_number = ?", $value ["主单号"] )->getOne ();
+				if ($masternumber->isNewRecord ()) {
+					$masternumber = new MasterNumber ( array (
+						"master_number" => $value ["主单号"],
+						"used_flag" => 0
+					) );
+				}
+				$masternumber->save ();
+			}
+			$conn->completeTrans ();
+			return $this->_redirectMessage ( "主单号，导入成功", "航空主单号导入成功", url ( "airfrance/masternumber" ) );
+		}
+	}
+	/**
+	 * 分公司入库
+	 */
+	function actionBranchIn() {
+	}
+	/**
+	 * 分公司入库-入库列表
+	 * 按运单号查找，分公司入库时间为空。
+	 */
+	function actionBranchInList() {
+		$data ['waybill_code'] = request ( 'waybill_code' );
+		$select = Waybill::find ();
+		$select->where ( "waybill_code = ? and product_id='123'", $data ['waybill_code'] );
+		$waybill = $select->getOne ();
+		if ($waybill->isNewRecord ()) {
+			$data ['msg'] = '无此单号';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '0') {
+			$data ['msg'] = '草稿';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '10') {
+			$data ['msg'] = '待确认';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '30') {
+			$data ['msg'] = '收货前取消';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '40') {
+			$data ['msg'] = '分公司已入库';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '50') {
+			$data ['msg'] = '收货后取消';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '60') {
+			$data ['msg'] = '已发货';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '20') {
+			$this->_view ['waybill'] = $waybill;
+		}
+	}
+	/**
+	 * 分公司入库-保存
+	 */
+	function actionBranchInSave() {
+		$waybill_code = request ( 'waybill_code' );
+		$actual_weight = request ( 'actual_weight' );
+		$parcel_length = request ( 'parcel_length' );
+		$parcel_width = request ( 'parcel_width' );
+		$parcel_height = request ( 'parcel_height' );
+		$clearing_weight = request ( 'clearing_weight' );
+		$remark = request ( 'remark' );
+		$data = array ();
+
+		$waybill = Waybill::find ( "waybill_code = ? and product_id='123'", $waybill_code )->getOne ();
+		if ($waybill->isNewRecord ()) {
+			$data ['msg'] = '数据异常！';
+			$data ['status'] = 0;
+		} else {
+			date_default_timezone_set ( 'Asia/Shanghai' );
+			$now = date ( 'Y-m-d H:i:s' );
+
+			$diff = Waybilldiff::find ( 'waybill_code = ?', $waybill_code )->getOne ();
+			if (! $diff->isNewRecord ()) {
+				$diff->clearing_weight_2 = $clearing_weight;
+				$diff->actual_weight_2 = $actual_weight;
+				$diff->parcel_length_2 = $parcel_length;
+				$diff->parcel_width_2 = $parcel_width;
+				$diff->parcel_height_2 = $parcel_height;
+				$diff->operator_branch = MyApp::currentUser("user_name");
+				$diff->save ();
+			}
+
+			$waybill->clearing_weight = $clearing_weight;
+			$waybill->actual_weight = $actual_weight;
+			$waybill->parcel_length = $parcel_length;
+			$waybill->parcel_width = $parcel_width;
+			$waybill->parcel_height = $parcel_height;
+			$waybill->branch1_in_date = $now;
+			$waybill->order_flag = '40';
+			$waybill->remark = $remark;
+			if($waybill->commission_weight<$clearing_weight){
+				$waybill->commission_weight=$clearing_weight;
+			}
+			$waybill->channel_confirm = '0';
+			$waybill->save ();
+
+			//物流信息-分公司入库
+			LogisticsInformation::logisticsinfo_plus ( $waybill->waybill_code, 'Acceptance', $now, 'Original Facility 1' );
+
+			$data ['waybill_code'] = $waybill->waybill_code;
+			$data ['actual_weight'] = $waybill->actual_weight;
+			$data ['parcel_length'] = $waybill->parcel_length;
+			$data ['parcel_width'] = $waybill->parcel_width;
+			$data ['parcel_height'] = $waybill->parcel_height;
+			$data ['clearing_weight'] = $waybill->clearing_weight;
+			$data ['remark'] = $waybill->remark;
+			$data ['msg'] = '数据保存成功，请操作下一单！';
+			$data ['status'] = 1;
+		}
+		echo json_encode ( $data );
+		exit ();
+	}
+	/**
+	 * 分公司入库-移除行
+	 */
+	function actionBranchInRemove() {
+		$waybill_code = request ( 'waybill_code' );
+		$data = array ();
+		$waybill = Waybill::find ( "waybill_code = ? and product_id='123'", $waybill_code )->getOne ();
+		if ($waybill->isNewRecord ()) {
+			$data ['msg'] = '数据异常！';
+			$data ['status'] = 0;
+		} else {
+			$waybill->clearing_weight = 0;
+			$waybill->actual_weight = 0;
+// 			$waybill->parcel_length = 0;
+// 			$waybill->parcel_width = 0;
+// 			$waybill->parcel_height = 0;
+			$waybill->branch1_in_date = null;
+			$waybill->order_flag = '20';
+			$waybill->save ();
+
+			$data ['msg'] = '数据清除成功！';
+			$data ['status'] = 1;
+		}
+		echo json_encode ( $data );
+		exit ();
+	}
+	/**
+	 * 平台入库
+	 */
+	function actionPlatformIn() {
+	}
+	/**
+	 * 平台入库-保存
+	 */
+	function actionPlatformInSave() {
+		$waybill_code = request ( 'waybill_code' );
+		$packing_code = request ( 'packing_code' );
+		$parcel_length = request ( 'parcel_length' );
+		$parcel_width = request ( 'parcel_width' );
+		$parcel_height = request ( 'parcel_height' );
+		$clearing_weight = request ( 'clearing_weight' );
+		$clearing_weight_platform = request ( 'clearing_weight_platform' );
+
+		$data = array ();
+		foreach ( $waybill_code as $k => $v ) {
+			$waybill = Waybill::find ( "waybill_code = ? and product_id='123'", $v )->getOne ();
+			if ($waybill->isNewRecord ()) {
+				$data [$v] ['msg'] = '无此单号';
+				$data [$v] ['status'] = 0;
+			} else {
+				date_default_timezone_set ( 'Asia/Shanghai' );
+				$now = date ( 'Y-m-d H:i:s' );
+
+				$diff = Waybilldiff::find ( 'waybill_code = ?', $v )->getOne ();
+				if (! $diff->isNewRecord ()) {
+					$diff->clearing_weight_3 = $clearing_weight [$k];
+					$diff->actual_weight_3 = $waybill->actual_weight;
+					$diff->parcel_length_3 = $parcel_length [$k];
+					$diff->parcel_width_3 = $parcel_width [$k];
+					$diff->parcel_height_3 = $parcel_height [$k];
+					$diff->operator_platform = MyApp::currentUser("user_name");
+					$diff->save ();
+				}
+
+				$waybill->parcel_length = $parcel_length [$k];
+				$waybill->parcel_width = $parcel_width [$k];
+				$waybill->parcel_height = $parcel_height [$k];
+
+				if ($clearing_weight_platform [$k] != 0) {
+					$waybill->clearing_weight = $clearing_weight_platform [$k];
+					if($waybill->commission_weight<$clearing_weight_platform [$k]){
+						$waybill->commission_weight=$clearing_weight_platform [$k];
+					}
+				} else {
+					$waybill->clearing_weight = $clearing_weight [$k];
+					if($waybill->commission_weight<$clearing_weight [$k]){
+						$waybill->commission_weight=$clearing_weight [$k];
+					}
+				}
+
+				$waybill->platform_in_date = $now;
+				$waybill->packing_code = $packing_code [$k];
+				$waybill->save ();
+
+				//物流信息-平台入库
+				LogisticsInformation::logisticsinfo_plus ( $waybill->waybill_code, 'Arrived at Operations Center', $now, 'Operations Center' );
+
+				$data [$v] ['msg'] = '更新成功';
+				$data [$v] ['status'] = 1;
+			}
+		}
+// 		dump($data);
+		return $this->_redirectMessage ( '保存成功', '成功', url ( "airfrance/platformin" ) );
+	}
+	/**
+	 * 平台入库-入库列表
+	 */
+	function actionPlatformInList() {
+		$waybill_code = request ( 'waybill_code' );
+		$select = Waybill::find ();
+		$select->where ( "waybill_code = ? and product_id='123'", $waybill_code );
+		$waybill = $select->getOne ();
+		if ($waybill->isNewRecord ()) {
+			$data ['msg'] = '无此单号';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '0') {
+			$data ['msg'] = '草稿';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '10') {
+			$data ['msg'] = '待确认';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '20') {
+			$data ['msg'] = '分公司未入库';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '30') {
+			$data ['msg'] = '收货前取消';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '50') {
+			$data ['msg'] = '收货后取消';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '60') {
+			$data ['msg'] = '已发货';
+			echo json_encode ( $data );
+			exit ();
+		} elseif ($waybill->order_flag == '40') {
+			if ($waybill->platform_in_date != null && $waybill->platform_in_date != '0000-00-00 00:00:00') {
+				$data ['msg'] = '平台已入库';
+				echo json_encode ( $data );
+				exit ();
+			} else {
+				$this->_view ['waybill'] = $waybill;
+			}
+		}
+	}
+	/**
+	 * 主单号绑定
+	 */
+	function actionNumberBind() {
+	}
+	/**
+	 * 主单号绑定-检索运单列表
+	 */
+	function actionNumberBindList() {
+		$product_id = request ( 'product_id' );
+		$select = Waybill::find ();
+		$select->where ( 'product_id = ?', $product_id );
+		//order_flag = 40    分公司入库
+		$select->where ( 'order_flag = "40"' );
+		$select->where ( 'master_number is null or master_number = ""' );
+		$select->where ( 'platform_in_date is not null or platform_in_date <> ""' );
+		$waybill = $select->setColumns ( 'waybill_code' )
+			->getAll ();
+		$this->_view ['waybill'] = $waybill;
+	}
+	/**
+	 * 主单号绑定-操作绑定
+	 */
+	function actionNumberBindSave() {
+		$master_number = request ( 'master_number' );
+		$flight = request ( 'flight' );
+		$flight_date = request ( 'flight_date' );
+		$waybill_arr = explode ( ",", request ( 'str' ) );
+		foreach ( $waybill_arr as $k => $v ) {
+			$waybill = Waybill::find ( 'waybill_code = ?', $v )->getOne ();
+			$waybill->master_number = $master_number;
+			$waybill->flight = $flight;
+			$waybill->flight_date = $flight_date;
+			$waybill->save ();
+		}
+		$mn = MasterNumber::find ( 'master_number = ?', $master_number )->getOne ();
+		$mn->used_flag = '1';
+		$mn->save ();
+		echo 'ok';
+		exit ();
+	}
+	/**
+	 * 发送数据
+	 */
+	function actionSend() {
+		$select = Waybill::find ();
+		$page = request_is_post () ? 1 : request ( 'page' );
+
+		$select->where ( 'master_number is not null and master_number <> ""' );
+
+		if (request ( 'product_id' )) {
+			$select->where ( 'product_id = ?', request ( 'product_id' ) );
+		}
+		if (request ( 'department_id' )) {
+			$select->where ( 'department_id = ?', request ( 'department_id' ) );
+		}
+		if (request ( 'declare_flag' ) != null && request ( 'declare_flag' ) == 13) {
+			$select->where ( 'declare_flag in (1,3)' );
+		} elseif (request ( 'declare_flag' ) != null) {
+			$select->where ( 'declare_flag = ?', request ( 'declare_flag' ) );
+		}
+		if (request ( 'declare_flag' ) == '13') {
+			$select->where ( 'declare_flag in (1,3)' );
+		}
+		if (request ( 'waybill_code' )) {
+			$select->where ( 'waybill_code like ?', '%' . request ( 'waybill_code' ) . '%' );
+		}
+		if (request ( 'do' ) == 'export') {
+			$header = array (
+				'运单号',
+				'重量',
+				'长',
+				'宽',
+				'高',
+				'体积',
+				'状态',
+				'部门',
+				'客户'
+			);
+			$w_xls = $select->getAll ();
+			$sheet = array (
+				$header
+			);
+			foreach ( $w_xls as $v ) {
+				/*@var $o Order_Head */
+				$row = array (
+					$v->waybill_code,
+					$v->clearing_weight,
+					$v->parcel_length,
+					$v->parcel_width,
+					$v->parcel_height,
+					$v->parcel_length * $v->parcel_width * $v->parcel_height,
+					$v->declare_flag,
+					$v->department_abbreviation,
+					$v->customs_abbreviation
+				);
+				$sheet [] = $row;
+			}
+			$helper = new Helper_Excel ();
+			$helper->array2xls ( $sheet, date ( 'YmdHis' ) . '.xls' );
+			exit ();
+		}
+
+		$waybill = $select->limitPage ( $page, request ( 'page_size', 30 ) )
+			->fetchPagination ( $this->_view ['pagination'] )
+			->order ( 'waybill_id desc' )
+			->getAll ();
+		$this->_view ['waybill'] = $waybill;
+	}
+	/**
+	 * 发送数据-GO
+	 */
+	function actionSendGo() {
+		$waybill_code_checked = request ( 'waybill_code_checked' );
+		$waybill_code = explode ( ',', $waybill_code_checked );
+
+		$select = Waybill::find ();
+		$select->where ( 'waybill_code in (?)', $waybill_code );
+		//筛选：0新单、未接受；3未通过（返回失败）
+		$select->where ( 'declare_flag in ("0","3")' );
+		//1h
+		set_time_limit ( 600 );
+		$waybills = $select->getAll ();
+		$data = array ();
+		if ($waybills->count () > 0) {
+			date_default_timezone_set ( 'Asia/Shanghai' );
+			$now = date ( 'Y-m-d H:i:s' );
+			foreach ( $waybills as $waybill ) {
+				//30s
+				set_time_limit ( 30 );
+				$result = Helper_FSJB::send ( $waybill->waybill_code );
+// 				$result = Helper_FSJB::send ( 'H9424308271' );
+				if ($result ['body'] ['list'] ['jkfResult'] ['chkMark'] == '1') {
+					$waybill->declare_flag = '1';
+					$waybill->declare_date = $now;
+					$waybill->save ();
+
+					//新增物流信息-推送
+					LogisticsInformation::logisticsinfo_plus ( $waybill->waybill_code, 'Export Customs Clearance In Progress', $now, 'PVG Operations Center', 2 );
+
+					$data [$waybill->waybill_code] ['msg'] = $result ['body'] ['list'] ['jkfResult'] ['resultList'] ['jkfResultDetail'] ['resultInfo'];
+				} else {
+					$data [$waybill->waybill_code] ['msg'] = '发送失败';
+				}
+				$data [$waybill->waybill_code] ['status'] = $result ['body'] ['list'] ['jkfResult'] ['chkMark'];
+				$data [$waybill->waybill_code] ['ResultDetail'] = $result ['body'] ['list'] ['jkfResult'] ['resultList'] ['jkfResultDetail'];
+				usleep ( 800 );
+			}
+		} else {
+			return $this->_redirectMessage ( "无待发数据", "无待发数据", url ( "airfrance/send" ), 3 );
+		}
+		$this->_view ['data'] = $data;
+	}
+	/**
+	 * 发送数据-GO-ajax
+	 */
+	function actionSendGoAjax() {
+		$waybill_code = request ( 'waybill_code' );
+		$select = Waybill::find ();
+		$select->where ( 'waybill_code = ?', $waybill_code );
+		//筛选：0新单、未接受；3未通过（返回失败）
+		$select->where ( 'declare_flag in ("0","3")' );
+		$waybill = $select->getOne ();
+
+		$data = array ();
+		$data ['waybill_code'] = $waybill_code;
+
+		if ($waybill->isNewRecord ()) {
+			$data ['result'] = '数据错误';
+			$data ['errs'] = '';
+			$data ['status'] = '0';
+		} else {
+			date_default_timezone_set ( 'Asia/Shanghai' );
+			$now = date ( 'Y-m-d H:i:s' );
+			//30s
+			set_time_limit ( 30 );
+			//1s(1000000)
+			usleep ( 1000000 );
+			$result = Helper_FSJB::send ( $waybill->waybill_code );
+			if ($result ['body'] ['list'] ['jkfResult'] ['chkMark'] == '1') {
+				//更新状态，已推送
+				$waybill->declare_flag = '1';
+				$waybill->declare_date = $now;
+				$waybill->save ();
+				//新增物流信息-推送
+				LogisticsInformation::logisticsinfo_plus ( $waybill->waybill_code, 'Export Customs Clearance In Progress', $now, 'PVG Operations Center', 2 );
+
+				$data ['result'] = $result ['body'] ['list'] ['jkfResult'] ['resultList'] ['jkfResultDetail'] ['resultInfo'];
+			} else {
+				$data ['result'] = '发送失败';
+			}
+// 			$data['errs'] = $result ['body'] ['list'] ['jkfResult'] ['resultList'] ['jkfResultDetail'];
+			$data ['errs'] = '';
+			$data ['status'] = $result ['body'] ['list'] ['jkfResult'] ['chkMark'];
+		}
+		return json_encode ( $data );
+		exit ();
+	}
+	/**
+	 * 发送数据-Back
+	 */
+	function actionSendBack() {
+		$req = request ( 'req' );
+		if ($req) {
+			$req1 = json_decode ( $req, true );
+			$req2 = json_decode ( $req1 ['ret_result'], true );
+			$req3 = Helper_xml::simplexml2a ( Helper_xml::simplexml_load_string ( $req2 ['name'] ) );
+			date_default_timezone_set ( 'Asia/Shanghai' );
+			$now = date ( 'Y-m-d H:i:s' );
+			$waybill = Waybill::find ( 'waybill_code = ?', $req3 ['body'] ['jkfMerchBill'] ['wayBillNo'] )->getOne ();
+			if ($waybill->isNewRecord ()) {
+				echo '未找到该运单号' . $req3 ['body'] ['jkfMerchBill'] ['wayBillNo'];
+			} else {
+				$waybill->send_info = $req3 ['body'] ['jkfMerchBill'] ['approveResult'] . ':' . $req3 ['body'] ['jkfMerchBill'] ['approveComment'] . ':' . $req3 ['body'] ['jkfMerchBill'] ['processTime'];
+				$waybill->send_info_date = $now;
+				if ($req3 ['body'] ['jkfMerchBill'] ['approveComment'] == '电脑审单进入绿通道' || $req3 ['body'] ['jkfMerchBill'] ['approveComment'] == '流水线自动放行') {
+					$waybill->declare_flag = '2';
+				} else {
+					if($waybill->declare_flag != '2'){
+						$waybill->declare_flag = '3';
+					}
+				}
+				$waybill->save ();
+				//记录日志，不返回输出
+				QLog::log ( print_r ( $req3, true ) );
+				echo '信息更新成功：' . $req3 ['body'] ['jkfMerchBill'] ['wayBillNo'];
+			}
+		}
+		exit ();
+	}
+	/**
+	 * 手动放行
+	 */
+	function actionSendGreen() {
+		$data ['waybill_code'] = request ( 'waybill_code' );
+		if ($data ['waybill_code']) {
+			$waybill = Waybill::find ( 'waybill_code = ?', $data ['waybill_code'] )->getOne ();
+			if ($waybill->isNewRecord ()) {
+				$data ['msg'] = 'err';
+				$data ['stu'] = '0';
+			} else {
+				date_default_timezone_set ( 'Asia/Shanghai' );
+				$now = date ( 'Y-m-d H:i:s' );
+				$waybill->send_info_date = $now;
+				$waybill->send_info = '手动放行';
+				$waybill->declare_flag = 2;
+				$waybill->save ();
+				$data ['msg'] = '已放行';
+				$data ['stu'] = '1';
+			}
+		} else {
+			$data ['msg'] = 'err';
+			$data ['stu'] = '0';
+		}
+		return json_encode ( $data );
+		exit ();
+	}
+	/**
+	 * 放弃
+	 */
+	function actionSendOff() {
+		$data ['waybill_code'] = request ( 'waybill_code' );
+		if ($data ['waybill_code']) {
+			$waybill = Waybill::find ( 'waybill_code = ?', $data ['waybill_code'] )->getOne ();
+			if ($waybill->isNewRecord ()) {
+				$data ['msg'] = 'err';
+				$data ['stu'] = '0';
+			} else {
+				date_default_timezone_set ( 'Asia/Shanghai' );
+				$now = date ( 'Y-m-d H:i:s' );
+				$waybill->send_info_date = $now;
+				$waybill->send_info = '放弃';
+				$waybill->declare_flag = 4;
+				$waybill->save ();
+				$data ['msg'] = '放弃';
+				$data ['stu'] = '1';
+			}
+		} else {
+			$data ['msg'] = 'err';
+			$data ['stu'] = '0';
+		}
+		return json_encode ( $data );
+		exit ();
+	}
+	/**
+	 * 平台出库
+	 */
+	function actionPlatformOut() {
+	}
+	/**
+	 * 平台出库-保存
+	 */
+	function actionPlatformOutSave() {
+		$waybill_arr = explode ( ",", request ( 'str' ) );
+		foreach ( $waybill_arr as $k => $v ) {
+			$waybill = Waybill::find ( 'waybill_code = ?', $v )->getOne ();
+			date_default_timezone_set ( 'Asia/Shanghai' );
+			$now = date ( 'Y-m-d H:i:s' );
+			$waybill->platform_out_date = $now;
+			$waybill->record_order_date = $now;
+			$waybill->order_flag = '60';
+			$waybill->save ();
+
+			//物流信息-平台出库
+			LogisticsInformation::logisticsinfo_plus ( $waybill->waybill_code, 'Departed PVG Operations Center', $now, 'PVG Operations Center' );
+		}
+		echo 'ok';
+		exit ();
+	}
+	/**
+	 * 货量统计
+	 */
+	function actionStatistics() {
+		//公共时间
+		if (request ( 'branchin_start_date', MyApp::getDate ( 'start_date' ) ) != MyApp::getDate ( 'start_date' )) {
+			MyApp::setDate ( 'start_date', request ( 'branchin_start_date' ) );
+		}
+		if (request ( 'end_date', MyApp::getDate ( 'end_date' ) ) != MyApp::getDate ( 'end_date' )) {
+			MyApp::setDate ( 'end_date', request ( 'branchin_start_date' ) );
+		}
+
+		$select = Waybill::find ("product_id='123'");
+		$page = request_is_post () ? 1 : request ( 'page' );
+
+		//分公司入库时间
+		$select->where ( 'branch1_in_date >=? and branch1_in_date <=?', MyApp::getDate ( 'start_date' ), MyApp::getDate ( 'end_date' ) );
+
+		//平台入库时间
+		if (request ( 'platformin_start_date' )) {
+			$select->where ( 'platform_in_date >= ?', request ( 'platformin_start_date' ) );
+		}
+		if (request ( 'platformin_end_date' )) {
+			$select->where ( 'platform_in_date <= ?', request ( 'platformin_start_date' ) . ' 23:59:59' );
+		}
+
+		//筛选有效部门
+		if (request ( 'department_id' )) {
+			$select->where ( 'department_id = ?', request ( 'department_id' ) );
+		} else {
+			$select->where ( 'department_id in(?)', RelevantDepartment::departmentids () );
+		}
+
+		$select_all = clone $select;
+		$waybill_all = $select_all->getAll ();
+		$this->_view ['waybill_all'] = $waybill_all;
+
+		$waybill = $select->limitPage ( $page, 50 )
+			->fetchPagination ( $this->_view ['pagination'] )
+			->order ( 'waybill_id desc' )
+			->getAll ();
+		$this->_view ['waybill'] = $waybill;
+	}
+
+	/**
+	 * 差异列表
+	 */
+	function actionWaybillDiff() {
+		//公共时间
+		if (request ( 'start_date', MyApp::getDate ( 'start_date' ) ) != MyApp::getDate ( 'start_date' )) {
+			MyApp::setDate ( 'start_date', request ( 'start_date' ) );
+		}
+		if (request ( 'end_date', MyApp::getDate ( 'end_date' ) ) != MyApp::getDate ( 'end_date' )) {
+			MyApp::setDate ( 'end_date', request ( 'end_date' ) );
+		}
+		$select = Waybill::find ("product_id='123'");
+		if (count(request ( "department_ids" ))) {
+			$select->where ( "[tb_waybill.department_id] IN (?)", Q::normalize ( request ( "department_ids" ) ) );
+		}
+		$select->where ( "tb_waybill.platform_out_date >= ?", MyApp::getDate ( 'start_date' ) );
+		$select->where ( "tb_waybill.platform_out_date <= ?", MyApp::getDate ( 'end_date' ) );
+		$select->joinLeft("tb_waybill_diff",null, "tb_waybill.waybill_code=tb_waybill_diff.waybill_code");
+		$page = request_is_post () ? 1 : request ( 'page' );
+		if (request ( 'do' ) == 'export') {
+			$header = array (
+				'运单号',
+				'客户委托重量',
+				'客户实际重量',
+				'客户计费重量',
+				'客户长',
+				'客户宽',
+				'客户高',
+				'分公司实际重量',
+				'分公司计费重量',
+				'分公司长',
+				'分公司宽',
+				'分公司高',
+				'分公司操作',
+// 				'平台实际重量',
+// 				'平台计费重量',
+// 				'平台长',
+// 				'平台宽',
+// 				'平台高',
+// 				'平台操作',
+				'客户差异区间'
+// 				'分公司差异区间'
+			);
+			$w_xls = $select->setColumns("tb_waybill.waybill_code,tb_waybill_diff.commission_weight1,tb_waybill_diff.actual_weight_1,tb_waybill_diff.clearing_weight_1,tb_waybill_diff.parcel_length_1,tb_waybill_diff.parcel_width_1,tb_waybill_diff.parcel_height_1,tb_waybill_diff.actual_weight_2,tb_waybill_diff.clearing_weight_2,tb_waybill_diff.parcel_length_2,
+				tb_waybill_diff.parcel_width_2,tb_waybill_diff.parcel_height_2,tb_waybill_diff.operator_branch,tb_waybill_diff.actual_weight_3,tb_waybill_diff.clearing_weight_3,tb_waybill_diff.parcel_length_3,tb_waybill_diff.parcel_width_3,tb_waybill_diff.parcel_height_3,tb_waybill_diff.operator_platform")->asArray()->getAll ();
+			$sheet = array (
+				$header
+			);
+			foreach ( $w_xls as $v ) {
+				$w1=ceil($v["clearing_weight_1"]/0.5);
+				$w2=ceil($v["clearing_weight_2"]/0.5);
+				//$w3=$v["clearing_weight_3"]/0.5;
+				$diff1=0;
+				//$diff2=0;
+				if($w2>$w1){
+					$diff1=1;
+				}elseif ($w2==$w1){
+					$diff1=0;
+				}else {
+					$diff1=-1;
+				}
+// 				if($w3>$w2){
+// 					$diff2=1;
+// 				}elseif ($w3==$w2){
+// 					$diff2=0;
+// 				}else {
+// 					$diff2=-1;
+// 				}
+				$row = array (
+					$v["waybill_code"],
+					$v["commission_weight1"],
+					$v["actual_weight_1"],
+					$v["clearing_weight_1"],
+					$v["parcel_length_1"],
+					$v["parcel_width_1"],
+					$v["parcel_height_1"],
+					$v["actual_weight_2"],
+					$v["clearing_weight_2"],
+					$v["parcel_length_2"],
+					$v["parcel_width_2"],
+					$v["parcel_height_2"],
+					$v["operator_branch"],
+// 					$v["actual_weight_3"],
+// 					$v["clearing_weight_3"],
+// 					$v["parcel_length_3"],
+// 					$v["parcel_width_3"],
+// 					$v["parcel_height_3"],
+// 					$v["operator_platform"],
+					$diff1
+// 					$diff2
+				);
+				$sheet [] = $row;
+			}
+			$helper = new Helper_Excel ();
+			$helper->array2xls ( $sheet, date ( 'Ymd' ) . '差异.xls' );
+			exit ();
+		}
+
+		$diffs = $select->setColumns("tb_waybill.waybill_code,tb_waybill_diff.commission_weight1,tb_waybill_diff.actual_weight_1,tb_waybill_diff.clearing_weight_1,tb_waybill_diff.parcel_length_1,tb_waybill_diff.parcel_width_1,tb_waybill_diff.parcel_height_1,tb_waybill_diff.actual_weight_2,tb_waybill_diff.clearing_weight_2,tb_waybill_diff.parcel_length_2,
+				tb_waybill_diff.parcel_width_2,tb_waybill_diff.parcel_height_2,tb_waybill_diff.operator_branch,tb_waybill_diff.actual_weight_3,tb_waybill_diff.clearing_weight_3,tb_waybill_diff.parcel_length_3,tb_waybill_diff.parcel_width_3,tb_waybill_diff.parcel_height_3,tb_waybill_diff.operator_platform")->limitPage ( $page, 50 )
+			->fetchPagination ( $this->_view ['pagination'] )->order ( 'tb_waybill_diff.waybill_code,tb_waybill_diff.waybill_diff_id desc' )
+			->asArray()->getAll ();
+		$this->_view ['diffs'] = $diffs;
+	}
+
+	/**
+	 * 发送法航数据
+	 */
+	function actionsendFtp() {
+		ini_set ( 'max_execution_time', '0' );
+		if (request ( "send" ) == "send") {
+			$way = Waybill::find ( "order_flag='60' and (ftp_flag is null or ftp_flag !='1')" )->getAll ();
+			//文件名称
+			$filename = "PREAL_SIGMA_" . date ( "ymdHis", time () ) . ".dat";
+			if (count ( $way )) {
+				$dir = INDEX_DIR . DS . 'airfrance' . DS . 'senddata';
+				$this->create_dir ( $dir );
+				$dir = INDEX_DIR . DS . 'airfrance' . DS . 'senddata' . DS . $filename;
+				$data = "";
+				foreach ( $way as $w ) {
+					$a = $w->toArray ();
+					$line = self::createData ( $a );
+					$data .= $line;
+					//保存发送ftp数据标记
+					$w->changeProps ( array (
+						"ftp_flag" => "1"
+					) );
+					$w->save ();
+				}
+				file_put_contents ( $dir, $data );
+				$this->Sendftp ( $dir, $filename );
+				echo ("1");
+			} else {
+				echo ("2");
+			}
+			exit ();
+		}
+	}
+
+	/**
+	 * 创建法航数据
+	 */
+	function createData($waybill) {
+		$line = "";
+		//运单号
+		if (strlen ( $waybill ["waybill_code"] )) {
+			$line .= $waybill ["waybill_code"] . ";" . $waybill ["waybill_code"] . ";PARCEL;DAP;AD;;";
+		} else {
+			$line .= ";;PARCEL;DAP;AD;;";
+		}
+		$goods = Goods::find ( "waybill_id=?", $waybill ["waybill_id"] )->asArray ()
+			->getAll ();
+		//商品描述，直接取第一条数据中的英文品名
+		if (! empty ( $goods )) {
+			foreach ( $goods as $g ) {
+				$line .= $g ["english_name"] . ";";
+				break;
+			}
+		} else {
+			$line .= ";";
+		}
+		//账号664
+		$line .= "664;";
+		//发货时间
+		if (strlen ( $waybill ["flight_date"] )) {
+			$line .= Helper_Util::strDate ( 'Ymd', $waybill ["flight_date"] ) . ";FI;HGH;;1;";
+		} else {
+			$line .= ";FI;HGH;;1;";
+		}
+		//实际重量
+		if (strlen ( $waybill ["actual_weight"] )) {
+			$line .= (floatval ( $waybill ["actual_weight"] ) * 10) . ";";
+		} else {
+			$line .= ";";
+		}
+		//计费重量+高价货
+		if (strlen ( $waybill ["clearing_weight"] )) {
+			$line .= (floatval ( $waybill ["clearing_weight"] ) * 10) . ";;";
+		} else {
+			$line .= ";;";
+		}
+		//体积（长*宽*高/1000）
+		if (strlen ( $waybill ["parcel_length"] ) && strlen ( $waybill ["parcel_width"] ) && strlen ( $waybill ["parcel_height"] )) {
+			$line .= (floatval ( $waybill ["parcel_length"] ) * floatval ( $waybill ["parcel_width"] ) * floatval ( $waybill ["parcel_height"] ) / 1000) . ";";
+		} else {
+			$line .= ";";
+		}
+		//国家
+		$line .= "CN;";
+		//申报价值=总的申报价值
+		if (! empty ( $goods )) {
+			$amount = 0;
+			foreach ( $goods as $g ) {
+				if (strlen ( $g ["transaction_price"] ) && strlen ( $g ["amount"] )) {
+					$amount += (floatval ( $g ["transaction_price"] ) * floatval ( $g ["amount"] ) * 100);
+				}
+			}
+			$line .= $amount . ";USD;;;;;";
+		} else {
+			$line .= ";USD;;;;;";
+		}
+
+		//发件人姓名
+		if (strlen ( $waybill ["sender_company_name_en"] )) {
+			$line .= ($waybill ["sender_company_name_en"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//发件人地址1
+		if (strlen ( $waybill ["sender_address1"] )) {
+			$line .= ($waybill ["sender_address1"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//发件人地址2
+		if (strlen ( $waybill ["sender_address2"] )) {
+			$line .= ($waybill ["sender_address2"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//发件人地址3，地址4
+		if (strlen ( $waybill ["sender_address3"] )) {
+			$line .= ($waybill ["sender_address3"]) . ";;";
+		} else {
+			$line .= ";;";
+		}
+		//发件人城市
+		if (strlen ( $waybill ["sender_city"] )) {
+			$line .= ($waybill ["sender_city"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//发件人邮编+国家+州
+		if (strlen ( $waybill ["sender_postal_code"] )) {
+			$line .= ($waybill ["sender_postal_code"]) . ";CN;;";
+		} else {
+			$line .= ";CN;;";
+		}
+		//发件人电话+传真+邮箱+SMS
+		if (strlen ( $waybill ["sender_tel"] )) {
+			$line .= ($waybill ["sender_tel"]) . ";;;;";
+		} else {
+			$line .= ";;;;";
+		}
+		//发件联系人+发件人全名
+		if (strlen ( $waybill ["sender_company_name_en"] )) {
+			$line .= ($waybill ["sender_company_name_en"]) . ";;";
+		} else {
+			$line .= ";;";
+		}
+		//收件人姓名
+		if (strlen ( $waybill ["consignee_company_name_en"] )) {
+			$line .= ($waybill ["consignee_company_name_en"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//收件人地址1
+		if (strlen ( $waybill ["consignee_address1"] )) {
+			$line .= ($waybill ["consignee_address1"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//收件人地址2
+		if (strlen ( $waybill ["consignee_address2"] )) {
+			$line .= ($waybill ["consignee_address2"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//收件人地址3，地址4
+		if (strlen ( $waybill ["consignee_address3"] )) {
+			$line .= ($waybill ["consignee_address3"]) . ";;";
+		} else {
+			$line .= ";;";
+		}
+		//收件人城市
+		if (strlen ( $waybill ["consignee_city"] )) {
+			$line .= ($waybill ["consignee_city"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//收件人邮编
+		if (strlen ( $waybill ["consignee_postal_code"] )) {
+			$line .= ($waybill ["consignee_postal_code"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//收件人国家+州
+		if (strlen ( $waybill ["destination"] )) {
+			$line .= ($waybill ["destination"]) . ";;";
+		} else {
+			$line .= ";;";
+		}
+
+		//收件人电话+传真+邮箱+SMS
+		if (strlen ( $waybill ["consignee_tel"] )) {
+			$line .= ($waybill ["consignee_tel"]) . ";;;;";
+		} else {
+			$line .= ";;;;";
+		}
+		//收件联系人+FREETEXT
+		if (strlen ( $waybill ["consignee_company_name_en"] )) {
+			$line .= ($waybill ["consignee_company_name_en"]) . ";;";
+		} else {
+			$line .= ";;";
+		}
+		//预报重量
+		if (strlen ( $waybill ["actual_weight"] )) {
+			$line .= (floatval ( $waybill ["actual_weight"] ) * 10) . ";";
+		} else {
+			$line .= ";";
+		}
+		//长
+		if (strlen ( $waybill ["parcel_length"] )) {
+			$line .= ($waybill ["parcel_length"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//宽
+		if (strlen ( $waybill ["parcel_width"] )) {
+			$line .= ($waybill ["parcel_width"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//高
+		if (strlen ( $waybill ["parcel_height"] )) {
+			$line .= ($waybill ["parcel_height"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//空白项
+		$line .= ";;;;;;;;";
+		//主单号
+		if (strlen ( $waybill ["master_number"] )) {
+			$line .= ($waybill ["master_number"]) . ";";
+		} else {
+			$line .= ";";
+		}
+		//航班日期
+		if (strlen ( $waybill ["flight_date"] )) {
+			$line .= Helper_Util::strDate ( 'Ymd', $waybill ["flight_date"] ) . ";";
+		} else {
+			$line .= ";";
+		}
+		//航班号
+		if (strlen ( $waybill ["flight"] )) {
+			$line .= ($waybill ["flight"]) ;
+		}
+		$line=str_replace(array("\r\n", "\r", "\n"), "", $line). "\r\n";
+		return $line;
+	}
+
+	/**
+	 * 连接ftp
+	 *
+	 * @param unknown $dir
+	 * @param unknown $name
+	 */
+	public function Sendftp($dir, $name) {
+		$host = 'ftp-sodexi.com';
+		$user = 'farinter@ftp-sodexi.com';
+		$pwd = 'F4r!n7&r';
+		$con = ftp_connect ( $host, '21' );
+		$login = @ftp_login ( $con, $user, $pwd );
+		@ftp_pasv ( $con, true );
+		@ftp_chdir ( $con, 'in' );
+		$reust = @ftp_put ( $con, $name, $dir, FTP_BINARY );
+		ftp_close ( $con );
+	}
+
+	/**
+	 * 创建文件夹
+	 */
+	public function create_dir($dir) {
+		$dir = explode ( DS, $dir );
+		$file = '';
+		for($i = 0; $i < count ( $dir ); $i ++) {
+			$file .= $dir [$i] . DS;
+			if (! file_exists ( $file )) {
+				mkdir ( $file );
+			}
+		}
+	}
+	/**
+	 * 转关清单
+	 */
+	function actionCustomsDocument() {
+		if(request("values")){
+			$sql= "";
+			$value="";
+			$way='';
+			$sql1="";
+			if (request("master_number")){
+				$value=request("master_number");
+				if(request("waybill_code")){
+					$way=request("waybill_code");
+					$sql .= " select tb_waybill.waybill_id,tb_waybill.waybill_code,tb_waybill.former_waybill_code,tb_waybill.product_name,tb_waybill.consignee_company_name_en,tb_waybill.record_order_date,tb_waybill.actual_weight,tb_waybill.remark,tb_country.chinese_name as chinese_country from tb_waybill left join tb_country on tb_waybill.destination=tb_country.code_word_two WHERE waybill_id in (SELECT waybill_id FROM ( SELECT waybill_id, SUM(transaction_price * amount) AS v FROM TB_GOODS WHERE waybill_id IN ( SELECT waybill_id FROM tb_waybill WHERE declare_flag='2' and order_flag='60' and tb_waybill.master_number = '".$value."' and tb_waybill.waybill_code = '".$way."' ) GROUP BY waybill_id ) a WHERE v > 25)";
+					$sql1="SELECT v  FROM ( SELECT waybill_id, SUM(transaction_price * amount) AS v FROM TB_GOODS WHERE waybill_id IN ( SELECT waybill_id FROM tb_waybill WHERE declare_flag='2' and order_flag='60' and tb_waybill.master_number = '".$value."'  and tb_waybill.waybill_code = '".$way."') GROUP BY waybill_id ) a WHERE v > 25";
+				}else{
+					$sql .= " select tb_waybill.waybill_id,tb_waybill.waybill_code,tb_waybill.former_waybill_code,tb_waybill.product_name,tb_waybill.consignee_company_name_en,tb_waybill.record_order_date,tb_waybill.actual_weight,tb_waybill.remark,tb_country.chinese_name as chinese_country from tb_waybill left join tb_country on tb_waybill.destination=tb_country.code_word_two WHERE waybill_id in (SELECT waybill_id FROM ( SELECT waybill_id, SUM(transaction_price * amount) AS v FROM TB_GOODS WHERE waybill_id IN ( SELECT waybill_id FROM tb_waybill WHERE declare_flag='2' and order_flag='60' and tb_waybill.master_number = '".$value."' ) GROUP BY waybill_id ) a WHERE v > 25)";
+					$sql1="SELECT v  FROM ( SELECT waybill_id, SUM(transaction_price * amount) AS v FROM TB_GOODS WHERE waybill_id IN ( SELECT waybill_id FROM tb_waybill WHERE declare_flag='2' and order_flag='60' and tb_waybill.master_number = ".$value." ) GROUP BY waybill_id ) a WHERE v > 25";
+				}
+			}else{
+				if( request("waybill_code")){
+					$way=request("waybill_code");
+					$sql .= " select tb_waybill.waybill_id,tb_waybill.waybill_code,tb_waybill.former_waybill_code,tb_waybill.product_name,tb_waybill.consignee_company_name_en,tb_waybill.record_order_date,tb_waybill.actual_weight,tb_waybill.remark,tb_country.chinese_name as chinese_country from tb_waybill left join tb_country on tb_waybill.destination=tb_country.code_word_two WHERE waybill_id in (SELECT waybill_id FROM ( SELECT waybill_id, SUM(transaction_price * amount) AS v FROM TB_GOODS WHERE waybill_id IN ( SELECT waybill_id FROM tb_waybill WHERE declare_flag='2' and order_flag='60'  and tb_waybill.waybill_code = '".$way."' ) GROUP BY waybill_id ) a WHERE v > 25)";
+					$sql1="SELECT v  FROM ( SELECT waybill_id, SUM(transaction_price * amount) AS v FROM TB_GOODS WHERE waybill_id IN ( SELECT waybill_id FROM tb_waybill WHERE declare_flag='2' and order_flag='60'  and tb_waybill.waybill_code = '".$way."') GROUP BY waybill_id ) a WHERE v > 25";
+				}else{
+					$sql .= " select tb_waybill.waybill_id,tb_waybill.waybill_code,tb_waybill.former_waybill_code,tb_waybill.product_name,tb_waybill.consignee_company_name_en,tb_waybill.record_order_date,tb_waybill.actual_weight,tb_waybill.remark,tb_country.chinese_name as chinese_country from tb_waybill left join tb_country on tb_waybill.destination=tb_country.code_word_two WHERE waybill_id in (SELECT waybill_id FROM ( SELECT waybill_id, SUM(transaction_price * amount) AS v FROM TB_GOODS WHERE waybill_id IN ( SELECT waybill_id FROM tb_waybill WHERE declare_flag='2' and order_flag='60' and 1!='1' ) GROUP BY waybill_id ) a WHERE v > 25)";
+					$sql1="SELECT v  FROM ( SELECT waybill_id, SUM(transaction_price * amount) AS v FROM TB_GOODS WHERE waybill_id IN ( SELECT waybill_id FROM tb_waybill WHERE declare_flag='2' and order_flag='60' and 1!='1' ) GROUP BY waybill_id ) a WHERE v > 25";
+				}
+			}
+			$t=QDB::getConn ()->execute ( $sql )->fetchAll ();
+			//总票数
+			$count = count ( $t );
+			//总重量
+			$weight = Helper_Array::sumBy ( $t, "actual_weight" );
+			$goods=QDB::getConn ()->execute ( $sql1 )->fetchAll ();
+			//总货值
+			$values = Helper_Array::sumBy ( $goods, "v" );
+			$this->_view ["waybills"] = $t;
+			$this->_view ["count"] = $count;
+			$this->_view ["weight"] = $weight;
+			$this->_view ["pcs"] = $count;
+			$this->_view ["values"] = $values;
+		}else{
+			$select = Waybill::find ( "declare_flag='2' and order_flag='60'" );
+			if (request ( "master_number" )) {
+				$select->where ( "master_number=?", request ( "master_number" ) );
+				if(request("waybill_code")){
+					$select->where ( "waybill_code=?", request ( "waybill_code" ) );
+				}
+				//导出三免清单
+				if(request("export")=="export"){
+					$select = Waybill::find ( "declare_flag='2' and order_flag='60'" );
+					$select->where ( "master_number=?", request ( "master_number" ) );
+					if (request ( "hidden_ids" )) {
+						$ids = array_unique ( explode ( ",", request ( "hidden_ids" ) ) );
+						$select->where ( "tb_waybill.waybill_id not in (?)", $ids );
+					}
+					$select->joinLeft ( "tb_goods", null, "tb_waybill.waybill_id=tb_goods.waybill_id" );
+					$temp = clone $select;
+					//公共数据(航班和主单号)
+					$common = $temp->setColumns ( "tb_waybill.flight,tb_waybill.master_number,tb_waybill.platform_out_date" )
+					->group ( "master_number" )
+					->asArray ()
+					->getOne ();
+					$select->setColumns ( "tb_waybill.waybill_id,tb_waybill.waybill_code,tb_waybill.actual_weight,tb_waybill.consignee_company_name_en,tb_waybill.sender_company_name_en,tb_goods.chinese_name,tb_goods.hs_code,tb_goods.transaction_price,tb_goods.amount" );
+					$w = $select->group ( "waybill_code" )
+					->asArray ()
+					->getAll ();
+					//总票数和总件数
+					$count = count ( $w );
+					//总重量
+					$weight_total = Helper_Array::sumBy ( $w, "actual_weight" );
+					$tableHead = array (
+						'鸿硕出口三免清单'
+					);
+					$newSheet = array (
+						$tableHead
+					);
+					$newSheet []=array (
+						'','总运单号','运输工具航次','进/出口标志','','总重量','总件数','分运单总数','运输方式','进港日期','抵运地','进出口岸代码'
+					);
+					$newSheet []=array('',$common ["master_number"],$common ["flight"],'E','',$weight_total,'',$count,'5',Helper_Util::strDate("Y-m-d", $common ["platform_out_date"]),'305','2244');
+					$newSheet []=array('','','','','','','','','','','','');
+					$newSheet []=array('','分运单号','中文品名','HS编码','件数','重量','价值','币种','收件人','收件人城市','发件人','报关类别');
+					$s = 0;
+					foreach ( $w as $value ) {
+						$goods_temps=Goods::find("waybill_id=?",$value ["waybill_id"])->asArray()->getAll();
+						$v=0;
+						foreach ($goods_temps as $goods_temp){
+							$v+=$goods_temp["amount"]*$goods_temp["transaction_price"];
+						}
+						$newRow=array(
+							++ $s, $value ["waybill_code"], $value ["chinese_name"],"'".substr($value ["hs_code"], 0,4),"1", $value ["actual_weight"],$v,'502', $value ["consignee_company_name_en"],'巴黎',  $value ["sender_company_name_en"],'2'
+						);
+						$newSheet [] = $newRow;
+					}
+					$file_name=iconv ( "utf-8", "gb2312",  '三免清单' );
+					Helper_ExcelX::array2xlsx ( $newSheet,$file_name );
+					exit ();
+				}
+				
+			} else {
+				if(request("waybill_code")){
+					$select->where ( "waybill_code=?", request ( "waybill_code" ) );
+				}else{
+					$select->where ( "1!=1" );
+				}
+			}
+			$s=clone $select;
+			$goods=$s->joinLeft("tb_goods", null,"tb_waybill.waybill_id=tb_goods.waybill_id")->setColumns("tb_goods.amount,tb_goods.transaction_price")->asArray()->getAll();
+			$values=0;
+			foreach ($goods as $g){
+				$values+=$g["amount"]*$g["transaction_price"];
+			}
+			$select->joinLeft ( "tb_country", null, "tb_waybill.destination=tb_country.code_word_two" );
+			$temp = clone $select;
+			$t = $temp->setColumns ( "tb_waybill.actual_weight" )
+			->group ( "tb_waybill.waybill_id" )
+			->asArray ()
+			->getAll ();
+			//总票数
+			$count = count ( $t );
+			//总重量
+			$weight = Helper_Array::sumBy ( $t, "actual_weight" );
+			$this->_view ["page"] = (request_is_post () ? 1 : request ( "page", 1 ));
+			$this->_view ["page_size"] = request ( "amount", MyApp::getPageSize () );
+			// 进行分页查询，并取得分页信息
+			$pagination = null;
+			$select->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), request ( "amount", MyApp::getPageSize () ) )
+			->fetchPagination ( $pagination );
+			$waybills = $select->setColumns ( "tb_waybill.waybill_id,tb_waybill.waybill_code,tb_waybill.former_waybill_code,tb_waybill.product_name,tb_waybill.consignee_company_name_en,tb_waybill.record_order_date,tb_waybill.actual_weight,tb_waybill.remark,tb_country.chinese_name as chinese_country" )
+			->asArray ()
+			->getAll ();
+			$this->_view ["waybills"] = $waybills;
+			$this->_view ["pagination"] = $pagination;
+			$this->_view ["count"] = $count;
+			$this->_view ["weight"] = $weight;
+			$this->_view ["pcs"] = $count;
+			$this->_view ["values"] = $values;
+		}
+	}
+	/**
+	 * 转关清单json
+	 */
+	function actionPrintCustomsDocument() {
+		$select = Waybill::find ( "declare_flag='2' and order_flag='60'" );
+		if (request ( "master" )) {
+			$select->where ( "master_number=?", request ( "master" ) );
+		} else {
+			exit ();
+		}
+		if (request ( "waybill_ids" )) {
+			$ids = array_unique ( explode ( ",", request ( "waybill_ids" ) ) );
+			$select->where ( "tb_waybill.waybill_id not in (?)", $ids );
+		}
+		$select->joinLeft ( "tb_goods", null, "tb_waybill.waybill_id=tb_goods.waybill_id" )
+			->joinLeft ( "tb_country", null, "tb_waybill.destination=tb_country.code_word_two" );
+		$temp = clone $select;
+		//公共数据(航班和主单号)
+		$common = $temp->setColumns ( "tb_waybill.flight,tb_waybill.master_number" )
+			->group ( "master_number" )
+			->asArray ()
+			->getOne ();
+		$data = array (
+			"flight" => $common ["flight"],
+			"master_number" => $common ["master_number"],
+			"shuttle" => request ( "shuttle" ),
+			"bags" => request ( "b" )
+		);
+		$select->setColumns ( "tb_waybill.waybill_code,tb_waybill.actual_weight,tb_waybill.remark,tb_country.chinese_name as chinese_country,tb_goods.chinese_name" );
+		$w = $select->group ( "waybill_code" )
+			->asArray ()
+			->getAll ();
+		//总票数和总件数
+		$count = count ( $w );
+		//总重量
+		$weight_total = Helper_Array::sumBy ( $w, "actual_weight" );
+		$detail = array ();
+		//序号
+		$s = 0;
+		foreach ( $w as $value ) {
+			$t = array (
+				"NO" => ++ $s,
+				"waybill_code" => $value ["waybill_code"],
+				"chinese_name" => $value ["chinese_name"],
+				"amount" => "1",
+				"weig" => $value ["actual_weight"],
+				"chinese_country" => $value ["chinese_country"],
+				"company" => "杭州泛远进出口有限公司",
+				"remark" => $value ["remark"]
+			);
+			$detail [] = $t;
+		}
+		$data ["count"] = $count;
+		$data ["pcs"] = $count;
+		$data ["weight_total"] = $weight_total;
+		$data ["detail"] = $detail;
+		$data ["time"] = date ( "Y-m-d", time () );
+		echo json_encode ( $data );
+		exit ();
+	}
+
+	/**
+	 * 打印预录单号和主单号标签
+	 */
+	function actionprintlabel() {
+		$data = array ();
+		if (request ( "master_number" )) {
+			$data ["master_number"] = request ( "master_number" );
+		}
+		if (request ( "prerecord_number" )) {
+			$data ["prerecord_number"] = request ( "prerecord_number" );
+		}
+		echo json_encode ( $data );
+		exit ();
+	}
+	/**
+	 * 制作转关单的时候勾选了运单，总票数，总件数，总重量，总货值的更改
+	 */
+	function actionChange(){
+		$select = Waybill::find ( "declare_flag='2' and order_flag='60'" );
+		$data=array();
+		if(request("master_number")){
+			$select->where ( "master_number=?", request ( "master_number" ));
+			if(request("ids")){
+				$ids=explode(",", request("ids"));
+				$select->where ( "tb_waybill.waybill_id not in (?)", $ids);
+			}
+			$s=clone $select;
+			$goods=$s->joinLeft("tb_goods", null,"tb_waybill.waybill_id=tb_goods.waybill_id")->setColumns("tb_goods.amount,tb_goods.transaction_price")->asArray()->getAll();
+			$values=0;
+			foreach ($goods as $g){
+				$values+=$g["amount"]*$g["transaction_price"];
+			}
+			$waybill=$select->asArray()->getAll();
+			$data["count"]=count($waybill);
+			$data["pcs"]=count($waybill);
+			$data["weight"]=Helper_Array::sumBy($waybill, "actual_weight");
+			$data["values"]=$values;
+			echo json_encode ( $data );
+		}
+		exit ();
+	}
+	/**
+	 * 制作转关清单页面，批量导出形式发票pdf格式
+	 */
+	function actionDownloadInvoice(){
+		if(request("waybill_id")){
+			$waybill=Waybill::find("waybill_id=? and declare_flag='2' and order_flag='60'",request("waybill_id"))->getOne();
+			$data=array();
+			if(!$waybill->isNewRecord()){
+				$data['waybill_code']=$waybill->waybill_code;
+				//总件数
+				$amount_total=0;
+				//总重量
+				$data['weight_total']=$waybill->actual_weight;
+				//总货值
+				$value_total=0;
+				foreach ($waybill->goods as $goods){
+					$amount_total+=$goods->amount;
+					$value_total+=$goods->transaction_price*intval($goods->amount);
+					$detail [] = array (
+						'english_name' => $goods->english_name,
+						'qty' => $goods->amount,
+						'weight' =>"",
+						'value' =>$goods->transaction_price*intval($goods->amount)
+					);
+				}
+				$data['detail']=$detail;
+				$data['amount_total']=$amount_total;
+				$data['value_total']=$value_total;
+				echo json_encode($data);
+			}
+		}
+		exit;
+	}
+	
+	/**
+	 * 系统自动发送法航数据
+	 */
+	function actionsendFtpAuto() {
+		ini_set ( 'max_execution_time', '0' );
+		if (date('H') !='05'){
+			QLog::log('时间未到');
+			exit;
+		}
+		$ways = Waybill::find ( "order_flag='60' and  ftp_flag ='1' and date_sub(curdate(), INTERVAL 1 DAY) <= date(`platform_out_date`)")->asArray()->getAll ();
+		$waybillcodes=array();
+		if(!empty($ways)){
+			foreach ($ways as $w){
+				$li=LogisticsInformation::find("parcel_no=? and logistics_code='ANCU'",$w["waybill_code"])->getOne();
+				if($li->isNewRecord()){
+					array_push($waybillcodes,$w["waybill_code"]);	
+				}
+			}
+			if(!empty($waybillcodes)){
+				$was=Waybill::find("waybill_code in (?)",$waybillcodes)->getAll();
+				//文件名称
+				$filename = "PREAL_SIGMA_" . date ( "ymdHis", time () ) . ".dat";
+				if (count ( $was )) {
+					$dir = INDEX_DIR . DS . 'airfrance' . DS . 'senddata';
+					$this->create_dir ( $dir );
+					$dir = INDEX_DIR . DS . 'airfrance' . DS . 'senddata' . DS . $filename;
+					$data = "";
+					foreach ( $was as $w ) {
+						$a = $w->toArray ();
+						$line = self::createData ( $a );
+						$data .= $line;
+					}
+					file_put_contents ( $dir, $data );
+					$this->Sendftp ( $dir, $filename );
+				}
+			}
+		}
+		sleep(1800);
+		exit;
+	}
+}

@@ -1,0 +1,833 @@
+<?php
+Q::import ( _INDEX_DIR_ . '/_library/phpexcel/PHPEXCEL' );
+require_once _INDEX_DIR_ . '/_library/phpexcel/PHPExcel.php';
+
+class Controller_ReturnOrder extends Controller_Abstract {
+	/**
+	 * @todo   退件入库总单列表
+	 * @author 吴开龙
+	 * @since  2020-11-13 09:18:55
+	 * @param
+	 * @return view
+	 * @link   #83699
+	 */
+	function actionReturnTotal() {
+		$total = ReturnTotal::find();
+		//创建时间
+		if(request('start_date')){
+			$total->where('create_time >= ?',strtotime(request('start_date').'00:00:00'));
+		}
+		//结束时间
+		if(request('end_date')){
+			$total->where('create_time <= ?',strtotime(request('end_date').'23:59:59'));
+		}
+		//总单单号
+		if(request('return_total_no')){
+			$total_list_no=explode("\r\n", request('return_total_no'));
+			//去空
+			$total_list_no=array_filter($total_list_no);
+			//去重
+			$total_list_no=array_unique($total_list_no);
+			$total->where('return_total_no in (?)',$total_list_no);
+		}
+		
+		//分页
+		$pagination = null;
+		$total=$total->limitPage ( request ( "page", 1 ), request ( 'page_size', 30 ) )
+		->fetchPagination ( $pagination )->order('return_total_id desc')->getAll();
+		$this->_view['total']=$total;
+		$this->_view['pagination']=$pagination;
+	}
+	/**
+	 * @todo   退件入库总单状态修改
+	 * @author 吴开龙
+	 * @since  2020-11-13 09:38:55
+	 * @param
+	 * @return view
+	 * @link   #83699
+	 */
+	function actionReturnStatus() {
+		if(request('return_total_id')){
+			$no_sub_code = array();
+			//根据总单号查出退货订单表所有数据
+			$r_orders = ReturnOrder::find('return_total_id in (?)',request('return_total_id'))->getAll();
+			//如果数据不为空就判断是否完全扫描结束
+			if(count($r_orders)){
+				foreach ($r_orders as $o1){
+					//循环获取所有ali订单表id
+					$order_id[] = $o1->order_id;
+					$return_order_id[] = $o1->return_order_id;
+				}
+				//获取已扫描的子单号
+				$package = ReturnPackage::find('return_order_id in (?)',$return_order_id)->getAll();
+				foreach ($package as $p){
+					if($p->sub_code){
+						$true_sub_code[] = $p->sub_code;
+					}
+				}
+				//获取未扫描的子单号
+				$sub_codes = Subcode::find('order_id in (?)',$order_id)->getAll();
+				foreach ($sub_codes as $s){
+					//判断如果不在已扫描里面就是为扫描单号
+					if(!in_array($s->sub_code,$true_sub_code)){
+						$no_sub_code[] = $s->sub_code;
+					}
+				}
+			}
+			if(count($no_sub_code)){
+				return $this->_redirectMessage('未完全扫描结束', '', url('/returntotal'));
+			}else{
+				$total = ReturnTotal::find('return_total_id=?',request('return_total_id'))->getOne();
+				$total->status = 1;
+				$total->save();
+			}
+		}
+		return $this->_redirect(url('/returntotal'));
+	}
+	/**
+	* @todo   退件入库扫描列表界面
+	* @author 吴开龙
+	* @since  2020-11-10 09:58:55
+	* @param 
+	* @return view
+	* @link   #83699
+	 */
+	function actionReturnIn() {
+		$true_sub_code = array();
+		$no_sub_code = array();
+		$total = ReturnTotal::find('return_total_id=?',request('return_total_id'))->getOne();
+		//根据总单获取所有阿里订单的order_id
+		if(request('return_total_id')){
+			$order_id = array();
+			$return_order_id = array();
+			$r_orders = ReturnOrder::find('return_total_id = ?',request('return_total_id'))->getAll();
+			if(count($r_orders)){
+				foreach ($r_orders as $o1){
+					//订单id数组
+					$order_id[] = $o1->order_id;
+					$return_order_id[] = $o1->return_order_id;
+				}
+				//获取已扫描的子单号
+				$package = ReturnPackage::find('return_order_id in (?)',$return_order_id)->getAll();
+				foreach ($package as $p){
+					if($p->sub_code){
+						$true_sub_code[] = $p->sub_code;
+					}
+				}
+				//获取未扫描的子单号
+				$sub_codes = Subcode::find('order_id in (?)',$order_id)->getAll();
+				foreach ($sub_codes as $s){
+					//判断如果不在已扫描里面就取出放入但号不全目录里
+					if(!in_array($s->sub_code,$true_sub_code)){
+						$no_sub_code[] = $s->sub_code;
+					}
+				}
+			}
+		}
+		$this->_view['total']=$total;
+		$this->_view['true_sub_code']=$true_sub_code;
+		$this->_view['no_sub_code']=$no_sub_code;
+	}
+	/**
+	 * @todo   退件入库保存ajax返回
+	 * @author 吴开龙
+	 * @since  2020-11-13 17:52:55
+	 * @param
+	 * @return json
+	 * @link   #83699
+	 */
+	function actionReturnInAjax(){
+		if(request_is_post()){
+			//返回数据初始化
+			$data = array(
+				'code' => 0,
+				'msg' => ''
+			);
+			//判断总单是否存在
+			if(!$_POST['return_total_id']){
+				//如果不存在则新建总单表
+				$total = new ReturnTotal();
+				$total->return_total_no = date('YmdHis');
+				$total->operate_name = MyApp::currentUser('staff_name');
+				$total->operate_id = MyApp::currentUser('staff_id');
+				$total->save();
+				$return_total_id = $total->return_total_id;
+				$return_total_no = $total->return_total_no;
+			}else{
+				//总单存在
+				$return_total_id = $_POST['return_total_id'];
+				$return_total_no = $_POST['return_total_no'];
+			}
+			//获取订单信息
+			$order = Order::find('order_id=?',$_POST['order_id'][0])->getOne();
+			//计算总件数和总重量
+			//退货总件数
+			$return_num = 0;
+			foreach ($_POST['quantity_out'] as $quantity){
+				$return_num += $quantity;
+			}
+			//退货总重量
+			$return_weight = 0;
+			foreach ($_POST['weight_out'] as $weight){
+				$return_weight += $weight;
+			}
+			$scan_no = '';
+			//判断是否已存在
+			$returnorder = ReturnOrder::find('order_id=?',$order->order_id)->getOne();
+			if(!$returnorder->isNewRecord()){
+				//订单存在时执行
+				foreach ($_POST['type'] as $k => $v){
+					//循环type，如果存在则说明点击的这一列，并将它(子单号)添加到同列包裹里面
+					if($v){
+						//添加子单号以及修改其他可编辑包裹信息
+						$returnpackage = ReturnPackage::find('return_package_id=?',$_POST['return_package_id'][$k])->getOne();
+						if($returnpackage->sub_code){
+							$data['msg'] = '此包裹已存在子单号';
+							return json_encode($data);
+						}
+						$scan_no = trim($v);
+						$returnpackage->sub_code = trim($v);
+						$returnpackage->quantity = $_POST['quantity_out'][$k];
+						$returnpackage->weight = $_POST['weight_out'][$k];
+						$returnpackage->length = $_POST['length_out'][$k];
+						$returnpackage->width = $_POST['width_out'][$k];
+						$returnpackage->height = $_POST['height_out'][$k];
+						$returnpackage->note = $_POST['note'][$k];
+						$returnpackage->save();
+						//重新计算总件数和总重量
+						$returnorder->return_num = $return_num;
+						$returnorder->return_weight = $return_weight;
+						$returnorder->save();
+					}
+				}
+			}else{
+				//退货单不存在说明第一次扫描此订单的单号
+				
+				//保存退货订单信息
+				$returnorder = new ReturnOrder();
+				$returnorder->department_id = MyApp::currentUser('department_id');
+				$returnorder->order_id = $order->order_id;
+				$returnorder->tracking_no = $order->tracking_no;
+				//阿里订单号前面加R
+				$returnorder->ali_order_no = 'R'.$order->ali_order_no;
+				$returnorder->return_total_id = $return_total_id;
+				$returnorder->order_status = '10';
+				$returnorder->return_time = time();
+				$returnorder->original_num = $order->package_total_in;
+				$returnorder->original_weight = $order->weight_actual_out;
+				$returnorder->return_num = $return_num;
+				$returnorder->return_weight = $return_weight;
+				$returnorder->scan_id = MyApp::currentUser('staff_id');
+				$returnorder->scan_name = MyApp::currentUser('staff_name');
+				$returnorder->save();
+				//保存包裹信息
+				foreach ($_POST['type'] as $k => $v){
+					$package = new ReturnPackage();
+					$package->return_order_id = $returnorder->return_order_id;
+					$package->quantity = $_POST['quantity_out'][$k];
+					$package->weight = $_POST['weight_out'][$k];
+					$package->length = $_POST['length_out'][$k];
+					$package->width = $_POST['width_out'][$k];
+					$package->height = $_POST['height_out'][$k];
+					$package->note = $_POST['note'][$k];
+					$package->sub_code = trim($v);
+					if($v){
+						$scan_no = trim($v);
+						$package->sub_code = trim($v);
+					}
+					$package->save();
+				}
+			}
+			//全部子单号封装为数组
+			$sub_code = explode("\r\n",$_POST['sub_code']);
+			$sub_code = array_filter($sub_code);
+			//拼接上扫描的单号
+			$sub_code[] = $scan_no;
+			//根据总单获取所有阿里订单的order_id
+			$order_id = array();
+			$r_orders = ReturnOrder::find('return_total_id in (?)',$return_total_id)->getAll();
+			foreach ($r_orders as $o1){
+				//订单id数组
+				$order_id[] = $o1->order_id;
+			}
+			$no_sub_code = array();
+			//子单号表数据
+			$sub_codes = Subcode::find('order_id in (?)',$order_id)->getAll();
+			foreach ($sub_codes as $s){
+				//判断如果不在已扫描里面就取出放入但号不全目录里
+				if(!in_array($s->sub_code,$sub_code)){
+					$no_sub_code[] = $s->sub_code;
+				}
+			}
+			
+			
+			$data['return_total_id'] = $return_total_id;
+			$data['scan_no'] = $scan_no;
+			$data['sub_code'] = $sub_code;
+			$data['no_sub_code'] = $no_sub_code;
+			//成功返回
+			$data['code'] = 1;
+			$data['msg'] = '保存成功';
+			$data['data'] = $data;
+			return json_encode($data);
+		}
+	}
+	/**
+	 * @todo   退件入库扫描ajax返回页面
+	 * @author 吴开龙
+	 * @since  2020-11-10 17:22:55
+	 * @param
+	 * @return json
+	 * @link   #83699
+	 */
+	function actionInScan() {
+		//返回数据初始化
+		$data = array(
+			'code' => 0,
+			'msg'  => ''
+		);
+		//验证订单正确性 查出子单信息
+		$subcode = Subcode::find('sub_code=?',request('scan_no'))->getOne();
+		if($subcode->isNewRecord()){
+			$data['msg'] = '未找到订单';
+			return json_encode($data);
+		}
+		//查询订单
+		$order = Order::find('order_id=?',$subcode->order_id)->getOne();
+		
+		//验证是否已添加
+		$returnpackage = ReturnPackage::find('sub_code=?',request('scan_no'))->getOne();
+		if(!$returnpackage->isNewRecord()){
+			$data['msg'] = '已扫描';
+			return json_encode($data);
+		}
+		
+		
+		
+// 		$returnin = ReturnOrder::find('tracking_no=?',$order->tracking_no)->getOne();
+// 		if(!$returnin->isNewRecord()){
+// 			$data['msg'] = '订单已扫描';
+// 			return json_encode($data);
+// 		}
+		//验证是否有出库包裹
+		$out_package = Faroutpackage::find('order_id=?',$order->order_id)->getAll();
+		if(!count($out_package)){
+			$data['msg'] = '订单无出库包裹';
+			return json_encode($data);
+		}
+		$returnin = ReturnOrder::find('order_id=?',$order->order_id)->getOne();
+		//判断是否已经在其他总单扫描过
+		if((!$returnin->isNewRecord() && !request('return_total_id')) || (!$returnin->isNewRecord() && $returnin->return_total_id != request('return_total_id'))){
+			$data['msg'] = '该订单已在其他总单里面扫描';
+			return json_encode($data);
+		}
+		//判断退货包裹是否添加过
+		if(!$returnin->isNewRecord()){
+			$returnpackage = ReturnPackage::find('return_order_id=?',$returnin->return_order_id)->getAll();
+			//如果有退货包裹，退货包裹信息数据组装进data1
+			foreach ($returnpackage as $k => $package){
+				$data1[$k]['order_id'] = $order->order_id;
+				$data1[$k]['ali_order_no'] = $order->ali_order_no;
+				//已扫描的子单号信息
+				$data1[$k]['return_package_id'] = $package->return_package_id;
+				$data1[$k]['tracking_no'] = $package->sub_code;
+				$data1[$k]['quantity_out'] = $package->quantity;
+				$data1[$k]['weight_out'] = $package->weight;
+				$data1[$k]['length_out'] = $package->length;
+				$data1[$k]['width_out'] = $package->width;
+				$data1[$k]['height_out'] = $package->height;
+			}
+		}else{
+			//出库包裹信息数据组装进data1
+			foreach ($out_package as $k => $package){
+				$data1[$k]['order_id'] = $order->order_id;
+				$data1[$k]['ali_order_no'] = $order->ali_order_no;
+				$data1[$k]['return_package_id'] = '';
+				$data1[$k]['tracking_no'] = '';
+				$data1[$k]['quantity_out'] = $package->quantity_out;
+				$data1[$k]['weight_out'] = $package->weight_out;
+				$data1[$k]['length_out'] = $package->length_out;
+				$data1[$k]['width_out'] = $package->width_out;
+				$data1[$k]['height_out'] = $package->height_out;
+			}
+		}
+		
+		
+		//获取子单号
+		$subcode = Subcode::find('order_id=?',$order->order_id)->getAll();
+		//子单号信息组装进data2
+		foreach ($subcode as $s){
+			$data2[] = $s->sub_code;
+		}
+		//组装返回数据
+		$data['code'] = 1;
+		$data['outpackage'] = $data1;
+		$data['subcode'] = $data2;
+		return json_encode($data);
+		exit;
+	}
+	/**
+	 * @todo   退件入库订单列表界面
+	 * @author 吴开龙
+	 * @since  2020-11-11 16:02:55
+	 * @param
+	 * @return view
+	 * @link   #83699
+	 */
+	function actionReturnList() {
+		//列表，仓库权限
+		$orders=ReturnOrder::find("department_id in (?)",RelevantDepartment::relateddepartmentids());
+		//时间搜索
+		if(request("start_date")){
+			$orders->where("return_time >=?",strtotime(request("start_date").':00'));
+		}
+		if (request("end_date")){
+			$orders->where("return_time <=?",strtotime(request("end_date").':59'));
+		}
+		//单号批量搜索
+		if(request('order_no')){
+			$waybill_codes=explode("\r\n", request('order_no'));
+			$waybill_codes=array_filter($waybill_codes);//去空
+			$waybill_codes=array_unique($waybill_codes);//去重
+			$orders->where('ali_order_no in (?) or new_tracking_no in (?) or tracking_no in (?)',$waybill_codes,$waybill_codes,$waybill_codes);
+		}
+		
+		//克隆对象
+		$order_count=clone $orders;
+		//根据状态分组查询
+		$counts=$order_count->group('order_status')->count()->columns('order_status')->asArray()->getAll();
+		//根据分组字段序列化数组
+		$counts=Helper_Array::toHashmap($counts,'order_status','row_count');
+		//counts[0]是【全部】状态
+		$counts[0] = 0;
+		foreach ($counts as $v){
+			$counts[0]+=$v;
+		}
+		$active_id = 0;
+		// 仓储中
+		if (request ( "parameters" ) == "cangchuzhong") {
+			$orders->where('order_status = 10');
+			$active_id = 10;
+		}
+		// 待重发
+		if (request ( "parameters" ) == "daichongfa") {
+			$orders->where('order_status=20');
+			$active_id = 20;
+		}
+		// 待销毁
+		if (request ( "parameters" ) == "daixiaohui") {
+			$orders->where('order_status=30');
+			$active_id = 30;
+		}
+		// 待退回
+		if (request ( "parameters" ) == "daituihui") {
+			$orders->where('order_status=40');
+			$active_id = 40;
+		}
+		// 已打印
+		if (request ( "parameters" ) == "yidayin") {
+			$orders->where('order_status=50');
+			$active_id = 50;
+		}
+		// 已重发
+		if (request ( "parameters" ) == "yichongfa") {
+			$orders->where('order_status=60');
+			$active_id = 60;
+		}
+		// 已销毁
+		if (request ( "parameters" ) == "yixiaohui") {
+			$orders->where('order_status=70');
+			$active_id = 70;
+		}
+		// 已退回
+		if (request ( "parameters" ) == "yituihui") {
+			$orders->where('order_status=80');
+			$active_id = 80;
+		}
+		//查询
+		$pagination = null;
+		$list=$orders->limitPage ( request ( "page", 1 ), request ( 'page_size', 30 ) )
+		->fetchPagination ( $pagination )
+		->order('return_order_id desc')->getAll();
+		
+// 		echo "<pre>";
+// 		echo (request ( "parameters" ));
+// 		exit;
+		$parameters=request ( "parameters" );
+		$this->_view ["orders"] = $list;
+		$this->_view ['pagination']=$pagination;
+		$this->_view ["parameters"] = $parameters;
+		$this->_view ["active_id"] = $active_id;
+		$this->_view ["counts"] = $counts;
+		$this->_view ["tabs"] = $this->createTabs ( $counts );
+	}
+	/**
+	 * @todo   退件入库订单列表创建标签
+	 * @author 吴开龙
+	 * @since  2020-11-11 16:32:55
+	 * @param
+	 * @return view
+	 * @link   #83699
+	 */
+	function createTabs($counts) {
+		return array (
+			array (
+				"id" => "0","title" => "全部","count" => val($counts,0,0),
+				"href" => "javascript:TabSwitch()"
+			),
+			array (
+				"id" => "10","title" => "仓储中","count" => val($counts,10,0),
+				"href" => "javascript:TabSwitch('cangchuzhong')"
+			),
+			array (
+				"id" => "20","title" => "待重发","count" => val($counts,20,0),
+				"href" => "javascript:TabSwitch('daichongfa')"
+			),
+			array (
+				"id" => "30","title" => "待销毁","count" => val($counts,30,0),
+				"href" => "javascript:TabSwitch('daixiaohui')"
+			),
+			array (
+				"id" => "40","title" => "待退回","count" => val($counts,40,0),
+				"href" => "javascript:TabSwitch('daituihui')"
+			),
+			array (
+				"id" => "50","title" => "已打印","count" => val($counts,50,0),
+				"href" => "javascript:TabSwitch('yidayin')"
+			),
+			array (
+				"id" => "60","title" => "已重发","count" => val($counts,60,0),
+				"href" => "javascript:TabSwitch('yichongfa')"
+			),
+			array (
+				"id" => "70","title" => "已销毁","count" => val($counts,70,0),
+				"href" => "javascript:TabSwitch('yixiaohui')"
+			),
+			array (
+				"id" => "80","title" => "已退回","count" => val($counts,80,0),
+				"href" => "javascript:TabSwitch('yituihui')"
+			)
+		);
+	}
+	/**
+	 * @todo   退件渠道
+	 * @author 吴开龙
+	 * @since  2020-11-12 10:32:55
+	 * @param
+	 * @return view
+	 * @link   #83699
+	 */
+	function actionReturnChannel() {
+		
+		$this->_view ['channels'] = ReturnChannel::find ()->getAll ();
+	}
+	/**
+	 * @todo   退件渠道编辑页面
+	 * @author 吴开龙
+	 * @since  2020-11-12 11:11:55
+	 * @param
+	 * @return view
+	 * @link   #83699
+	 */
+	function actionReturnChannelEdit() {
+		$channel=ReturnChannel::find('channel_id=?',request('channel_id'))->getOne();
+		if(request_is_post()){
+			//判断渠道名称是否存在
+			$channel_check=ReturnChannel::find('channel_name=?',request('channel_name'))->getOne();
+			if(!$channel_check->isNewRecord() && ($channel_check->channel_id!=request('channel_id'))){
+				return $this->_redirectMessage('退件渠道编辑失败', '退件渠道名称已存在', url('/returnchanneledit',array('channel_id'=>$channel->channel_id)),2);
+			}else{
+				//$sender_id = @join ( ',', request ( 'sender_id' ) );
+				$channel=ReturnChannel::find('channel_id=?',request('channel_id'))->getOne();
+				$channel->channel_name=request('channel_name');
+				$channel->channel_group_id=request('channel_group_id');
+				$channel->network_code=request('network_code');
+				$channel->trace_network_code=request('trace_network_code');
+				//$channel->sender_id=$sender_id;
+				$channel->account=request('account');
+				$channel->print_method=request('print_method');
+				$channel->supplier_id=request('supplier_id');
+				$channel->label_sign=request('label_sign');
+				$channel->check_complete=request('check_complete');
+				$channel->send_kj=request('send_kj');
+				$channel->has_battery=request('has_battery');
+				$channel->is_declaration=request('is_declaration');
+				$channel->sort_code=request('sort_code');
+				
+				$channel->length=request('length');
+				$channel->width=request('width');
+				$channel->height=request('height');
+				$channel->perimeter=request('perimeter');
+				
+				$channel->girth=request('girth');
+				$channel->weight=request('weight');
+				$channel->total_cost_weight=request('total_cost_weight');
+				$channel->declare_threshold=request('declare_threshold');
+				$channel->type=request('type');
+				$channel->forecast_type=request('forecast_type');
+				$channel->is_pda=request('is_pda');
+				$channel->postcode_verify=request('postcode_verify');
+				$channel->save();
+				
+				//保存可用部门
+				ReturnChanneldepartmentavailable::find('channel_id=?',$channel->channel_id)->getAll()->destroy();
+				foreach (explode(',', request('department_hidden')) as $department_id){
+					if(!$department_id){
+						continue;
+					}
+					$available= new ReturnChanneldepartmentavailable();
+					$available->changeProps(array(
+						'channel_id'=>$channel->channel_id,
+						'department_id'=>$department_id
+					));
+					$available->save();
+				}
+				return $this->_redirectMessage('退件渠道编辑', '退件渠道编辑成功', url('/returnchanneledit',array('channel_id'=>$channel->channel_id)));
+			}
+		}
+		$this->_view['channel']=$channel;
+		//筛选可用部门
+		$available_department=ReturnChanneldepartmentavailable::find('channel_id=?',$channel->channel_id)->getAll();
+		$this->_view ["department"] = array (
+			"state" => true,
+			"checked" => implode ( ",", Helper_Array::getCols ( $available_department, "department_id" ) )
+		);
+	}
+	/**
+	 * @todo   退件渠道发件人 导入
+	 * @author 吴开龙
+	 * @since  2020-11-12 14:14:07
+	 * @param
+	 * @return json
+	 * @link   #83699
+	 */
+	function actionReturnChannelImport(){
+		ini_set('max_execution_time', '0');
+		ini_set('memory_limit', '2G');
+		set_time_limit(0);
+		//上传文件开始
+		$uploader = new Helper_Uploader();
+		//检查指定名字的上传对象是否存在
+		if (! $uploader->existsFile ( 'file' )) {
+			return $this->_redirectMessage('未上传文件','',url('/returnchanneledit'), 3 );
+		}
+		$file = $uploader->file ( 'file' );//获得文件对象
+		if (! $file->isValid ( 'xls' )) {
+			return $this->_redirectMessage('文件格式不正确：xls','',url('/returnchanneledit'), 3 );
+		}
+		$des_dir = Q::ini ( 'upload_tmp_dir' );//缓存路径
+		$filename = $des_dir.DS.date ( 'YmdHis' ).'feeimport.'.$file->extname ();
+		$file->move ( $filename );
+		ini_set ( "memory_limit", "3072M" );
+		$xls = Helper_Excel::readFile ( $filename,true);
+		$sheets =$xls->toHeaderMap ();
+		$error = array ();
+		//必填字段
+		$required_fields = array (
+			'发件人代码',
+			'发件人姓名',
+			'发件人公司',
+			'发件人国家',
+			'发件人省',
+			'发件人市',
+			'发件人电话',
+			'发件人邮编',
+			'发件人地址'
+		);
+		foreach ( $sheets as $k => $row ) {
+			//判断基础信息不得为空
+			//print_r(strtotime($row['登账日期']));exit;
+			foreach ( $required_fields as $field ) {
+				if (empty ( $row [$field] )) {
+					$error [$k] [$field] = '必填数据不可为空';
+				}
+			}
+		}
+		//错误输出
+		$this->_view ['errors'] = $error;
+		if (empty ( $error )) {
+			$sender_id = array();
+			foreach ($sheets as $sheet){
+				$sender = Sender::find('sender_code=?',$sheet['发件人代码'])->getOne();
+				if($sender->isNewRecord()){
+					$sender->sender_code = $sheet['发件人代码'];
+					$sender->sender_name = $sheet['发件人姓名'];
+					$sender->sender_company = $sheet['发件人公司'];
+					$sender->sender_country = $sheet['发件人国家'];
+					$sender->sender_province = $sheet['发件人省'];
+					$sender->sender_city = $sheet['发件人市'];
+					$sender->sender_area = @$sheet['发件人区县'];
+					$sender->sender_phone = $sheet['发件人电话'];
+					$sender->sender_zip_code = $sheet['发件人邮编'];
+					$sender->sender_address = $sheet['发件人地址'];
+					$sender->sender_email = @$sheet['发件人邮箱'];
+					$sender->save();
+				}
+				$sender_id[] = $sender->sender_id;
+			}
+			$sender_id_str = implode(',', $sender_id);
+			$channel = ReturnChannel::find('channel_id=?',request('channel_id'))->getOne();
+			$channel->sender_id = $sender_id_str;
+			$channel->save();
+			return $this->_redirectMessage ( '导入成功', '成功', url ( '/returnchanneledit',array('channel_id' => request('channel_id')) ), 3 );
+			exit ();
+		}
+	}
+	/**
+	 * @todo   退件渠道发件人 导出
+	 * @author 吴开龙
+	 * @since  2020-11-12 14:32:00
+	 * @param
+	 * @return json
+	 * @link   #83699
+	 */
+	function actionReturnChannelExport(){
+		ini_set('max_execution_time', '0');
+		ini_set('memory_limit', '2G');
+		set_time_limit(0);
+		$channel = ReturnChannel::find ('channel_id=?',request('channel_id'))->getOne();
+		$sender_id = explode(',',$channel->sender_id);
+		$sender = Sender::find('sender_id in (?)',$sender_id)->getAll();
+		$header = array (
+			'发件人代码',
+			'发件人姓名',
+			'发件人公司',
+			'发件人国家',
+			'发件人省',
+			'发件人市',
+			'发件人区县',
+			'发件人电话',
+			'发件人邮编',
+			'发件人地址',
+			'发件人邮箱'
+		);
+		$sheet = array (
+			$header
+		);
+		foreach ($sender as $value){
+			$row =array(
+				$value->sender_code,
+				$value->sender_name,
+				$value->sender_company,
+				$value->sender_country,
+				$value->sender_province,
+				$value->sender_city,
+				$value->sender_area,
+				$value->sender_phone,
+				$value->sender_zip_code,
+				$value->sender_address,
+				$value->sender_email
+			);
+			$sheet [] = $row;
+		}
+		Helper_Excel::array2xls ( $sheet, '退件渠道发件人导出.xls' );
+		exit ();
+	}
+	/**
+	 * @todo   退件渠道偏派邮编 导入
+	 * @author 吴开龙
+	 * @since  2020-11-02 14:52:07
+	 * @return json
+	 * @link   #83699
+	 */
+	function actionReturnChannelImportCode(){
+		//主表数据
+		$channelcode = ReturnChannelZipCode::find('channel_id=?',request('channel_id'));
+		//查询条件
+		if(request('zip_code')){
+			$channelcode->where('zip_code = ?',request('zip_code'));
+		}
+		//导入
+		if(request_is_post() && request('import') == '导入'){
+			//程序运行时间
+			ini_set('max_execution_time', '0');
+			//程序运行内存
+			ini_set('memory_limit', '2G');
+			set_time_limit(0);
+			//上传文件开始
+			$uploader = new Helper_Uploader();
+			//检查指定名字的上传对象是否存在
+			if (! $uploader->existsFile ( 'file' )) {
+				return $this->_redirectMessage('未上传文件','',url('/returnchannelimportcode',array('channel_id'=>request('channel_id'))), 3 );
+			}
+			//获得文件对象
+			$file = $uploader->file ( 'file' );
+			if (! $file->isValid ( 'xls' )) {
+				return $this->_redirectMessage('文件格式不正确：xls','',url('/returnchannelimportcode',array('channel_id'=>request('channel_id'))), 3 );
+			}
+			//缓存路径
+			$des_dir = Q::ini ( 'upload_tmp_dir' );
+			$filename = $des_dir.DS.date ( 'YmdHis' ).'feeimport.'.$file->extname ();
+			$file->move ( $filename );
+			ini_set ( "memory_limit", "3072M" );
+			$xls = Helper_Excel::readFile ( $filename,true);
+			$sheets =$xls->toHeaderMap ();
+			// 		echo "<pre>";
+			// 		print_r($sheets);
+			// 		exit;
+			//判断字段是否正确
+			if(@!$sheets[0]['邮编']){
+				return $this->_redirectMessage ( '导入失败', '邮编字段不存在', url ( '/returnchannelimportcode',array('channel_id' => request('channel_id')) ), 3 );
+				exit ();
+			}
+			//删除原有数据
+			ReturnChannelZipCode::meta()->destroyWhere('channel_id=?',request('channel_id'));
+			//循环添加
+			foreach ($sheets as $sheet){
+				//判断邮编不存在跳出
+				if(!$sheet['邮编']){
+					break;
+				}
+				//添加新数据
+				$zipcode = new ReturnChannelZipCode();
+				//主表id
+				$zipcode->channel_id = request('channel_id');
+				$zipcode->zip_code = $sheet['邮编'];
+				$zipcode->save();
+			}
+			return $this->_redirectMessage ( '导入成功', '成功', url ( '/returnchannelimportcode',array('channel_id' => request('channel_id')) ), 3 );
+			exit ();
+		}
+		$pagination = null;
+		$channelcode=$channelcode->limitPage ( request ( "page", 1 ), request ( 'page_size', 30 ) )
+		->fetchPagination ( $pagination )->getAll();
+		
+		$this->_view['channelcode']=$channelcode;
+		$this->_view['pagination']=$pagination;
+	}
+	/**
+	 * @todo   退件渠道偏派邮编添加
+	 * @author 吴开龙
+	 * @since  2020-11-12 15:03:07
+	 * @return json
+	 * @link   #83699
+	 */
+	function actionReturnChannelImportCodeAdd(){
+		//判断
+		if (request('zip_code')){
+			//添加数据
+			$disabled = ReturnChannelZipCode::find ( "id=?", request ( "id" ) )->getOne ();
+			$disabled->channel_id = request('channel_id');
+			$disabled->zip_code = request('zip_code');
+			$disabled->save ();
+			//返回id
+			echo ($disabled->id);
+		}
+		exit();
+	}
+	/**
+	 * @todo   退件渠道偏派邮编删除
+	 * @author 吴开龙
+	 * @since  2020-11-12 15:03:07
+	 * @return json
+	 * @link   #83699
+	 */
+	function actionReturnDeleteZip(){
+		//id为真执行
+		if(request ( 'id' )){
+			//删除
+			ReturnChannelZipCode::meta()->destroyWhere('id = ?',request ( 'id' ));
+		}
+		exit;
+	}
+}

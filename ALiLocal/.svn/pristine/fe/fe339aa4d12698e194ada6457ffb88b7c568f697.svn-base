@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!--By Supcan Report -->
+<Report>
+	<WorkSheet name="Sheet">
+		<Properties>
+			<BackGround bgColor="#FFFFFF"/>
+			<DefaultTD>
+				<TD fontIndex="0" textColor="#000000" transparent="true" leftBorder="1" topBorder="1" leftBorderColor="#C0C0C0" leftBorderStyle="solid" topBorderColor="#C0C0C0" topBorderStyle="solid" decimal="2" align="left" vAlign="middle" isProtected="false" isThousandSeparat="true" isRound="true" isPrint="true"/>
+			</DefaultTD>
+			<Other isShowZero="true" isRefOriPrecision="true" AutoBreakLine="3" LineDistance="0" isRowHeightAutoExtendAble="false"/>
+		</Properties>
+		<Fonts>
+			<Font faceName="微软雅黑" charSet="134" height="-14" weight="400"/>
+		</Fonts>
+		<Table>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="25"/>
+			<Col width="15"/>
+			<TR height="25" sequence="0">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="1">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="2">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="3">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="4">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="5">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="6">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="7">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="8">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="9">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="10">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="11">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="12">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="13">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="14">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="15">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="16">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="17">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="18">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="19">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="20">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="21">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="22">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="23">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="24">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="25">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="26">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="27">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="28">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="29">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="30">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="31">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="32">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="33">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="34">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="35">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="25" sequence="36">
+				<TD col="26" topBorder="0"/>
+			</TR>
+			<TR height="15" sequence="37">
+				<TD col="0" leftBorder="0"/>
+				<TD col="1" leftBorder="0"/>
+				<TD col="2" leftBorder="0"/>
+				<TD col="3" leftBorder="0"/>
+				<TD col="4" leftBorder="0"/>
+				<TD col="5" leftBorder="0"/>
+				<TD col="6" leftBorder="0"/>
+				<TD col="7" leftBorder="0"/>
+				<TD col="8" leftBorder="0"/>
+				<TD col="9" leftBorder="0"/>
+				<TD col="10" leftBorder="0"/>
+				<TD col="11" leftBorder="0"/>
+				<TD col="12" leftBorder="0"/>
+				<TD col="13" leftBorder="0"/>
+				<TD col="14" leftBorder="0"/>
+				<TD col="15" leftBorder="0"/>
+				<TD col="16" leftBorder="0"/>
+				<TD col="17" leftBorder="0"/>
+				<TD col="18" leftBorder="0"/>
+				<TD col="19" leftBorder="0"/>
+				<TD col="20" leftBorder="0"/>
+				<TD col="21" leftBorder="0"/>
+				<TD col="22" leftBorder="0"/>
+				<TD col="23" leftBorder="0"/>
+				<TD col="24" leftBorder="0"/>
+				<TD col="25" leftBorder="0"/>
+				<TD col="26" leftBorder="0" topBorder="0"/>
+			</TR>
+		</Table>
+		<PrintPage>
+			<Paper>
+				<Margin left="19" top="25" right="19" bottom="25"/>
+			</Paper>
+			<Page isIgnoreValidBorder="false">
+				<PageCode>
+					<Font faceName="微软雅黑" charSet="134" height="-14" weight="400"/>
+				</PageCode>
+			</Page>
+		</PrintPage>
+	</WorkSheet>
+</Report>

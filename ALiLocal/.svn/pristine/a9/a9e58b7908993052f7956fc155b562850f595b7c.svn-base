@@ -1,0 +1,37 @@
+<div style="overflow: scroll; height: 420px;" id="scroll-fee-list-talbe">
+	<table class="FarTable" style="margin: 0; width: 380; table-layout: fixed;"
+		id="fee-list-talbe">
+		<thead>
+			<tr>
+				<th style="width: 50px;">No.</th>
+				<th style="width: 150px;">账号</th>
+				<th style="width: 150px;">总金额</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php if(request('fee_type','1')==1):?>
+			<tr>
+				<td style="text-align: center;">1</td>
+				<td style="text-align: center;">阿里巴巴</td>
+				<td style="text-align: center;"><?php echo $totals?></td>
+			</tr>
+		<?php else:?>
+			<?php foreach ($totals as $key => $total):?>
+			<tr>
+				<td style="text-align: center;"><?php echo $key+1?></td>
+				<td style="text-align: center;"><?php echo $total['account']?></td>
+				<td style="text-align: center;"><?php echo $total['sum_amount']?></td>
+			</tr>
+			<?php endforeach;?>
+		<?php endif;?>
+		</tbody>
+	</table>
+</div>
+
+<script type="text/javascript">
+$('#fee-list-talbe').floatThead({
+    scrollContainer: function($table){
+        return $table.closest('#scroll-fee-list-talbe');
+    }
+});
+</script>

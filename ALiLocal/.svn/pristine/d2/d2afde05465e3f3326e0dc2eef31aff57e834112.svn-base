@@ -1,0 +1,62 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>逾期报告用户列表<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<div class="FarSearch">
+		<table>
+			<tbody>
+				<tr>
+					<th width=80>工号</th>
+					<td width=120>
+						<input type="text" name="user_account"
+							value="<?php echo request("user_account")?>" />
+					</td>
+					<th width=80>姓名</th>
+					<td width=120>
+						<input type="text" name="user_name"
+							value="<?php echo request("user_name")?>" />
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="FarTool">
+		<button class="btn btn-primary">
+			<i class="icon-search"></i>
+			搜索
+		</button>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th width="120">工号</th>
+				<th>姓名</th>
+				<th>部门</th>
+				<th>邮箱</th>
+				<th>逾期报告天数</th>
+				<th width=160>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		    <?php foreach($users as $user):?>
+			<tr>
+				<td><?php echo $user->user_account;?></td>
+				<td><a target="edit_user_<?php echo $user->user_id?>" href="<?php echo url("user/setoverdue",array("id"=>$user->user_id))?>"><?php echo $user->user_name;?></a></td>
+				<td><?php echo $user->department->abbreviation?></td>
+				<td><?php echo $user->email?></td>
+				<td><?php echo $user->account_period?></td>
+				<td>
+					<a class="btn btn-mini"
+						target="edit_user_<?php echo $user->user_id?>"
+						href="<?php echo url("user/setoverdue",array("id"=>$user->user_id))?>">
+						<i class="icon-edit"></i>
+						编辑
+					</a>
+				</td>
+			</tr>
+			<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+
+<?PHP $this->_endblock();?>

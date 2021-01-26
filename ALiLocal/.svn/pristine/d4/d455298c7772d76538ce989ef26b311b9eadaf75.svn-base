@@ -1,0 +1,115 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    订单轨迹
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <style type="text/css">
+        .table>tbody>tr>td{
+            border:0px;
+        }
+        .tracking_el {
+        		float:right;margin:8px 0 0 0;
+        }
+        td {
+         word-break: break-all;
+        }
+         
+    </style>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php if (!request_is_ajax()):?>
+<p>
+总单号：<?php echo request('total_list_no')?>
+</p>
+<?php endif?>
+<form method="POST" onsubmit=" return checktime();">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th class="required-title">轨迹代码</th>
+					<td>
+						<?php
+						echo Q::control ( "dropdownbox", "tracking_code", array (
+							"items" => $trace_code,
+						    "value" => request ( "tracking_code" ),
+							"style" => "width:200px" ,
+						    "empty"=>true,
+						    "required"=>'required'
+						) )?>
+					</td>
+					<th class="required-title">轨迹时间</th>
+					<td>
+						<input class="easyui-datetimebox"
+						name="trace_time" value=""
+						style="width: 150px"/>
+					</td>
+					<th class="required-title">地点</th>
+					<td>
+						<input name="location" type="text" style="width: 100px"
+							value="<?php echo request('location')?>">
+					</td>
+					<th class="required-title">时区号</th>
+					<td>
+						<input  required="required" style="width: 80px;" type="text" maxlength="32" name="timezone" />
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="offset5 span2">
+	   <button class="btn btn-small btn-success">
+                                保存
+       </button>
+       <a class="btn btn-small btn-inverse" href="<?php echo url('/totaltrack')?>">返回</a>
+	</div>
+	<input type="hidden" name="order_id" value="<?php echo $order->order_id?>">
+</form>  
+<div class="row">
+	<div>
+	<h4 style="clear: both;"> 订单轨迹信息<font color="red">(例如：西一区录入-1，东一区，录入1)</font>
+	<a class='btn btn-mini' href="<?php echo url('warehouse/allcheck',array('total_list_no'=>request('total_list_no')))?>">一键确认</a></h4>
+	<table class="FarTable" style="width:70%;">
+		<thead>
+			<tr>
+				<th>轨迹代码</th>
+				<th>轨迹时间</th>
+				<th>地点</th>
+				<th>中文描述信息</th>
+				<th>时区</th>
+				<th>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php foreach ($list as $temp):?>
+		<tr>
+			<td><?php echo $temp->tracking_code?></td>
+			<td><?php echo Helper_Util::strDate('Y-m-d H:i', $temp->trace_time)?></td>
+			<td><?php echo $temp->location?></td>
+			<td><?php echo $temp->trace_desc_cn?></td>
+			<td><?php echo $temp->timezone?></td>
+			<td>
+    			<?php if ($temp->confirm_flag <1):?>
+    			<a class="btn btn-mini btn-info" href="<?php echo url('/trackconfirm',array('tracking_id'=>$temp->tracking_id))?>">
+    				<i class="icon icon-ok"></i>
+    			</a>
+    			<a class="btn btn-mini btn-danger" href="<?php echo url('/ignore',array('tracking_id'=>$temp->tracking_id))?>">
+    				忽略
+    			</a>
+    			
+    			<?php elseif ($temp->confirm_flag =='1'):?>
+    				已确认
+    			<?php elseif ($temp->confirm_flag =='2'):?>
+    			            已忽略
+    			<?php endif;?>
+			</td>
+		</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	</div>
+	
+</div>
+
+<?PHP $this->_endblock();?>
+

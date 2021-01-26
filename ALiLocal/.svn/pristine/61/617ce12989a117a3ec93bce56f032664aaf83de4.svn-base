@@ -1,0 +1,48 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+  工作台
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'工作台' => ''
+	) 
+) )?>
+<form method="POST">
+	 <h5>
+	 	(阿里/泛远/末端)单号:<input style="width:160px;" type='text' value="" name="order_no" autofocus>
+		 <button class="btn btn-primary btn-small" id="search">
+		 	<i class="icon-search"></i>
+		                 搜索
+	     </button>
+     </h5>
+    <h4>审单预警</h4>
+    <table class="FarTable" style="width:60%">
+        <thead>
+            <tr>
+                <th style="width:40px;">序号</th>
+                <th class="span2">阿里订单号</th>
+                <th>预警原因</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php $i=1; foreach ($warning_orders as $warning_order):?>
+            <tr>
+                <td><?php echo $i++;?></td>
+                <td><a target="_blank" href="<?php echo url("order/detail",array("order_id"=>$warning_order['order_id']))?>"><?php echo $warning_order['ali_order_no']?></a></td>
+                <td><?php echo implode("<br/>", $warning_order['reason'])?></td>
+                <td> <a class="btn btn-small btn-info" href="<?php echo url("staff/handled",array("order_id"=>$warning_order['order_id']))?>">已处理</a>
+		          </td>
+            </tr>
+            <?php endforeach;?>
+        </tbody>
+    </table>
+</form>
+    
+<?PHP $this->_endblock();?>
+

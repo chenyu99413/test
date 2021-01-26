@@ -1,0 +1,257 @@
+<?php
+class Controller_Product extends Controller_Abstract {
+	/**
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 产品一览
+	 */
+	function actionSearch() {
+		$select = Product::find ()->order ( 'product_name' );
+		$this->_view ['products'] = $select->getAll ();
+	}
+	
+	/**
+	 * 产品显示
+	 */
+	function actionEdit() {
+		//产品信息
+		$product = Product::find ( 'product_id = ?', request ( "id" ) )->getOne ();
+		
+		//产品保存
+		if (request_is_post ()) {
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			
+			//产品
+			if (request ( "product" ) != null || strlen ( request ( "product" ) ) > 0) {
+				$product->changeProps ( request ( "product" ) );
+				$product->save ();
+			}
+			//产品-价格-分区-偏派列表
+			if (request ( "productppr" ) != null || strlen ( request ( "productppr" ) ) > 0) {
+				Productppr::meta ()->destroyWhere ( "product_id = ?", $product->product_id );
+				foreach ( json_decode ( request ( "productppr" ) ) as $value ) {
+					$productprp = new Productppr ();
+					$value->effective_time=strtotime($value->effective_time);
+					$value->invalid_time=strtotime($value->invalid_time);
+					$productprp->changeProps ( $value );
+					$productprp->product_id=$product->product_id;
+					$productprp->save ();
+				}
+			}
+			
+			$conn->completeTrans ();
+			return $this->_redirectMessage ( "产品信息", "保存成功", url ( "product/edit", array (
+				"id" => $product->id ()
+			) ) );
+		}
+		$this->_view ["tabs"] = $this::createTabs ( $product );
+		$this->_view ["networks"] = Network::networks ();
+		$this->_view ["product"] = $product;
+	}
+	
+	/**
+	 * 产品复制
+	 */
+	function actionCopy() {
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		$conn = QDB::getConn ();
+		$conn->startTrans ();
+		
+		//基本信息
+		$newProduct = clone $product;
+		$newProduct->product_name = $product->product_name . "(复制)";
+		$newProduct->product_code = $product->product_code . "(复制)";
+		$newProduct->modifier = $this->_login_user ["user_name"];
+		$newProduct->save ();
+		
+		// 产品可用部门
+		$sql = "INSERT INTO tb_product_department ( product_id, department_id, create_date, update_date )";
+		$sql .= "SELECT '" . $newProduct->product_id . "', department_id, create_date, update_date FROM tb_product_department WHERE product_id = " . $product->product_id;
+		$conn->execute ( $sql );
+		
+		//渠道成本价信息
+		foreach ( $product->channelcost as $channelCost ) {
+			$newChannelCost = clone $channelCost;
+			$newChannelCost->product_id = $newProduct->product_id;
+			$newChannelCost->save ();
+			
+			//渠道成本价类型
+			foreach ( $channelCost->channelcosttype as $channelcosttype ) {
+				$newChannelcosttype = clone $channelcosttype;
+				$newChannelcosttype->channel_cost_id = $newChannelCost->channel_cost_id;
+				$newChannelcosttype->save ();
+				
+				//渠道折扣分区
+				$sql = "INSERT INTO tb_channel_discount_partition (type_id, partition_code, start_weight, end_weight, discount, create_date, update_date)";
+				$sql .= "SELECT '" . $newChannelcosttype->type_id . "', partition_code, start_weight, end_weight, discount, create_date, update_date FROM tb_channel_discount_partition WHERE type_id = " . $channelcosttype->type_id;
+				$conn->execute ( $sql );
+				
+				//渠道折扣国家
+				$sql = "INSERT INTO tb_channel_discount_country (type_id, country_code_word_two, discount, create_date, update_date)";
+				$sql .= "SELECT '" . $newChannelcosttype->type_id . "', country_code_word_two, discount, create_date, update_date FROM tb_channel_discount_country WHERE type_id = " . $channelcosttype->type_id;
+				$conn->execute ( $sql );
+				
+				//渠道折扣操作
+				$sql = "INSERT INTO tb_channel_discount_operating (type_id, start_weight, end_weight, first, first_fee, additional, additional_fee, capping, create_date, update_date)";
+				$sql .= "SELECT '" . $newChannelcosttype->type_id . "', start_weight, end_weight, first, first_fee, additional, additional_fee, capping, create_date, update_date FROM tb_channel_discount_operating WHERE type_id = " . $channelcosttype->type_id;
+				$conn->execute ( $sql );
+				
+				//渠道折扣其他
+				$sql = "INSERT INTO tb_channel_discount_other (type_id, start_weight, end_weight, first, first_fee, additional, additional_fee, capping, create_date, update_date)";
+				$sql .= "SELECT '" . $newChannelcosttype->type_id . "', start_weight, end_weight, first, first_fee, additional, additional_fee, capping, create_date, update_date FROM tb_channel_discount_other WHERE type_id = " . $channelcosttype->type_id;
+				$conn->execute ( $sql );
+			}
+		}
+		$conn->completeTrans ();
+		return $this->_redirectMessage ( "产品信息", "复制成功", url ( "product/search" ) );
+	}
+	
+	/**
+	 * 产品删除
+	 */
+	function actionDelete() {
+		//产品信息
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		//判断产品是否存在
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( '产品信息', '该产品不存在，无法删除', url ( 'product/search' ) );
+		}
+		
+		//判断产品是否被使用
+		$check = Waybill::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if (! $check->isNewRecord ()) {
+			return $this->_redirectMessage ( '产品信息', '该产品正在被使用，无法删除', url ( 'product/search' ) );
+		}
+		$check = CustomsDiscount::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if (! $check->isNewRecord ()) {
+			return $this->_redirectMessage ( '产品信息', '该产品正在被使用，无法删除', url ( 'product/search' ) );
+		}
+		$check = Publicprice::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if (! $check->isNewRecord ()) {
+			return $this->_redirectMessage ( '产品信息', '该产品正在被使用，无法删除', url ( 'product/search' ) );
+		}
+		
+		$product->destroy ();
+		return $this->_redirectMessage ( '产品删除成功', '', url ( 'product/search' ) );
+	}
+	
+	/**
+	 * 创建标签
+	 *
+	 * @param 产品 $product        	
+	 * @return 标签列
+	 */
+	static function createTabs($product) {
+		if ($product->isNewRecord ()) {
+			return array (
+				array (
+					"id" => "0",
+					"title" => "基本信息",
+					"href" => "" 
+				) 
+			);
+		} else {
+			return array (
+				array (
+					"id" => "0",
+					"title" => "基本信息",
+					"href" => url ( "product/edit", array (
+						"id" => $product->product_id 
+					) ) 
+				),
+				array (
+					"id" => "4",
+					"title" => "渠道成本",
+					"href" => url ( "channelcost/search", array (
+						"id" => $product->product_id 
+					) ) 
+				) 
+			);
+		}
+	}
+	
+	/*
+	 * 电池包裹操作费
+	 */
+	function actionOperating(){
+		//保存
+		if (request ( "operating" ) != null || strlen ( request ( "operating" ) ) > 0) {
+				$value=json_decode ( request ( "operating" ),true);
+				$operating = Productbatteryoperating::find("operating_id=?",$value[0]["operating_id"])->getOne();
+				if (request ( "delete_flag" ) == "true") {
+					if (! $operating->isNewRecord ()) {
+						$operating->destroy ();
+					}
+				}else{
+					$operating->changeProps ( $value[0] );
+					$operating->save ();
+				}
+				echo ($operating->operating_id);
+			}
+			exit;
+	}
+	/*
+	 * 旺季操作费
+	 */
+	function actionProductsurchargecountry(){
+		//保存
+		if (request ( "surcharge" ) != null || strlen ( request ( "surcharge" ) ) > 0) {
+			$value=json_decode ( request ( "surcharge" ),true);
+			$id=$value[0]['surcharge_id'];
+			$surcharge= ProductSurchargeCountry::find("surcharge_country_id =?",$id)->getOne();
+			if (request ( "delete_flag" ) == "true") {
+				$surcharge->destroy();
+			}else{
+				$value[0]['country_code_word_two']=strtoupper($value[0]['country_code_word_two']);
+				$surcharge->changeProps($value[0]);
+				$surcharge->save();
+			}
+			$result=$surcharge->id();
+			echo ($result);
+		}
+		exit;
+	}
+	
+	/**
+	 * 客户端可用产品
+	 */
+	function actionClient(){
+		if(request_is_post() && request("customer")){
+			$customer=Customs::find('customs_abbreviation=?',request("customer"))->getOne();
+			if(request("product_ids") && request("set")=='set'){
+				Productclient::find('client_id =?',$customer->customs_id)->getAll()->destroy();
+				$time=time();
+				$product_ids=request("product_ids");
+				foreach ($product_ids as $p){
+					$product_client=new Productclient();
+					$product_client->department_id=request("department");
+					$product_client->client_id=$customer->customs_id;
+					$product_client->product_id=$p;
+					$product_client->operator=MyApp::CurrentUser('user_name');
+					$product_client->operate_time=$time;
+					$product_client->save();
+				}
+			}
+			//部门可用产品
+			$product_department=ProductDepartment::find('department_id =?',$customer->department_id)->asArray()->getAll();
+			//所有可用的未过期的产品
+			$products=Product::find("product_id in (?) and network_id=1 and fail_date >=?",Helper_Array::getCols($product_department, 'product_id'),date('Y-m-d'))->order ( 'fail_date' )->getAll();
+			$this->_view ["products"] = $products;
+			//已存在的客户端可用产品
+			$product_clients=Productclient::find('client_id=?',$customer->customs_id)->asArray()->getAll();
+			$this->_view ["product_client_ids"] =Helper_Array::getCols($product_clients, 'product_id');
+		}
+	}
+}

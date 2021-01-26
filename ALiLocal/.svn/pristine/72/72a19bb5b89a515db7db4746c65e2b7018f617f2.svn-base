@@ -1,0 +1,34 @@
+<?php
+require dirname ( __FILE__ ) . DS . 'ChinesePinyin.class.php';
+/**
+ * 中文处理助手
+ *
+ * @author firzen
+ *        
+ */
+class Helper_Chinese {
+	/**
+	 * 唯一实例
+	 *
+	 * @return ChinesePinyin
+	 */
+	static function instance() {
+		return Q::singleton ( 'ChinesePinyin' );
+	}
+	/**
+	 * 中文转拼音
+	 *
+	 * @param string $chineseString        	
+	 * @return string
+	 */
+	static function toPinYin($chineseString, $default = false) {
+		$result = "";
+		if ($default) {
+			preg_match ( '/^[\w\d]+/', $chineseString, $return );
+			if (! empty ( $return )) {
+				$result = $return [0];
+			}
+		}
+		return $result . self::instance ()->TransformWithoutTone ( $chineseString );
+	}
+}

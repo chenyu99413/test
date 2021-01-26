@@ -1,0 +1,230 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+  工作台
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'工作台' => ''
+	) 
+) )?>
+<form method="POST">
+	 <h5>
+	 	(阿里/泛远/末端)单号:<input style="width:160px;" type='text' value="" name="order_no" autofocus>
+		 <button class="btn btn-primary btn-small" id="search">
+		 	<i class="icon-search"></i>
+		                 搜索
+	     </button>
+     </h5>
+    <?php $relateddepartment=RelevantDepartment::relateddepartmentids();?>
+    <?php if (in_array('6', $relateddepartment)):?>
+    <h4>审单预警</h4>
+    <form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>仓库</th>
+					<td>
+						<?php
+						echo Q::control ( 'dropdownbox', 'department_id', array (
+							'items' => Helper_Array::toHashmap(Department::departmentlist(),'department_id','department_name'),
+							'empty'=>true,
+							'value' => request ( 'department_id') 
+						) )?>
+					</td>
+					<th>产品</th>
+					<td>
+						<?php
+						echo Q::control ( 'dropdownbox', 'service_code', array (
+							'items' => $service,
+							'empty'=>true,
+							'value' => request ( 'service_code') 
+						) )?>
+					</td>
+					<th>订单状态</th>
+					<td>
+						<?php
+						echo Q::control ( 'dropdownbox', 'order_status', array (
+							'items' => Order::$status,
+							'empty'=>true,
+							'value' => request ( 'order_status') 
+						) )?>
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div id="dialog_send" class="easyui-dialog hide"title="邮件模板"
+		data-options="closed:true, modal:true"
+		style="width:800px; height: 430px;">
+		<div>
+        <table class="FarTable">
+              <tr>
+                    <th class="required-title">阿里单号</th>
+                    <td><input id='ali_order_no' type="text" readonly="readonly" required="required"/></td>
+              </tr>
+              <tr>
+              		<th  style="width:100px;" class="required-title">模板</th>
+					<td><?php
+                    echo Q::control ( 'dropdownbox', 'emailtemplate', array (
+                        'name'=>'emailtemplate',
+                        'items' => Helper_Array::toHashmap(EmailTemplate::find()->asArray()->getAll(),'id','template_name'),
+                        'empty'=>true,
+                        'required'=>"required",
+                        'style'=>'width:200px;',
+                    ) )?></td>
+              </tr>
+              <tr>
+                    <th class="required-title" style="width:100px;">预览</th>
+                    <td><textarea rows="13" id='template_msg' style="width:500px;"></textarea></td>
+              </tr>
+        </table>
+        <table>
+        <tr>
+		    <td>
+		      <button class="btn btn-primary" type="submit" onclick="sendemail()" style="margin-left: 370px">
+					发送
+				</button>
+			</td>
+		</tr>
+		</table>		
+        </div>
+    </div>
+	</form>
+    <table class="FarTable" >
+        <thead>
+            <tr>
+                <th style="width:40px;">序号</th>
+                <th class="span2">阿里订单号</th>
+                <th style="width: 60px">订单状态</th>
+                <th align="center" style="width: 90px">订单时间</th>
+                <th style="width:60px;">仓库</th>
+                <th style="width:110px;">产品</th>
+                <th>预警原因</th>
+                <th style="width: 80px">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php $i=1; foreach ($warning_orders as $warning_order):?>
+            <tr>
+                <td><?php echo $i++;?></td>
+                <td><a target="_blank" href="<?php echo url("order/detail",array("order_id"=>$warning_order['order_id']))?>"><?php echo $warning_order['ali_order_no']?></a></td>
+                <td><?php echo $status[$warning_order['order_status']]?></td>
+                <td><?php echo date('m-d H:i',$warning_order['order_create_time'])?></td>
+                <td><?php echo $dpms[$warning_order['department_id']]?></td>
+                <td><?php echo $service[$warning_order['service_code']]?></td>
+                <td><?php echo implode(",", $warning_order['reason'])?></td>
+		        <td style="width:110px;">
+		            <a class="btn btn-small btn-success" href="javascript:void(0)" onclick="$('#dialog_send').dialog('open');$('.window-shadow').css('top',$(window).scrollTop());$('.panel').css('top',$(window).scrollTop());$('#dialog_send').removeClass('hide');copy('<?php echo $warning_order['ali_order_no']?>')">邮件</a>
+		            <input type="button" class="btn btn-small btn-info" href="javascript:void(0)" data="<?php echo $warning_order['order_id']?>" onclick="finish(this)" value="已处理">
+		        </td>
+            </tr>
+            <?php endforeach;?>
+        </tbody>
+    </table>
+    <?php endif;?>
+</form>
+    
+<?PHP $this->_endblock();?>
+<script type="text/javascript">
+function copy(ali_order_no){
+	$('#ali_order_no').val(ali_order_no);
+	$("#emailtemplate").val('');
+	$('#template_msg').val('');
+}
+$("#emailtemplate").change(function(){
+	var ali_order_no = $('#ali_order_no').val();
+	var id = $("#emailtemplate").val();
+	if(ali_order_no == ''){
+		alert('数据错误');
+		return false;
+	}
+	if(id>0 && ali_order_no != ''){
+		$.ajax({
+			url:'<?php echo url('product/templateinfo')?>',
+			data:{id:id,ali_order_no:ali_order_no},
+			type:'post',
+			dataType:'json',
+			async:false,
+			success:function(data){
+				if(data.error == 'notemplate'){
+				   alert('该模板不存在');
+				}else if(data.error == 'noorder'){
+				   alert('该订单不存在');
+				}else if(data.error == 'nopostal'){
+				   alert('邮政信息缺失,请检查是否正确');
+				}else if(data.error == 'nodata'){
+				   alert('数据缺失');
+				}else{
+				   $('#template_msg').val(data.message);
+				}
+			}
+		});
+	}else{
+		$('#template_msg').val('');
+	}
+});
+function sendemail(){
+	var id = $("#emailtemplate").val();
+	var ali_order_no = $('#ali_order_no').val();
+	var message = $('#template_msg').val();
+	if(id>0 && ali_order_no != '' && message != ''){
+		$.ajax({
+			url:'<?php echo url('product/sendtemplate')?>',
+			data:{id:id,ali_order_no:ali_order_no,message:message},
+			type:'post',
+			dataType:'json',
+			async:false,
+			success:function(data){
+				if(data.error=='notemplatzzze'){
+					alert('该模板不存在');
+				}else if(data.error=='nodata'){
+					alert('数据不完整');
+				}else{
+					if(data.success== 'success'){
+					   alert('发送成功');
+					   setTimeout(function (){
+							window.location.reload();
+						}, 1000);
+					}else{
+					   alert('发送失败，失败原因：'+data.errorinfo);
+					}
+				}
+			}
+		});
+	}else{
+		alert('必填项不能为空');
+		return false;
+	}
+}
+function finish(obj){
+	var order_id=$(obj).attr('data');
+// 	alert(order_id);
+	$.ajax({
+		url:'<?php echo url('staff/handled')?>',
+		data:{order_id:order_id},
+		type:'post',
+		async:false,
+		success:function(data){
+// 			alert(data);
+			if(data!='success'){
+			   alert('订单不存在');
+			}else{
+				alert('成功');
+				$(obj).remove();
+			}
+		}
+	});
+}
+</script>

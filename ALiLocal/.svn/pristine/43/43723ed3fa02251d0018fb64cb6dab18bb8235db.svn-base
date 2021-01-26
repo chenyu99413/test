@@ -1,0 +1,230 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+应付统计
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<form method="post" action="" style="margin-bottom: 2px;" id="page-top-search">
+	<div
+		style="border: 1px solid #d4d4d4; background-color: #f2f2f2; padding: 10px;">
+		<table>
+			<tbody>
+				<tr>
+					<th>
+					<?php
+                        echo Q::control ( 'dropdownlist', 'timetype', array (
+                        'items'=>array('1'=>'出库日期','2'=>'订单日期'),
+                        'value' => request('timetype', '1' ),
+                        'style'=>'width:80px'
+                     ) )?>
+                    </th>
+					<td colspan="3">
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date", date ( 'Y-m-' ) . '01' ),
+							"style" => "width: 90px"
+						) )?>
+						-
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date", date ( 'Y-m-d' ) ),
+							"style" => "width: 90px"
+						) )?>
+					</td>
+					<th>阿里订单号</th>
+					<td>
+						<input name="ali_order_no" type="text"
+							value="<?php echo request('ali_order_no')?>">
+					</td>
+					<th>泛远单号</th>
+					<td>
+						<input name="far_no" type="text" value="<?php echo request('far_no')?>">
+					</td>
+					<th>供应商</th>
+					<td>
+						<?php
+                        echo Q::control ( 'dropdownbox', 'supplier_id', array (
+                        'items'=>Helper_Array::toHashmap(Supplier::find()->asArray()->getAll(),'supplier_id','supplier'),
+                        'empty' => true, 
+                        'value' => request('supplier_id'),
+                        'style'=>'width:80px'
+                     ) )?>
+					</td>
+					<th>渠道</th>
+					<td>
+						<?php
+                        echo Q::control ( 'dropdownbox', 'channel_id', array (
+                        'items'=>Helper_Array::toHashmap(Channel::find()->asArray()->getAll(),'channel_id','channel_name'),
+                        'empty' => true, 
+                        'value' => request('channel_id'),
+                        'style'=>'width:100px'
+                     ) )?>
+					</td>
+					<td>
+						<input type="hidden" name="filter_id"
+							value="<?php echo request('filter_id')?>" />
+						<button class="btn btn-small btn-info" name="search" id="search">
+							<i class="icon-search"></i>
+							搜索
+						</button>
+						<a class="btn btn-small btn-primary" href="javascript:void(0)" onclick="downloadpayment()">
+						     <i class="icon-download"></i>
+						     导出
+						</a>
+						<a id="import" class="btn btn-small btn-warning"
+                    	href="javascript:void(0)"
+                    	onclick="$('#upload_file_import').trigger('click');">
+                    	<i class="icon-upload"></i>
+                    	成本对账
+                        </a>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</form>
+<div style="display: none">
+	<input id="upload_file_import" type="file" name="file" accept="application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+		onchange="UploadFile(this,'<?php echo url('/compare')?>');MessagerProgress('导入');" />
+</div>
+<div style="clear: both;"></div>
+<div>
+	<div style="float: left; width: 210px;" id="filter-area">
+		<div
+			style="border: 1px solid #d4d4d4; background-color: #f2f2f2; width: 200px; padding: 4px;">筛选</div>
+		<div
+			style="border: 1px solid #d4d4d4; background-color: #ffffff; width: 200px; padding: 4px; border-top: 0px;">
+			<input type="text" name="filter-input" value="" placeholder="快速筛选"
+				style="width: 176px; margin: 6px 6px 10px;">
+			<ul id="filter-list" class="nav nav-list"
+				style="overflow: auto; height: 400px;">
+				<li class="active">
+					<a class="filter-a">全部</a>
+				</li>
+				<?php foreach ($filters as $filter):?>
+				<li>
+					<a class="filter-a" data-filter_id="<?php echo $filter['filter_id']?>"><?php echo $filter['filter_name']?></a>
+				</li>
+				<?php endforeach;?>
+			</ul>
+		</div>
+	</div>
+
+	<div class="easyui-tabs" style="float: right; width: 945px;" id="data-area">
+		<div title="明细" style="padding: 2px">
+			<div id="detail" style="min-height: 420px;"></div>
+		</div>
+		<div title="汇总" style="padding: 2px">
+			<div id="total" style="min-height: 420px;"></div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+$(function(){
+	$("#search").click(function(){
+		$('#page-top-search').find('[name="filter_id"]').val('全部');
+	})
+	// 初始化
+	loadDeatil();
+	// 标签页切换
+	$('#data-area').tabs({
+		onSelect: function(title,index){
+			// 仅切换时执行
+			if(title == '明细'){
+				loadDeatil();
+			} else {
+				loadTotal();
+			}
+		}
+	});
+	// 左侧快速筛选
+	$('[name="filter-input"]').on('keyup change',function(){
+		var $filter = $(this);
+		var input_value = $filter.val().trim().toUpperCase();
+		if (input_value == "") {
+			$('#filter-list').find('li').show();
+		} else {
+			$('#filter-list').find('li').each(function(){
+				var li_value = $(this).find('a').html().trim().toUpperCase();
+				if (li_value.indexOf(input_value) >= 0) {
+					$(this).show();
+				} else {
+					$(this).hide();
+				}
+			});
+		}
+	});
+	// 左侧快速筛选点击事件
+	$('.filter-a').on('click',function(){
+		$('#filter-list').find('li').removeClass('active');
+		$(this).closest('li').addClass('active');
+		$('#page-top-search').find('[name="filter_id"]').val($(this).data('filter_id'));
+		loadDeatil();
+	});
+	// 翻页异步加载
+	$('#detail').on('click','.pagination a',function(){
+		loadDeatil($(this).attr('href'));
+		return false;
+	});
+	// 翻页异步加载
+	$('#total').on('click','.pagination a',function(){
+		loadTotal($(this).attr('href'));
+		return false;
+	});
+});
+function loadDeatil(href){
+	var $form = $('#page-top-search');
+	var url = href != undefined ? href : "<?php echo url('statistics/PaymentDetail')?>";
+	$("#detail").load(url,$form.serialize(),function(){
+		console.log('loadDeatil');
+		$('#data-area').tabs('select','明细');
+// 		$('#page-top-search').find('[name=filter_id]').val('');
+	});
+}
+function loadTotal(href){
+	var $form = $('#page-top-search');
+	var url = href != undefined ? href : "<?php echo url('statistics/PaymentTotal')?>";
+	$("#total").load(url,$form.serialize(),function(){
+		console.log('loadTotal');
+		$('#data-area').tabs('select','汇总');
+	});
+}
+function downloadpayment(){
+	var $form = $('#page-top-search');
+	var url ="<?php echo url('statistics/Paymentexport')?>";
+	window.location.href="<?php echo url('statistics/Paymentexport')?>"+'?'+$form.serialize();
+}
+function downloadreceivable(){
+	var $form = $('#page-top-search');
+	var url ="<?php echo url('statistics/receivableexport')?>";
+	window.location.href="<?php echo url('statistics/receivableexport')?>"+'?'+$form.serialize();
+}
+$(function(){
+	if($("#timetype").val()=='1' && $("#fee_type_1").attr('checked')=='checked'){
+		$(".receivable").show();
+	}else{
+		$(".receivable").hide();
+	}
+});
+$("#timetype").click(function(){
+	if($("#timetype").val()=='1' && $("#fee_type_1").attr('checked')=='checked'){
+		$(".receivable").show();
+	}
+	if($("#timetype").val()=='2' || $("#fee_type_2").attr('checked')=='checked'){
+		$(".receivable").hide();
+	}
+});
+$("#fee_type_1").click(function(){
+	if($("#timetype").val()=='1'){
+		$(".receivable").show();
+	}else{
+		$(".receivable").hide();
+	}
+});
+$("#fee_type_2").click(function(){
+	$(".receivable").hide();
+});
+</script>
+<?PHP $this->_endblock();?>
+

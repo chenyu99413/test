@@ -1,0 +1,48 @@
+<HTML>
+<head><title>10.不同浏览器之间的一些差别</title>
+<meta http-equiv="content-type" content="text/html; charset=gb2312">
+<link rel="stylesheet" href="temp1.css" type="text/css">
+</head>
+<body bgcolor=#ffffff vlink=#0000ff>
+<br>
+<p class='sz1'>10.不同浏览器之间的一些差别</p><hr color=#2266ee size=1>
+　　硕正套件对FireFox、Chrome和IE的支持存在着一些细微的差别，目前已发现的差别如下：<br>
+<b>1</b>.FireFox/Chrome的 HTML 页面必须要有&lt;meta ... &gt;的文字编码声明，例如:<br>
+<pre class='xml'>
+&lt;meta http-equiv="content-type" content="text/html; charset=gb2312"&gt;
+//或
+&lt;meta http-equiv="content-type" content="text/html; charset=utf-8"&gt;</pre>
+　　否则页面调用插件的函数时，参数中的中文很可能会变成乱码.<br>
+<br>
+<b>2</b>.如果您将 插件/加载项 安置在&lt;Form&gt;中，在Firefox和Chrome下没问题，但在IE中针对控件的js会有问题，例如:<br>
+<pre class='xml'>
+...
+function OnReady(id)
+{
+ AF.func("Build", "g1.xml");
+}
+...
+&lt;form name="form1"&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;script&gt;insertReport('AF', '')&lt;/script&gt;
+&lt;/form&gt;
+...</pre>
+　　IE执行到第4行会抛出 'AF'未定义的错误，此时改成如下写法就能成功：
+<pre class='xml'>
+...
+function OnReady(id)
+{
+ <font color=red>form1.AF</font>.func("Build", "g1.xml");
+}
+...</pre>
+　　当然，您也可以把 上面insertReport( )的语句移出form，这样就不会有这个问题了。<br>
+<br>
+<b>3</b>.如果你的页面很长(指高度)，比如需要垂直滚动条, 如果插件一开始是隐藏在底部的，需要拖动滚动条才能显现，那么在IE中，插件是在初次显现时才会触发OnReady( )事件的!<br>
+<br>
+<b>4</b>.FireFox、Chrome页面中，插件无法感知页面上下文的字体，主要受影响的是Edit组件;<br>
+<br>
+<b>5</b>.在 FireFox、Chrome 浏览器中，您会发现硕正插件发起的 http 请求中，会话 Session 都会丢失，在前面已经提到过这个问题，因为 Chrome/Firefox 浏览无法自动保持 Cookie，需要您对页面作简单的改动，具体请参考<a class="out" href="http://www.supcan.cn/" target=_blank>硕正官网</a>主页左侧上方的"后端开发案例"中的文章《Firefox/Chrome中硕正请求Session丢失解决方法》;<br>
+<br>
+
+<br><br><br>
+<script type='text/javascript' src='nstd.js'></script>
+</body></html>

@@ -1,0 +1,44 @@
+<?php
+class Controller_Order extends Controller_Abstract{
+	/**
+	 * notifyBizEvent
+	 */
+    function actionnotifyBizEvent(){
+        session_start();
+        if(!isset($_SESSION['time'])){
+            $_SESSION['time']='1';
+        }
+        if($_SESSION['time']=='8'){
+            $_SESSION['time']='1';
+        }
+        $time=session('time');
+        $url_sign='http://112.124.134.6:80/openapi/param2/1/ali.intl.onetouch/logistics.order.notifyBizEvent/807693';
+        $order=Order::find("ali_order_no='ALI-1000000007'")->getOne();
+        $event_array=array('1'=>'WAREHOUSE_INBOUND','2'=>'WAREHOUSE_OUTBOUND','3'=>'CHECK_WEIGHT','4'=>'CONFIRM','5'=>'PALLETIZE','6'=>'CARRIER_PICKUP','7'=>'DELIVERY');
+        $ali=new Helper_ALI();
+        $event_request_data=$ali->notifyBizEvent($order->order_id,$event_array[$time]);
+        $sign=$ali->sign($url_sign, json_encode($event_request_data),'notifyBizEvent');
+        //组合完整url
+        $url=$url_sign.'?notifyBizEventDTO='.urlencode(json_encode($event_request_data)).'&_aop_signature='.$sign;
+        QLog::log($url);
+        //通过curl get 方式发送至阿里
+        $response=Helper_Curl::get1($url);
+        $_SESSION['time']+='1';
+        return $response;
+    }
+    /**
+     * notifyTrace
+     */
+    function actionnotifyTrace(){
+        $url_sign='http://112.124.134.6:80/openapi/param2/1/ali.intl.onetouch/logistics.order.notifyTrace/807693';
+        $tracking=Tracking::find()->getOne();
+        $ali=new Helper_ALI();
+        $trace_request_data=$ali->notifyTrace($tracking);
+        $sign=$ali->sign($url_sign, json_encode($trace_request_data),'notifyTrace');
+        //组合完整url
+        $url=$url_sign.'?notifyTraceDTO='.urlencode(json_encode($trace_request_data)).'&_aop_signature='.$sign;
+        //通过curl get 方式发送至阿里
+        $response=Helper_Curl::get1($url);
+        return $response;
+    }
+}

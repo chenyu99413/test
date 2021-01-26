@@ -1,0 +1,1 @@
+ALTER TABLE `tb_routes` CHANGE `location` `location` VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL DEFAULT '' COMMENT '轨迹地点';

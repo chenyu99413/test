@@ -1,0 +1,49 @@
+<?php
+
+class Controller_Kwaiquick extends Controller_Abstract {
+	/**
+	 * @todo   快手签入
+	 * @author stt
+	 * @since  August 10th 2020
+	 */
+	function actionIn() {
+	}
+	
+	/**
+	 * @todo   快手签入ajax
+	 * @author stt
+	 * @since  August 10th 2020
+	 */
+	function actionAjaxin() {
+		$data = request('kwaiquick_text');
+		$data = explode(",",$data);
+		if (count($data)==2){
+			$order=Order::find('ali_order_no=?',$data[0])->getOne();
+			if ($order->isNewRecord()){
+				$data['message']='noorder';
+				echo json_encode($data);
+				exit();
+			}
+			if ($order->order_status!='1'){
+				$data['message']='orderstatuserror';
+				echo json_encode($data);
+				exit();
+			}
+			$order->order_status = '5'; // 5 入库
+			$order->save();
+			Farpackage::meta ()->deleteWhere ( 'order_id=?', $order->order_id );
+			$far_package = new Farpackage ();
+			$far_package->order_id = $order->order_id;
+			$far_package->weight = $data[1];
+			$far_package->quantity = 1;
+			$far_package->save ();
+			$data['message']='success';
+			echo json_encode($data);
+			exit();
+		}else{
+			$data['message']='dataerror';
+			echo json_encode($data);
+			exit();
+		}
+	}
+}

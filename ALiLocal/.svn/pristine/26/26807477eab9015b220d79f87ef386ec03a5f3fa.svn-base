@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * Tracking 封装来自 tb_tracking 数据表的记录及领域逻辑
+ */
+class Tracking extends QDB_ActiveRecord_Abstract {
+	static $trace_code_cn= array(
+		'S_CLEARANCE_START' => '目的地清关开始',
+		'S_CLEARANCE_COMPLETE' => '目的地清关完成',
+		'S_TH_IN' => '到达转运中心',
+		'S_TH_OUT' => '离开转运中心',
+		'S_TH_IN_LAST' => '到达最后投递站',
+		'S_DELIVERY_SCHEDULED' => '安排投递',
+		'S_DELIVERY_SIGNED' => '快件已签收',
+		'F_CLEARANCE_5037' => '进口清关延迟:查验,海关要求同批次货物集中清关',
+		'F_CARRIER_PICKUP_RT_5035' => '派送延迟:已更新派送信息和计划，将重派',
+		'F_CARRIER_PICKUP_RT_5034' => '承运商收件失败，包裹退回到物流商',
+		'F_CLEARANCE_5037' => '进口清关延迟:查验,海关要求提供更多的清关资料（如税号、发票、许可证、货物详情、授权委托书等单据)',
+		'F_CLEARANCE_5038' => '海关没收或销毁，请联络承运商',
+		'F_DELIVERY_5043' => '需要进⼀步确认收件⼈信息',
+		'F_DELIVERY_5044' => '预约派送',
+		'F_DELIVERY_5045' => '收件⼈联系不上',
+		'F_DELIVERY_5046' => '收件人拒收，在联系收/发件方处理中',
+		'F_DELIVERY_5047' => '派送异常:退运给发件方',
+		'F_DELIVERY_5048' => '派送异常:收发件方弃件、销毁',
+		'F_DELIVERY_5049' => '派送异常:收件地址不在服务范围之内',
+		'F_DELIVERY_5050' => '等待收件方支付税费',
+		'F_DELIVERY_5051' => '收件方要求暂扣、延迟派送或自提',
+		'F_DELIVERY_5052' => '部分签收',
+		'F_DELIVERY_5053' => '包裹滞留中，即将派送',
+	);
+	/**
+	 * 返回对象的定义
+	 *
+	 * @static
+	 *
+	 * @return array
+	 */
+	static function __define() {
+		return array (
+			
+			// 用什么数据表保存对象
+			'table_name' => 'tb_tracking',
+			
+			// 指定数据表记录字段与对象属性之间的映射关系
+			// 没有在此处指定的属性，QeePHP 会自动设置将属性映射为对象的可读写属性
+			'props' => array (
+				'tracking_id' => array (
+					'readonly' => true 
+				) 
+			),
+			'validations' => array (),
+			'create_autofill' => array (
+				
+				// 自动填充修改和创建时间
+				'create_time' => self::AUTOFILL_TIMESTAMP,
+				'update_time' => self::AUTOFILL_TIMESTAMP 
+			),
+			'update_autofill' => array (
+				'update_time' => self::AUTOFILL_TIMESTAMP 
+			),
+			'attr_protected' => 'tracking_id' 
+		);
+	}
+	
+	/**
+	 * 开启一个查询，查找符合条件的对象或对象集合
+	 *
+	 * @static
+	 *
+	 * @return QDB_Select
+	 */
+	static function find() {
+		$args = func_get_args ();
+		return QDB_ActiveRecord_Meta::instance ( __CLASS__ )->findByArgs ( $args );
+	}
+	
+	/**
+	 * 返回当前 ActiveRecord 类的元数据对象
+	 *
+	 * @static
+	 *
+	 * @return QDB_ActiveRecord_Meta
+	 */
+	static function meta() {
+		return QDB_ActiveRecord_Meta::instance ( __CLASS__ );
+	}
+	
+	/* ------------------ 以上是自动生成的代码，不能修改 ------------------ */
+}
+class TrackingException extends QException {}

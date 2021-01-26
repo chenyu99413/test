@@ -1,0 +1,383 @@
+<?php
+/**
+ * 后台服务控制器
+ *
+ */
+class Controller_Cron extends Controller_Abstract{
+    /**
+     * notifyBizEvent
+     */
+    function actionnotifyBizEvent(){
+        $url_sign='https://gw.open.1688.com/openapi/param2/1/ali.intl.onetouch/logistics.order.notifyBizEvent/563333';
+       	$events=Event::find("ifnull(send_flag,'')!='1' and order_id>'82' and confirm_flag = '1' and ifnull(reason,'')=''  and event_time<=?",time())->order('order_id,event_time')->getAll();
+        foreach ($events as $event){
+            $ali=new Helper_ALI();
+            $event_request_data=$ali->notifyBizEvent($event);
+            $sign=$ali->sign($url_sign, json_encode($event_request_data),'notifyBizEvent');
+            //组合完整url
+            QLog::log($url_sign.'?notifyBizEventDTO='.json_encode($event_request_data).'&_aop_signature='.$sign);
+            $url=$url_sign.'?notifyBizEventDTO='.urlencode(json_encode($event_request_data)).'&_aop_signature='.$sign;
+            QLog::log($url);
+            //通过curl get 方式发送至阿里
+            $response=Helper_Curl::get1($url);
+            QLog::log('event_response'.$response);
+            $response=json_decode($response,true);
+            if(isset($response['success']) && $response['success']==true){
+                $event->send_flag='1';
+                $event->save();
+                if($event->event_code=='DELIVERY'){
+	                	$order=Order::find('order_id=?',$event->order_id)->getOne();
+	                	$order->delivery_time=$event->event_time;
+	                	$order->save();
+                }
+            }else{
+            	$order=Order::find('order_id=?',$event->order_id)->getOne();
+                $email_response=Helper_Mailer::send('2570277324@qq.com', '发送事件失败', '阿里单号 '.$order->ali_order_no);
+            }
+        }
+        exit();
+    }
+    /**
+     * notifyTrace
+     */
+    function actionnotifyTrace(){
+        $url_sign='https://gw.open.1688.com/openapi/param2/1/ali.intl.onetouch/logistics.order.notifyTrace/563333';
+        $tracking=Tracking::find("ifnull(send_flag,'')!='1' and order_id>'82' and confirm_flag = '1' and trace_time<=?",time())->getAll();
+        foreach ($tracking as $temp){
+            $ali=new Helper_ALI();
+            $trace_request_data=$ali->notifyTrace($temp);
+            $sign=$ali->sign($url_sign, json_encode($trace_request_data),'notifyTrace');
+            //组合完整url
+            $url=$url_sign.'?notifyTraceDTO='.urlencode(json_encode($trace_request_data)).'&_aop_signature='.$sign;
+            //通过curl get 方式发送至阿里
+            $response=Helper_Curl::get1($url);
+            QLog::log('trace_request'.json_encode($trace_request_data));
+            QLog::log('trace_response'.$response);
+            $response=json_decode($response,true);
+            if(isset($response['success']) && $response['success']==true){
+                $temp->send_flag='1';
+                $temp->save();
+            }else{
+            	$order=Order::find('order_id=?',$temp->order_id)->getOne();
+                $email_response=Helper_Mailer::send('2570277324@qq.com', '发送轨迹失败', '阿里单号 '.$order->ali_order_no);
+                continue;
+            }
+            //自动确认签收事件
+            if ($temp->tracking_code =='S_DELIVERY_SIGNED'){
+	            $ev=Event::find('order_id =? and confirm_flag =0 and event_code="DELIVERY"',$temp->order_id)->getOne();
+	            if (!$ev->isNewRecord()){
+	            		$ev->confirm_flag=1;
+	            		$ev->save();
+	            }
+            }
+        }
+        exit();
+    }
+   
+    /**
+     * 跟踪渠道末端轨迹
+     */
+    function actionRoute(){
+    		$args=func_get_args();
+    		$sleep=Q::cache('RouteSleep',array('life_time'=>3600));
+    		if ($sleep && empty($args[3])){
+    			self::log('sleep');
+    			exit;
+    		}
+    		self::log('begin');
+    		$select=Order::find('order_status in (?)',array(Order::STATUS_OUT,Order::STATUS_PRESEND,Order::STATUS_SENT,Order::STATUS_LOCK));
+    		if (!empty($args[3]) && $args[3]!='force'){
+    			$select->where('tracking_no =?',$args[3]);
+    		}
+    		$select= $select->order('update_time')
+    			->setColumns('order_id,tracking_no,channel_id')
+    			->all()
+    			->getQueryHandle();
+    		while ($row=$select->fetchRow()){
+    			self::log($row['order_id']);
+    			$order=Order::find('order_id =?',$row['order_id'])->getOne();
+    			
+    			if (!empty($row['tracking_no']) && !empty($row['channel_id'])){
+    				self::log($row['tracking_no']);
+    				
+    				$channel =Channel::find('channel_id =?',$row['channel_id'])->getOne();
+    				$trackings=Tracking::find('order_id =?',$row['order_id'])->getAll();
+    				
+    				// 求最晚时间并转换为utc+8
+    				$evt=Event::find('order_id =? ',$row['order_id'])->order('event_time desc') ->getOne();
+    				$lastTime=strtotime(date("Y-m-d 2:25:00",$evt->event_time))+86400*2;	//事件最后的时间+2天
+    				
+    				if (count($trackings)) foreach ($trackings as $tr){
+    					if ($tr->timezone==-19){
+    						continue;
+    					}
+    					if ($tr->trace_time + (8-$tr->timezone )*3600 > $lastTime ){
+    						$lastTime =$tr->trace_time + (8-$tr->timezone )*3600;
+    					}
+    				}
+    				
+    				$network_code=$channel->network_code;
+    				if ($network_code =='UPS'){
+    					$json=Helper_Curl::get('http://m.far800.com/?action=tracking&num='.$row['tracking_no'].'&lang=en');
+    					$routes=json_decode($json,TRUE);
+    					if (!empty($routes['data']) && count($routes['data'])){
+    						// 将轨迹按照时间升序排序
+    						$routes['data']=array_reverse($routes['data']);
+    						$prevLocation='';
+    						foreach ($routes['data'] as $d){
+    							// 保存
+    							$r=Route::checkAndSave(array(
+    								'network_code'=>$network_code,
+    								'tracking_no'=>$row['tracking_no'],
+    								'time'=>strtotime($d['time']),
+    								'location'=>$d['location'],
+    								'description'=>$d['context'],
+    							));
+    							if (!is_null($r)){
+    								self::log('save');
+    								//判断是否更改地址
+    								if(!$order->address_change){
+    									$tracking=Tracking::find('order_id=? and tracking_code="F_DELIVERY_5043"',$order->order_id)->getOne();
+    									if (!$tracking->isNewRecord()){
+    										$order->address_change='1';
+    										$order->address_change_info='F_DELIVERY_5043:Delivery information needed,attempting to update it';
+    										$order->save();
+    									}else {
+    										$change_array=array('corrected the street number','corrected the apartment number','corrected the postal code','delivery change','a request to modify the delivery address','delivery address has been updated','requested an alternate delivery address','updated the delivery information','request to modify the delivery address','updated the address','change of delivery');
+    										foreach ($change_array as $value){
+    											if(strpos(strtolower($d['context']), $value)!==false){
+    												$order->address_change='1';
+    												$order->address_change_info=$d['context'];
+    												$order->save();
+    												break;
+    											}
+    										}
+    									}
+    								}
+    								$r->generateTrace($lastTime,$order,$prevLocation);
+    							}
+    							
+    							if (strlen($d['location'])){
+    								$prevLocation=$d['location'];
+    							}
+    						}
+    					}
+    				}
+    			}
+    		}
+    		Q::writeCache('RouteSleep',true,array('life_time'=>3600));
+    		exit;
+    }
+    static function log($str){
+    		QLog::log($str);
+    		echo date('Ymd H:i').']'.$str."\n";
+    }
+    
+    /**
+     * 推送数据到新的出库表格里
+     */
+    function actionsyncpackage(){
+    	set_time_limit(0);
+    	$farpackages=Farpackage::find()->getAll();
+    	foreach ($farpackages as $f){
+    		$order=Order::find('order_id=? and order_status=5',$f->order_id)->getOne();
+    		if(!$order->isNewRecord()){
+    			continue;
+    		}
+    		$faroutpackge=new Faroutpackage();
+    		$faroutpackge->order_id=$f->order_id;
+    		$faroutpackge->quantity_out=$f->quantity;
+    		if($f->weight_out>0){
+    			$faroutpackge->length_out=$f->length_out;
+    			$faroutpackge->width_out=$f->width_out;
+    			$faroutpackge->height_out=$f->height_out;
+    			$faroutpackge->weight_out=$f->weight_out;
+    		}else{
+    			$faroutpackge->length_out=$f->length;
+    			$faroutpackge->width_out=$f->width;
+    			$faroutpackge->height_out=$f->height;
+    			$faroutpackge->weight_out=$f->weight;
+    		}
+    		$faroutpackge->save();
+    	}
+    	exit;
+    }
+    
+    /**
+     * 测试拆分阿里推送过来的数据
+     */
+    function actiontestapi(){
+    	$url='localhost/AliExpress/Code/api/orderbooking';
+    	$requestBody='{"bookingOrderDTO":"{\"aliOrderNo\":\"ALS002019031503\",\"consignee\":{\"city\":\"North hudson\",\"countryCode\":\"US\",\"mobile\":\"7153772133\",\"name1\":\"Ceme-Tube LLC\",\"name2\":\"Ceme-Tube LLC\",\"postalCode\":\"54016\",\"stateRegionCode\":\"Wisconsin\",\"street1\":\"579 Schommer Dr\"},\"consignor\":{\"city\":\"苏州市\",\"countryCode\":\"CN\",\"email\":\"eric.hwang@wonsten.com\",\"mobile\":\"18112752189\",\"name1\":\"王欣跃\",\"postalCode\":\"215600\",\"stateRegionCode\":\"江苏省\",\"street1\":\"乐余镇兆丰开发区双丰路5号\"},\"customsDeclaration\":{\"currencyCode\":\"USD\",\"declarationType\":\"QT\",\"totalAmount\":1000},\"needInsurance\":false,\"needPickUp\":false,\"packages\":[{\"height\":40,\"length\":67,\"packageType\":\"BOX\",\"quantity\":1,\"unit\":\"CM\",\"weight\":40,\"weightUnit\":\"KG\",\"width\":40}],\"products\":[{\"declarationPrice\":1000,\"hasBattery\":false,\"hsCode\":\"9617001100\",\"productName\":\"撕碎机筛网\",\"productNameEn\":\"Screen for shredder \",\"productQuantity\":1,\"productUnit\":\"pcs\"}],\"referenceNo\":\"803678522198,803678522199\",\"serviceCode\":\"Express_Standard_Global\",\"warehouse\":{\"code\":\"ASP_FAR_SH_PD\",\"name\":\"泛远上海浦东仓\"}}","sign":"302c02147ab07e89a99b19c4fe7f79a1ec9d918a2989f3d4021439822da781fe778c67b5b07caffb00b15b8a7e73"}';
+    	Helper_Curl::post($url, $requestBody);
+    	exit;
+    }
+    
+    /**
+     * 将阿里老订单里的运单号拆分到新表中
+     */
+    function actionsplitreference(){
+    	set_time_limit(0);
+    	$orders=Order::find('order_id <1452')->getAll();
+    	foreach ($orders as $order){
+    	  	if(strlen($order->reference_no)){
+	        	$references=explode(",", $order->reference_no);
+	        	foreach ($references as $r){
+	        		$alireference=new Alireference();
+	        		$alireference->order_id=$order->order_id;
+	        		$alireference->reference_no=$r;
+	        		$alireference->save();
+	        	}
+        	}
+    	}
+    	exit;
+    }
+    
+    /**
+     * 处理老数据的重量问题
+     */
+    function actioncalcweight(){
+    	set_time_limit(0);
+    	$orders=Order::find('ali_testing_order !="1" and order_status not in ("1","2","3","11") and order_id <1000')->getAll();
+    	foreach ($orders as $order){
+    		$far_in_packages=Farpackage::find('order_id=?',$order->order_id)->getAll();
+    		//应收实重
+    		if(!$order->weight_actual_in){
+    			if(count($far_in_packages)){
+    				$weight_actual_in=0;
+    				foreach ($far_in_packages as $far_in_actual){
+    					$weight_actual_in+=$far_in_actual->weight*$far_in_actual->quantity;
+    				}
+    				if($weight_actual_in>0){
+    					$order->weight_actual_in=$weight_actual_in;
+    					$order->save();
+    				}
+    			} 
+    		}
+    		//应收计费重
+    		if(!$order->weight_income_in){
+    			if(count($far_in_packages)){
+    				 $weight_income_in=0;
+    				 foreach ($far_in_packages as $far_in_income){
+    				 	$volumn_weight=$far_in_income->length*$far_in_income->width*$far_in_income->height/5000;
+    				 	$volumn=$volumn_weight>$far_in_income->weight;
+    				 	if($volumn){
+    				 		$weight_income_in+=$volumn_weight>20?ceil($volumn_weight)*$far_in_income->quantity:ceil($volumn_weight/0.5)*0.5*$far_in_income->quantity;
+    				 	}else{
+    				 		$weight_income_in+=$far_in_income->weight>20?ceil($far_in_income->weight)*$far_in_income->quantity:ceil($far_in_income->weight/0.5)*0.5*$far_in_income->quantity;
+    				 	}
+    				 	
+    				 }
+    				 if($weight_income_in>0){
+    				 	$order->weight_income_in=$weight_income_in>20?ceil($weight_income_in):$weight_income_in;
+    				 	$order->save();
+    				 }
+    			} 
+    		}
+    	}
+    	exit;
+    }
+    
+    /**
+     * 自动计算老的应收费用
+     */
+    function actioncalcfee(){
+    	set_time_limit(0);
+    	$fees=Fee::find('fee_type="1" and amount is null and fee_item_name="基础运费"')->getAll();
+    	foreach ($fees as $fee){
+    		$order=Order::find("order_id=?",$fee->order_id)->getOne();
+    		if($order->isNewRecord() || $order->order_status =='2' ||  $order->order_status =='3'){
+    			continue;
+    		}
+    		//基础运费
+    		$tracking_fee=0;
+    		$partition=Partition::find('partition_manage_id=1 and country_code_two=?',$order->consignee_country_code)->getOne();
+    		//获取价格
+    		$price=Price::find('price_manage_id=3 and partition_code=? and boxing_type=? and start_weight<? and end_weight>=?',$partition->partition_code,"BOX",$order->weight_income_in,$order->weight_income_in)->getOne();
+    		if($price->isNewRecord()){
+    			continue;
+    		}
+    		if($price->additional_weight>0){
+    			if(($order->weight_income_in-$price->first_weight)>0){
+    				$tracking_fee=(ceil(($order->weight_income_in-$price->first_weight)/$price->additional_weight)*$price->additional_fee)+$price->first_fee;
+    			}else{
+    				$tracking_fee=$price->first_fee;
+    			}
+    		}else{
+    			if(($order->weight_income_in-$price->first_weight)>0){
+    				$tracking_fee=(($order->weight_income_in-$price->first_weight)*$price->additional_fee)+$price->first_fee;
+    			}else{
+    				$tracking_fee=$price->first_fee;
+    			}
+    		}
+    		if($tracking_fee<=0){
+    			continue;
+    		}
+    		$fee->amount=$tracking_fee;
+    		$fee->save();
+    		
+    		//燃油附加费
+    		$fuel_amount=0;
+    		$fuel_fee=Fee::find('fee_type="1" and amount is null and fee_item_name="燃油附加费" and order_id=?',$order->order_id)->getOne();
+    		if($fuel_fee->isNewRecord()){
+    			continue;
+    		}
+    		$fuel_amount=Fee::find('fee_type="1" and fee_item_name in ("基础运费","超尺寸/超重附加费","偏远地区附加费") and order_id=?',$order->order_id)->getSum("amount");
+    		if($fuel_amount<=0){
+    			continue;
+    		}
+    		$fuel_fee->amount=sprintf("%.2f",$fuel_amount*0.15);
+    		$fuel_fee->save();
+    	}
+    	exit;
+    }
+    
+    /**
+     * 处理老数据的毛利
+     */
+    function actioncalcprofit(){
+    	set_time_limit(0);
+    	$orders=Order::find('order_id <5119 and ifnull(profit,"")="" ')->getAll();
+    	foreach ($orders as $order){
+    		$shou=Fee::find("order_id=? and fee_type='1'",$order->order_id)->getSum(amount);
+    		$fu=Fee::find("order_id=? and fee_type='2'",$order->order_id)->getSum(amount);
+    		$amout=$shou-$fu;
+    		if($amout){
+    			$order->profit=$amout;
+    			$order->save();
+    		}
+    	}
+    	exit;
+    }
+    
+    /**
+     * 检索老数据中更改地址的订单
+     */
+    function actionchangeaddress(){
+    	set_time_limit(0);
+    	$orders=Order::find()->getAll();
+    	foreach ($orders as $order){
+    		$tracking=Tracking::find('order_id=? and tracking_code="F_DELIVERY_5043"',$order->order_id)->getOne();
+    		if (!$tracking->isNewRecord()){
+    			$order->address_change='1';
+    			$order->address_change_info='F_DELIVERY_5043:Delivery information needed,attempting to update it';
+    			$order->save();
+    		}else {
+    			$change_array=array('corrected the street number','corrected the apartment number','corrected the postal code','delivery change','a request to modify the delivery address','delivery address has been updated','requested an alternate delivery address','updated the delivery information','request to modify the delivery address','updated the address','change of delivery');
+    			$routes=Route::find('tracking_no=?',$order->tracking_no)->getAll();
+    			foreach ($routes as $route){
+    				foreach ($change_array as $value){
+    					if(strpos(strtolower($route->description), $value)!==false){
+    						$order->address_change='1';
+    						$order->address_change_info=$route->description;
+    						$order->save();
+    						//跳出两层循环
+    						 break 2;
+    					}
+    				}
+    			}
+    		}
+    	}
+    	exit;
+    }
+}

@@ -1,0 +1,779 @@
+<?php
+class Controller_Api extends Controller_Abstract{
+	const ECODE_MISSING_DATA='1001';//数据缺失
+	const ECODE_WRONG_DATA='1002';//数据字段格式不正确
+	const ECODE_NOT_EXIST_QUOTE='1003';//报价不存在
+	const ECODE_ORDERNUMBER_EXIST='1004';//ordernumber重复
+	const ECODE_FORMAT_ILLEGAL='1005';//数据格式不合法
+	const ECODE_INTERNAL_ERROR='1006';//导入订单失败
+	function _before_execute(){
+		session_write_close();
+	}
+	function existsAction($action_name){
+		return true;
+	}
+	private $_customer;
+	static $package_type=array('P1','P2','D','L');
+	function execute($action_name, array $args = array()){
+		if (!parent::existsAction($action_name)){
+			return self::encode(self::failure("Operation $action_name not existed."));
+		}
+		$customer = Customs::find ( "customs_code=?", request('client_code') )->getOne ();
+		if ($customer->isNewRecord ()) {
+			return self::encode ( self::failure ( "client_code not existed." ) );
+		}
+		$this->_customer = $customer;
+
+		$body=file_get_contents("php://input");
+		QLog::log($body);
+		//验证api请求的合法性
+		$key=request('client_code');
+		$secret=request('sign');
+		if ($secret!=md5(base64_encode($body).$key)){
+			return self::encode(self::failure('sign Incorrect.'));
+		}
+		$action_method = "action{$action_name}";
+		// 执行指定的动作方法
+		$this->_before_execute();
+		#IFDEF DBEUG
+		QLog::log('EXECUTE ACTION: '. get_class($this) . '::' . $action_method . '()', QLog::DEBUG);
+		#ENDIF
+		//body
+		$this->body = $body;
+
+		if (request('debug')){
+			dump($this->body,'POST BODY',5);
+		}
+		//Execute and exception
+		try {
+			$response = call_user_func_array(array($this, $action_method), $args);
+		}catch (Exception $ex){
+			QLog::log(print_r($ex,true));
+			return self::encode(self::failure('Exception: '.$ex->getMessage()));
+		}
+		if (request('debug')){
+			dump($response,'RESPONSE',7);
+		}
+		// after execute
+		$this->_after_execute($response);
+		if (is_null($response)){
+			$response=self::failure('No response.');
+		}
+		return self::encode($response);
+	}
+	static function encode($arr){
+		return json_encode($arr,JSON_UNESCAPED_UNICODE);
+	}
+	static function failure($message,$code='1000',$data=''){
+		return array('code'=>$code,'data'=>$data,'message'=>$message);
+	}
+	static function success($str,$message='success'){
+		return array('code'=>'1','data'=>$str,'message'=>$message);
+	}
+	function actiongetquote(){
+		$data=json_decode($this->body,true);
+		if (count($data)==0){
+		    return self::failure('no body',self::ECODE_MISSING_DATA);
+		}
+		if(!is_array($data)){
+		    return self::failure('Data format is not right',self::ECODE_FORMAT_ILLEGAL);
+		}
+		$checkRequired = array (
+		    "weight","length","height","width","destination_country","packages_type"
+		);
+		//检查订单中的必填
+		foreach ($checkRequired as $key){
+		    if (!isset($data[$key]) || strlen($data[$key])===0){
+		        return self::failure($key.' missing.',self::ECODE_MISSING_DATA);
+		    }
+		}
+		//判断包裹重量是否正确
+		if(!preg_match('/^[0-9]{1,7}(.[0-9]{1,3})?$/', trim($data['weight'])) ||trim($data['weight'])<='0'){
+		    return self::failure('weight not right.The weight field format can only be decimal(10,3).',self::ECODE_WRONG_DATA);
+		}
+		//判断包裹长是否正确
+		if(!preg_match('/^[0-9]{1,8}(.[0-9]{1,2})?$/', trim($data['length']))){
+		    return self::failure('length not right.The length field format can only be decimal(10,2).',self::ECODE_WRONG_DATA);
+		}
+		//判断包裹宽是否正确
+		if(!preg_match('/^[0-9]{1,8}(.[0-9]{1,2})?$/', trim($data['width']))){
+		    return self::failure('width not right.The width field format can only be decimal(10,2).',self::ECODE_WRONG_DATA);
+		}
+		//判断包裹高是否正确
+		if(!preg_match('/^[0-9]{1,8}(.[0-9]{1,2})?$/', trim($data['height']))){
+		    return self::failure('height not right.The height field format can only be decimal(10,2).',self::ECODE_WRONG_DATA);
+		}
+		//判断目的国家格式是否正确
+		if(!preg_match("/^[A-Z]{2}$/",strtoupper(trim($data['destination_country'])))){
+		    return self::failure('destination_country not right.The destination_country must be two english character. ',self::ECODE_WRONG_DATA);
+		}
+		$country=Country::find("code_word_two=?", strtoupper(trim($data['destination_country'])))->getOne();
+		if($country->isNewRecord()){
+		    return self::failure('destination_country not right.The destination_country not exist. ',self::ECODE_WRONG_DATA);
+		}
+		//判断包裹类型是否合法
+		if(!in_array($data['packages_type'], self::$package_type)){
+			return self::failure('packages_type not right.packages_type can only be P1 or P2 or D or L.',self::ECODE_WRONG_DATA);
+		}
+		$return = array();
+		//查询UPS和FEDEX网络对应的network_id
+		$networks=Network::find("network_code = 'UPS' or network_code= 'FEDEX' ")->getAll();
+		foreach ($networks as $network){
+		    //查询客户折扣
+		    $customs_discounts=CustomsDiscount::find ( "network_id = ? and customs_id = ?", $network->network_id, $this->_customer->customs_id )->getAll();
+		    if(count($customs_discounts)<1){
+		        return self::failure('get quote failed.',self::ECODE_NOT_EXIST_QUOTE);//报价查询不到不存在
+		    }
+		    foreach ($customs_discounts as $customs_discount){
+		        // 获取折扣
+		        $boxing_type = Product::boxingType ( trim($data['packages_type']) );
+		        $customsdiscounttype = Customsdiscounttype::find ( "customs_discount_id = ? and boxing_type = ?", $customs_discount->customs_discount_id, $boxing_type )->getOne ();
+		        //获取分区
+		        if($network->network_code=='FEDEX' && $customs_discount->service->service_code=='IP'){
+		            $partition_manage=PartitionManage::find("partition_name = 'Fedex2015 22出口优先'")->getOne();
+		        }elseif ($network->network_code=='FEDEX' && $customs_discount->service->service_code=='IE'){
+		            $partition_manage=PartitionManage::find("partition_name = 'Fedex2015 22出口经济'")->getOne();
+		        }else{
+		        	//UPS渠道超过20KG，使用“金华征程速快大货”分区表
+		        	if(trim($data['weight'])>'20'){
+		        		$partition_manage=PartitionManage::find("partition_name = '金华征程速快大货'")->getOne();
+		        	}else{
+		        		$partition_manage=PartitionManage::find("partition_name = ?",'UPS2019 '.$customs_discount->service->service_code.'分区表')->getOne();
+		        	}
+		        }
+		        $partition=Partition::find("partition_manage_id=? and code_word_two=?",$partition_manage->partition_manage_id,trim($data['destination_country']))->getOne();
+		        //获取折扣
+		        $discount = Customsdiscounttype::discount ( $customsdiscounttype, trim($data['weight']), $partition->partition_code, trim($data['destination_country']), $boxing_type );
+		        //获取公开价
+		        $country=array('US','CA','MX');
+		        if($network->network_code=='FEDEX' && $customs_discount->service->service_code=='IP'){
+		            $price = Price::public_price ( $customs_discount->price_manage_id, trim($data['weight']), $partition->partition_code, $boxing_type );
+		        }elseif ($network->network_code=='FEDEX' && $customs_discount->service->service_code=='IE'){
+		            $price = Price::public_price ( $customs_discount->price_manage_id, trim($data['weight']), $partition->partition_code, $boxing_type );
+		        }else{
+		            if(trim($data['weight'])>'20'){
+		                $price_manage=PriceManage::find("price_name= '金华征晨速快大货成本20181201'")->getOne();
+		            }else{
+		                if(in_array(trim($data['destination_country']), $country) || $partition->partition_code=='7'){
+		                    $service=array('1'=>'特快加急','1P'=>'速快','1+'=>'特快','2'=>'蓝单');
+		                    $price_manage=PriceManage::find("price_name=?",'金华征晨'.$service[$customs_discount->service->service_code].'成本20181201')->getOne();
+		                }else{
+		                    $service=array('1'=>'特快加急','1P'=>'速快','1+'=>'特快','2'=>'快捷');
+		                    $price_manage=PriceManage::find("price_name=?",'UPS2019年'.$service[$customs_discount->service->service_code].'公开价')->getOne();
+		                }
+		            }
+		            $price = Price::public_price ( $price_manage->price_manage_id, trim($data['weight']), $partition->partition_code, $boxing_type );
+		        }
+		        // 获取燃油附加费
+		        if ($customs_discount->baf_id) {
+		            $baf = Baf::rates ( $customs_discount->baf_id );
+		        } else {
+		            $baf = Baf::rates ( $network->network_id );
+		        }
+		        $service_type=array('1'=>'UPS特快加急','1P'=>'UPS速快服务','1+'=>'UPS特快服务','2'=>'UPS快捷服务','IP'=>'联邦出口优先','IE'=>'联邦出口经济');
+		        $info=array();
+		        if(trim($data['weight'])>'20' && $customs_discount->network->network_code=="UPS"){
+		            $info['service_type']='UPS';
+		            $info['amount']=round($price,2);
+		        }else{
+		            $info['service_type']=$service_type[$customs_discount->service->service_code];
+		            if((in_array(trim($data['destination_country']), $country)  || $partition->partition_code=='7') && $customs_discount->network->network_code=="UPS"){
+		                $info['amount']=round($price,2);
+		            }else{
+		                $info['amount']=round($price*$discount*(1+$baf),2);
+		            }
+		        }
+		        if($price!='0' && $discount!='0' &&$price!=null){
+		            $return[]=array('code'=>'1','data'=>$info,'message'=>'success');
+		        }
+		    }
+		}
+		if(count($return)>0){
+		    $return = array_values(array_map('unserialize', array_unique(array_map('serialize', $return))));
+		    return $return;
+		}else{
+		    return self::failure('get quote failed.',self::ECODE_NOT_EXIST_QUOTE);//报价查询不到不存在
+		}
+	}
+	//根据运单号查询物流跟踪信息
+	function actiongetLogisticsTracking(){
+		$data=json_decode($this->body,true);
+		if (count($data)==0){
+		    return self::failure('no body',self::ECODE_MISSING_DATA);
+		}
+		if(!is_array($data)){
+		    return self::failure('Data format is not right',self::ECODE_FORMAT_ILLEGAL);
+		}
+		if (empty($data['waybill_code'])){
+			return self::failure('waybill_code missing.',self::ECODE_MISSING_DATA);
+		}
+		$waybill=Waybill::find("waybill_code=?",$data['waybill_code'])->getOne();
+		if ($waybill->isNewRecord()){
+			return self::failure('get waybill failed.',self::ECODE_NOT_EXIST_QUOTE);//查询不到
+		}
+		//查询物流跟踪信息
+		$trackingInfo= Helper_Curl::get1('http://m.far800.com/index.php?controller=far800&action=tracking&num='.$data['waybill_code']);
+		$response=json_decode($trackingInfo);
+		return self::success($response);
+	}
+	/**
+	 * 获取运单号
+	 */
+	function actionGetwaybillcode(){
+	    $data=json_decode($this->body,true);
+	    if(!is_array($data)){
+	        return self::failure('Data format is not right',self::ECODE_FORMAT_ILLEGAL);
+	    }
+	    if (count($data)==0){
+	        return self::failure('no body',self::ECODE_MISSING_DATA);
+	    }
+	    $return=array();
+	    foreach ($data as $orderrow){
+	        $return_each=array();
+	        if(!is_array($orderrow)){
+	            $return_each=array('code'=>'1005','data'=>'','message'=>'Data format is not right');
+	            $return[]=$return_each;
+	            continue;
+	        }
+	        if(!isset($orderrow['order_number'])){
+	            $return_each=array('code'=>'1001','data'=>'','message'=>'order_number missing');
+	            $return[]=$return_each;
+	            continue;
+	        }
+	        $former_waybill_code=trim($orderrow['order_number']);
+	        $waybill=Waybill::find("former_waybill_code=? and customs_id=?",$former_waybill_code,$this->_customer->customs_id)->getOne();
+	        if ($waybill->isNewRecord()) {
+	            $return_each=array('code'=>'1003','data'=>array('order_number'=>$former_waybill_code),'message'=>'order_number not exist');
+	            $return[]=$return_each;
+	            continue;
+	        }
+	        $info=array();
+	        $info['order_number']=$former_waybill_code;
+	        $info['waybill_code']=$waybill->waybill_code;
+	        $network=Network::find('network_code=?',$waybill->network_code)->getOne();
+	        if($network->network_name_cn=='FEDEX'){
+	            $info['network']='联邦';
+	        }else{
+	            $info['network']=$network->network_name_cn;
+	        }
+	        $return[]=array('code'=>'1','data'=>$info,'message'=>'success');
+	    }
+	    return $return;
+	}
+	/**
+	 * 批量导入订单
+	 */
+	function actionOrder(){
+	    $data=json_decode($this->body,true);
+	    if (count($data)==0){
+	        return self::failure('no body',self::ECODE_MISSING_DATA);
+	    }
+	    //网络代码
+// 	    $network_code='';
+	    $service_type='';
+	    //分区管理ID
+// 	    $partition_manage_id='';
+	    $customer=Customs::find("customs_code=?",$this->_customer->customs_code)->getOne();
+	    //总的返回结果数组
+	    $return=array();
+	    if(!is_array($data)){
+	        return self::failure('Data format is not right',self::ECODE_FORMAT_ILLEGAL);
+	    }
+	    foreach ($data as $orderRow){
+	        $result_each=array();
+	        if(!is_array($orderRow)){
+	            $result_each=array("code"=>"1005","data"=>"","message"=>'Data format is not right');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //单个订单的返回数组
+	        $checkRequired = array (
+	            "order_number","consignee_name","consignee_address1","service_type",
+	            "consignee_city","consignee_postcode","consignee_country",
+	            "consignee_phone","sender_name","sender_address1",
+	            "sender_city","sender_postcode","sender_phone","parcel_quantity",
+	            "payment_type","business_code","business_name","parcel_weight","parcel_length","parcel_width","parcel_height","packages_type"
+	        );
+	        //检查订单中的必填
+	        foreach ($checkRequired as $key){
+	            if (!isset($orderRow[$key]) || strlen($orderRow[$key])===0){
+	                if($key=='order_number'){
+	                    $result_each=array("code"=>"1001","data"=>"","message"=>$key.' missing');
+	                }else{
+	                    $result_each=array("code"=>"1001","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>$key.' missing');
+	                }
+	                break;
+	            }else{
+	                $orderRow[$key]=trim($orderRow[$key]);
+	            }
+	        }
+	        //判断是否有错误
+	        if(count($result_each)){
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //验证订单重复
+	        if (Waybill::find("former_waybill_code =? and customs_id=? " ,$orderRow['order_number'],$customer->customs_id)->getCount()){
+	            $result_each=array("code"=>"1004","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'order_number existed');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //获取产品信息
+// 	        $orderRow['product_code']=isset($orderRow['product_code'])?$orderRow['product_code']:'';
+// 	        $pro=Product::find("product_code=? and effective_date<? and fail_date>=?",$orderRow['product_code'],date('Y-m-d H:i:s',time()),date('Y-m-d H:i:s',time()))->getOne();
+// 	        $network_code=$orderRow['network_code'];
+	        $service_type=$orderRow['service_type'];
+// 	        $partition_manage_id=$pro->partitionmanage->partition_manage_id;
+	        //检查商品必填项
+	        $checkitemrequired= array('goods_type','chinese_name','english_name','hs_code','unit_price','amount');
+	        foreach ($checkitemrequired as $k){
+	            foreach ($orderRow['items'] as $l){
+	                if(!is_array($l)){
+	                    $result_each=array("code"=>"1005","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'Data format is not right');
+	                    break;
+	                }
+	                if (!isset($l[$k]) || strlen($l[$k])===0){
+	                    $result_each=array("code"=>"1001","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>$k.' missing');
+	                    break;
+	                }
+	                //验证数据字段格式
+	                if($k=='goods_type'){
+	                    //商品型号验证
+	                    if(strlen($l["goods_type"])>30){
+	                        $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'goods_type not right.goods_type can not more than 30 words');
+	                        break;
+	                    }
+	                }elseif($k=='chinese_name'){
+	                    //中文品名验证
+	                    if(strlen($l["chinese_name"])>50){
+	                        $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'chinese_name not right.chinese_name can not more than 50 words');
+	                        break;
+	                    }
+	                }elseif ($k=='english_name'){
+	                    //英文品名验证
+	                    if(!preg_match('/^[a-zA-Z\s\n\r.,:]{1,50}$/', trim($l["english_name"]))){
+	                        $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'english_name not right.english_name can only be English and can not more than 50 words');
+	                        break;
+	                    }
+	                }elseif ($k=='hs_code'){
+	                    //HS编码验证
+	                    if(strlen($l["hs_code"])>20){
+	                        $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'hs_code not right.hs_code can not more than 20 words');
+	                        break;
+	                    }
+	                }elseif ($k=='unit_price'){
+	                    //申报单价验证
+	                    if(!preg_match('/^[0-9]{1,8}(.[0-9]{1,2})?$/', trim($l["unit_price"]))){
+	                        $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'unit_price not right.The unit_price field format can only be decimal(10,2).');
+	                        break;
+	                    }
+	                }elseif($k=='amount'){
+	                    //产品数量验证
+	                    if(!preg_match('/^[\d]{1,8}$/', trim($l["amount"]))){
+	                        $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'amount not right.amount can only be numbers and can not more than 8 words');
+	                        break;
+	                    }
+	                }
+	            }
+	            if(count($result_each)){
+	                break;
+	            }
+	        }
+	        //判断是否有错误
+	        if(count($result_each)){
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //判断包裹重量是否正确
+	        if(!preg_match('/^[0-9]{1,7}(.[0-9]{1,3})?$/', trim($orderRow["parcel_weight"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'parcel_weight not right.The parcel_weight field format can only be decimal(10,3).');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //判断包裹长是否正确
+	        if(!preg_match('/^[0-9]{1,8}(.[0-9]{1,2})?$/', trim($orderRow["parcel_length"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'parcel_length not right.The parcel_length field format can only be decimal(10,2).');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //判断包裹宽是否正确
+	        if(!preg_match('/^[0-9]{1,8}(.[0-9]{1,2})?$/', trim($orderRow["parcel_width"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'parcel_width not right.The parcel_width field format can only be decimal(10,2).');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //判断包裹高是否正确
+	        if(!preg_match('/^[0-9]{1,8}(.[0-9]{1,2})?$/', trim($orderRow["parcel_height"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'parcel_height not right.The parcel_height field format can only be decimal(10,2).');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //收件人全名验证
+	        if(!preg_match('/^[a-zA-Z\s\d\n\r\/,.:()#-]{1,100}$/', trim($orderRow["consignee_name"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'consignee_name not right.consignee_name can only be English and can not more than 100 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //ordernumber验证
+	        if(strlen($orderRow["order_number"])>50){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'order_number not right,order_number can not more than 50 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //收件地址1验证
+	        if(!preg_match('/^[a-zA-Z\s\d\n\r\/,.:()#-]{1,30}$/', trim($orderRow["consignee_address1"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'consignee_address1 not right.consignee_address1 can only be English and can not more than 30 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //收件地址2验证
+	        if(isset($orderRow["consignee_address2"]) && strlen($orderRow["consignee_address2"])>0 && !preg_match('/^[a-zA-Z\s\d\n\r\/,.:()#-]{1,30}$/', trim($orderRow["consignee_address2"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'consignee_address2 not right.consignee_address2 can only be English and can not more than 30 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //收件地址3验证
+	        if(isset($orderRow["consignee_address3"]) && strlen($orderRow["consignee_address3"])>0 && !preg_match('/^[a-zA-Z\s\d\n\r\/,.:()#-]{1,30}$/', trim($orderRow["consignee_address3"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'consignee_address3 not right.consignee_address3 can only be English and can not more than 30 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //收件人城市验证
+	        if(strlen($orderRow['consignee_city'])>20){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'consignee_city not right.consignee_city can not more than 20 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //收件人邮编验证
+	        if(strlen($orderRow['consignee_postcode'])>20){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'consignee_postcode not right.consignee_postcode can not more than 20 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //验证收件人国家二字码
+	        if(!preg_match("/^[A-Z]{2}$/",strtoupper(trim($orderRow['consignee_country'])))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'consignee_country not right.The consignee_country must be two english character.');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        $country=Country::find("code_word_two=?", strtoupper(trim($orderRow['consignee_country'])))->getOne();
+	        if($country->isNewRecord()){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'consignee_country not right.The consignee_country not exist.');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //收件人电话验证
+	        if(strlen($orderRow['consignee_phone'])>20){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'consignee_phone not right.consignee_phone can not more than 20 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //收件人邮箱验证
+	        if(strlen($orderRow['consignee_email'])>20){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'consignee_email not right.consignee_email can not more than 20 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //收件人姓名验证
+	        if(!preg_match('/^[a-zA-Z\s\d\n\r\/,.:()#-]{1,100}$/', trim($orderRow["sender_name"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'sender_name not right.sender_name can only be English and can not more than 100 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //发件地址1验证
+	        if(!preg_match('/^[a-zA-Z\s\d\n\r\/,.:()#-]{1,30}$/', trim($orderRow["sender_address1"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'sender_address1 not right.sender_address1 can only be English and can not more than 30 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //发件地址2验证
+	        if(isset($orderRow["sender_address2"]) && strlen($orderRow["sender_address2"])>0 && !preg_match('/^[a-zA-Z\s\d\n\r\/,.:()#-]{1,30}$/', trim($orderRow["sender_address2"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'sender_address2 not right.sender_address2 can only be English and can not more than 30 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //发件地址3验证
+	        if(isset($orderRow["sender_address3"]) && strlen($orderRow["sender_address3"])>0 && !preg_match('/^[a-zA-Z\s\d\n\r\/,.:()#-]{1,30}$/', trim($orderRow["sender_address3"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'sender_address3 not right.sender_address3 can only be English and can not more than 30 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //发件人城市验证
+	        if(strlen($orderRow['sender_city'])>20){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'sender_city not right.sender_city can not more than 20 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //发件人邮编验证
+	        if(strlen($orderRow['sender_postcode'])>20){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'sender_postcode not right.sender_postcode can not more than 20 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //发件人电话验证
+	        if(strlen($orderRow['sender_phone'])>20){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'sender_phone not right.sender_phone can not more than 20 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //包裹数量验证
+	        if(!preg_match('/^[\d]{1,10}$/', trim($orderRow["parcel_quantity"]))){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'parcel_quantity not right.parcel_quantity can only be numbers and can not more than 10 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //验证付款方式
+	        if($orderRow["payment_type"]!="PP" && $orderRow["payment_type"]!="CC" && $orderRow["payment_type"]!="TPC" && $orderRow["payment_type"]!="TPP"){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'payment_type not right,payment_type must be PP or CC or TPP or TPC');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //验证经营单位编码
+	        if(strlen($orderRow["business_code"])!=10){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'business_code not right,business_code length must be 10');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //经营单位名称验证
+	        if(strlen($orderRow['business_name'])>50){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'business_name not right.business_name can not more than 50 words');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //判断包裹类型是否合法
+	        if(!in_array($orderRow['packages_type'], self::$package_type)){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'packages_type not right.packages_type can only be P1 or P2 or D or L.');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //判断网络代码是否合法
+	        if($orderRow['service_type'] != "UPS速快服务" && $orderRow['service_type'] != "UPS快捷服务" && $orderRow['service_type'] != "联邦出口经济" && $orderRow['service_type'] != "联邦出口优先" && $orderRow['service_type'] != "UPS"){
+	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'service_type not right.service_type can only be UPS速快服务 or UPS快捷服务 or 联邦出口经济 or 联邦出口优先 or UPS.');
+	            $return[]=$result_each;
+	            continue;
+	        }
+	        //验证服务代码
+// 	        if($orderRow["service_code"]!="1" && $orderRow["service_code"]!="1+" && $orderRow["service_code"]!="1P" && $orderRow["service_code"]!="2"){
+// 	            $result_each=array("code"=>"1002","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'service_code not right,service_code must be 1 or 1+ or 1P or 2');
+// 	            $return[]=$result_each;
+// 	            continue;
+// 	        }
+	        //导入
+	        $items=$orderRow['items'];
+	        unset($orderRow['items']);
+	        QDB::getConn()->startTrans();
+	        try {
+	            $waybill=new Waybill();
+	            //用收件人公司名字代替收件人名字
+	            $waybill->consignee_company_name_en=$orderRow["consignee_name"];
+	            //收件国家二字码
+	            $waybill->destination=strtoupper(trim($orderRow["consignee_country"]));
+	            $c=Country::find("code_word_two=?",$orderRow["consignee_country"])->getOne();
+	            if(!$c->isNewRecord()){
+	                //收件人国家名称
+	                $waybill->country_name=$c->chinese_name;
+	            }
+	            $consignee_address='';
+	            //收件人地址1
+	            $waybill->consignee_address1=$orderRow["consignee_address1"];
+	            $consignee_address.=$orderRow["consignee_address1"];
+	            //收件人地址2
+	            if(isset($orderRow["consignee_address2"]) && strlen($orderRow["consignee_address2"])){
+	                $waybill->consignee_address2=$orderRow["consignee_address2"];
+	                $consignee_address.=" ".$orderRow["consignee_address2"];
+	            }
+	            //收件人地址3
+	            if(isset($orderRow["consignee_address3"]) && strlen($orderRow["consignee_address3"])){
+	                $waybill->consignee_address3=$orderRow["consignee_address3"];
+	                $consignee_address.=" ".$orderRow["consignee_address3"];
+	            }
+	            //总的收件人地址
+	            $waybill->consignee_company_address_en=$consignee_address." ".$orderRow["consignee_city"];
+	            //收件人城市
+	            $waybill->consignee_city=$orderRow["consignee_city"];
+	            //收件人邮编
+	            $waybill->consignee_postal_code=$orderRow["consignee_postcode"];
+	            //收件人电话
+	            $waybill->consignee_tel=$orderRow["consignee_phone"];
+	            //收件人邮箱
+	            if(isset($orderRow["consignee_email"]) && strlen($orderRow["consignee_email"])){
+	                $waybill->consignee_email=$orderRow["consignee_email"];
+	            }
+	            $sender_address='';
+	            //发件人地址1
+	            $waybill->sender_address1=$orderRow["sender_address1"];
+	            $sender_address.=$orderRow["sender_address1"];
+	            //发件人地址2
+	            if(isset($orderRow["sender_address2"]) && strlen($orderRow["sender_address2"])){
+	                $waybill->sender_address2=$orderRow["sender_address2"];
+	                $sender_address.=" ".$orderRow["sender_address2"];
+	            }
+	            //发件人地址3
+	            if(isset($orderRow["sender_address3"]) && strlen($orderRow["sender_address3"])){
+	                $waybill->sender_address3=$orderRow["sender_address3"];
+	                $sender_address.=" ".$orderRow["sender_address3"];
+	            }
+	            //总的发件人地址
+	            $waybill->sender_company_address=$sender_address;
+	            //用发件人公司名字代替发件人名字
+	            $waybill->sender_company_name_en=$orderRow["sender_name"];
+	            //发件人城市
+	            $waybill->sender_city=$orderRow["sender_city"];
+	            //发件人邮编
+	            $waybill->sender_postal_code=$orderRow["sender_postcode"];
+	            //发件人电话
+	            $waybill->sender_tel=$orderRow["sender_phone"];
+	            //经营单位编码
+	            $waybill->sender_business_units_code= $orderRow["business_code"];
+	            //经营单位名称
+	            $waybill->sender_business_units_name= $orderRow["business_name"];
+	            //付款方式
+	            $waybill->payment_mode=$orderRow["payment_type"];
+	            //下面是从客户信息中获取信息放到订单中？？？获取客户信息
+	            if(!$customer->isNewRecord()){
+	                //客户ID
+	                $waybill->customs_id=$customer->customs_id;
+	                //客户来源
+	                $waybill->source=$customer->source;
+	                //客户简称
+	                $waybill->customs_abbreviation=$customer->customs_abbreviation;
+	                //部门ID+部门简称
+	                if(strlen($customer->department_id)){
+	                    $waybill->department_id=$customer->department_id;
+	                    $department=Department::find("department_id=?",$customer->department_id)->getOne();
+	                    if(!$department->isNewRecord()){
+	                        $waybill->department_abbreviation=$department->abbreviation;
+	                    }
+	                }
+	                 
+	                //取件员
+	                if(strlen($customer->receiver)){
+	                    $waybill->receiver_name=$customer->receiver;
+	                    $user=User::find('user_name=? and department_id=?',$customer->receiver,$customer->department_id)->getOne();
+	                    if(!$user->isNewRecord()){
+	                        $waybill->receiver_id=$user->user_id;
+	                    }
+	                }
+	                //销售员
+	                if(strlen($customer->salesperson)){
+	                    $waybill->salesperson=$customer->salesperson;
+	                    $user2=User::find('user_name=? and department_id=?',$customer->salesperson,$customer->department_id)->getOne();
+	                    if(!$user2->isNewRecord()){
+	                        $waybill->salesperson_id=$user2->user_id;
+	                    }
+	                }
+	                //取件地
+	                if(strlen($customer->receive_address)){
+	                    $waybill->receive_address=$customer->receive_address;
+	                }
+	                //账期
+	                if(strlen($customer->account_period)){
+	                    $waybill->account_period=$customer->account_period;
+	                }
+	            }
+	            //产品id
+// 	            $waybill->product_id=$pro->product_id;
+	            //产品名称
+// 	            $waybill->product_name=$pro->product_name;
+	            //包裹件数
+	            $waybill->item_count=$orderRow["parcel_quantity"];
+	            //支付方式
+	            $waybill->payment_mode=$orderRow["payment_type"];
+	            $waybill->boxing_category=$orderRow["packages_type"];
+	            //原始包装类型
+	            $waybill->former_boxing_category=$orderRow["packages_type"];
+	            if($service_type=='UPS速快服务'){
+	                //网络
+	                $waybill->network_code='UPS';
+	                //服务
+	                $waybill->service_code='1P';
+	            }elseif ($service_type=='UPS快捷服务'){
+	                //网络
+	                $waybill->network_code='UPS';
+	                //服务
+	                $waybill->service_code='2';
+	            }elseif ($service_type=='联邦出口经济'){
+	                //网络
+	                $waybill->network_code='FEDEX';
+	                //服务
+	                $waybill->service_code='IE';
+	            }elseif ($service_type=='联邦出口优先'){
+	                //网络
+	                $waybill->network_code='FEDEX';
+	                //服务
+	                $waybill->service_code='IP';
+	            }elseif ($service_type=='UPS'){
+	                //网络
+	                $waybill->network_code='UPS';
+	            } 
+	            //业务来源
+	            $waybill->source=$customer->source;
+	            //收件日
+	            $waybill->record_order_date=date('Y-m-d',time()).'00:00:00';
+	            //产品国家分区
+// 	            $partition=Partition::find("code_word_two=? and partition_manage_id=?",$orderRow["consignee_country"],$partition_manage_id)->getOne();
+// 	            if(!$partition->isNewRecord()){
+// 	                //产品国家分区号
+// 	                $waybill->partition_code=$partition->partition_code;
+// 	                //渠道分区
+// 	                $waybill->channel_partition_code=$partition->partition_code;
+// 	            }
+	            //订单编号
+	            $waybill->former_waybill_code=$orderRow["order_number"];
+	            //包裹长度
+	            $waybill->parcel_length=$orderRow["parcel_length"];
+	            //包裹宽度
+	            $waybill->parcel_width=$orderRow["parcel_width"];
+	            //包裹高度
+	            $waybill->parcel_height=$orderRow["parcel_height"];
+	            //判断泡重和传入重量大小
+	            $weight='';
+	            $foam_modumus='5000';
+	            $dimensional_weight=($orderRow["parcel_length"]*$orderRow["parcel_width"]*$orderRow["parcel_height"])/$foam_modumus;
+	            if($dimensional_weight>$orderRow["parcel_weight"]){
+	                $weight=$dimensional_weight;
+	            }else{
+	                $weight=$orderRow["parcel_weight"];
+	            }
+	            //包裹重量+实际重量
+	            $waybill->commission_weight=$weight;
+	            //假的发件日就是api传过来的时间
+	            $waybill->operator_id = '120';
+	            //订单状态
+	            $waybill->operator='施瑜';
+	            $waybill->record_order_date = date ( 'Y-m-d' );
+	            //订单状态
+	            $waybill->order_flag='20';
+	            //退税方式
+	            $waybill->drawback_code= '3';
+	            $waybill->sort='S1';
+	            $waybill->high_low_price_flag= '0';
+	            //运单中的商品信息
+	            foreach ($items as $item) {
+	                $waybill->commodity_name_cn=$item["chinese_name"];
+	                $waybill->commodity_name_en=$item["english_name"];
+	                $waybill->commodity_hs_code=$item["hs_code"];
+	                // 	                $waybill->value=$item["unit_price"]*$item["amount"];
+	                $waybill->count=$item["amount"];
+	                break;
+	            }
+	            //商品信息
+	            $remark='';
+	            foreach ($items as $i){
+	                $remark.='品名：'.$i["chinese_name"].'；单价：'.$i["unit_price"].'；数量：'.$i["amount"].'；';
+	            }
+	            $waybill->remark=rtrim($remark,'；');
+	            $waybill->save();
+	            QDB::getConn()->completeTrans();
+	            $result_each=array("code"=>"1","data"=>array('order_number'=>$orderRow["order_number"]),"message"=>'order received.');
+	            $return[]=$result_each;
+	        }catch (Exception $ex){
+	            QLog::log(print_r($ex,true));
+	            QDB::getConn()->setTransFailed();
+	            QDB::getConn()->completeTrans();
+	            return self::failure('Import failed.',self::ECODE_INTERNAL_ERROR);
+	        }
+	    }
+	    return $return;
+	}
+}

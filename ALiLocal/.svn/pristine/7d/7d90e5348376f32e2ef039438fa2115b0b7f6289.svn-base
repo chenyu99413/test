@@ -1,0 +1,153 @@
+<?php
+class Control_Menu extends QUI_Control_Abstract {
+	static $purviews = array ();
+	
+	/**
+	 * 获取所有菜单
+	 *
+	 * @return list
+	 */
+	static function all() {
+		$array = array ();
+		$menus = json_decode ( file_get_contents ( dirname ( __FILE__ ) . '/menu.json' ) );
+		foreach ( $menus as $m ) {
+			$menu = ( array ) $m;
+			if ($menu ["children"] == null) {
+				$array [] = self::getMenuID ( $menu ['url'], ( array ) $menu ['param'] );
+			} else {
+				foreach ( $menu ["children"] as $sub ) {
+					$_menu = ( array ) $sub;
+					$array [] = self::getMenuID ( $_menu ['url'], ( array ) $_menu ['param'] );
+				}
+			}
+		}
+		return $array;
+	}
+	
+	/**
+	 * 获取菜单ID
+	 *
+	 * @param 连接名称 $link        	
+	 * @param 参数 $params        	
+	 * @return unknown|string
+	 */
+	static function getMenuID($link, $params = null) {
+		if (is_null ( $params ) || empty ( $params )) {
+			return $link;
+		}
+		return $link . '#' . http_build_query ( $params );
+	}
+	
+	/**
+	 * 自定义控件-菜单
+	 *
+	 * @see QUI_Control_Abstract::render()
+	 */
+	function render() {
+		// 获取菜单
+		$contents = file_get_contents ( dirname ( __FILE__ ) . '/menu.json' );
+		$menus = json_decode ( $contents );
+		
+		// 获取权限
+		$user = Q::get_obj ( 'app' )->currentUser ();
+		self::$purviews = Staff::purviews ( $user ['staff_id'] );
+		// 创建菜单
+		$out = $this->menu ( $menus );
+		
+		return $out;
+	}
+	
+	/**
+	 * 创建菜单
+	 *
+	 * @param unknown $menus        	
+	 * @return string
+	 */
+	function menu($menus) {
+		$out = "<ul class='nav'>";
+		foreach ( $menus as $menu ) {
+			$out .= $this->node ( ( array ) $menu );
+		}
+		$out .= "</ul>";
+		return $out;
+	}
+	
+	/**
+	 * 创建节点
+	 *
+	 * @param unknown $menu        	
+	 * @return void|string
+	 */
+	function node($menu) {
+		$childrenFlag = false;
+		// 判断子菜单
+		if ($menu ["children"] == null) {
+			if (! in_array ( self::getMenuID ( $menu ['url'], ( array ) $menu ['param'] ), self::$purviews )) return;
+			else {
+				return "<li><a href='" . url ( $menu ['url'], ( array ) $menu ['param'] ) . "'>" . $menu ['name'] . "</a></li>";
+			}
+		} else {
+			if (! $this->check ( $menu ["children"] )) {
+				return;
+			} else {
+				$out = "<li class='dropdown'>";
+				$out .= "<a class='dropdown-toggle' data-toggle='dropdown' data-target='#' href='#'>" . $menu ['name'] . "</a>";
+				$out .= "<ul class='dropdown-menu'>";
+				foreach ( $menu ["children"] as $sub ) {
+					$_menu = ( array ) $sub;
+					if (in_array ( self::getMenuID ( $_menu ['url'], ( array ) $_menu ['param'] ), self::$purviews )) {
+						$out .= "<li><a href='" . url ( $_menu ['url'], ( array ) $_menu ['param'] ) . "'>" . $_menu ['name'] . "</a></li>";
+					}
+				}
+				$out .= "</ul></li>";
+				return $out;
+			}
+		}
+	}
+	
+	/**
+	 * 判断是否有子菜单
+	 *
+	 * @param unknown $menus        	
+	 * @return boolean
+	 */
+	function check($menus) {
+		$result = false;
+		foreach ( $menus as $menu ) {
+			$_menu = ( array ) $menu;
+			$_url = self::getMenuID ( $_menu ['url'], ( array ) $_menu ['param'] );
+			if (in_array ( $_url, self::$purviews )) {
+				$result = true;
+				break;
+			}
+		}
+		return $result;
+	}
+	
+	/**
+	 * 获取路径
+	 * 
+	 * @param 控制器 $controller        	
+	 * @param 执行 $action        	
+	 * @return 路径
+	 */
+	static function path($controller, $action) {
+		$menus = json_decode ( file_get_contents ( dirname ( __FILE__ ) . '/menu.json' ) );
+		foreach ( $menus as $m ) {
+			$menu = ( array ) $m;
+			if ($menu ["children"] != null) {
+				foreach ( $menu ["children"] as $sub ) {
+					$_menu = ( array ) $sub;
+					if ($_menu ['url'] == $controller . "/" . $action) {
+						return array (
+							'path' => array (
+								$menu ["name"] => '',
+								$_menu ["name"] => url ( '/' . $action ) 
+							) 
+						);
+					}
+				}
+			}
+		}
+	}
+}

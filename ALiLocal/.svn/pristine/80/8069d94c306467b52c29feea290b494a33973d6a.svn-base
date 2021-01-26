@@ -1,0 +1,46 @@
+<?php
+/**
+ * 国家二字码选择控件
+ *
+ * @author firzen
+ *        
+ */
+class Control_Country extends Control_ComboGrid {
+	function _before_render() {
+		$columns = array (
+			array (
+				"field" => "code_word_two",
+				"title" => "二字码",
+				"width" => 50,
+				"align" => "center" 
+			),
+			array (
+				"field" => "code_word_three",
+				"title" => "三字码",
+				"width" => 70,
+				"align" => "center" 
+			),
+			array (
+				"field" => "chinese_name",
+				"title" => "中文名称",
+				"width" => 150 
+			),
+			array (
+				"field" => "english_name",
+				"title" => "英文名称",
+				"width" => 230 
+			) 
+		);
+		$this->_attrs ["columns"] = $columns;
+		$mode = $this->_extract ( "mode", "local" );
+		$this->_attrs ["mode"] = $mode;
+		$this->_attrs ["url"] = url ( "common/countrygrid" );
+		$this->_attrs ["textField"] = $this->_extract ( "textField", "code_word_two" );
+		$this->_attrs ["idField"] = $this->_extract ( "idField", "code_word_two" );
+		$showChineseName = $this->_extract ( "showChineseName" );
+		if ($showChineseName) {
+			$this->_attrs ["onSelect"] = 'function(index,row){$("#' . $this->id () . '_addon").text(row.chinese_name)}';
+			$this->_attrs ["onLoadSuccess"] = 'function(data){$("#' . $this->id () . '_addon").text(getRowCol(data.rows,"code_word_two",$(this).val(),"chinese_name"))}';
+		}
+	}
+}

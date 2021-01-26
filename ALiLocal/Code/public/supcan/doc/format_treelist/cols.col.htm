@@ -1,0 +1,141 @@
+<HTML>
+<meta http-equiv="content-type" content="text/html; charset=gb2312">
+<head>
+<link rel="stylesheet" href="temp1.css" type="text/css">
+</head>
+<body bgcolor=#ffffff vlink=#0000ff>
+
+<div id="Tag12"/>
+<b>Cols</b>
+<table width=100% border=1 align="center">
+<tr bgcolor=#e4e4e4><td colspan=4>含义:各列的信息；数量: 1</td></tr>
+</table>
+<br>
+
+
+<br><b>Col</b><br>
+<table width=100% border=1 align="center" cols=6>
+<tr bgcolor=#e4e4e4><td colspan=6>含义: 列的属性；数量: 1-n, 内容: 列标题文字。如果希望分多行显示，可以直接加回车、或加插"\r\n"</td></tr>
+<tr bgcolor=#f1f1f1><td colspan=2>属性名称</td><td>含义</td><td>可用值</td><td>默认值</td><td>示例</td></tr>
+<tr><td rowspan=21>主要</td><td>name 或 id</td><td>列名</td><td>串, 相当于字段名</td><td>(无)</td><td>&nbsp;</td></tr>
+<tr><td rowspan=2>isUnique</td><td>内容是否允许重复</td><td>true/false</td><td rowspan=2>false</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 用于生成XML提交文档前的唯一性验证</td></tr>
+<tr><td rowspan=2>nullAble</td><td>是否允许为空</td><td>true/false</td><td rowspan=2>true</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 19.提交修改内容"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 用于生成XML提交文档前的简单验证</td></tr>
+<tr><td rowspan=2>defaultValue</td><td>默认值</td><td>串, 用于新插入行操作时的初始, 支持以 "=" 开头的表达式，例如 defaultValue="=now( )",  表示将日期型默认值设为当天</td><td rowspan=2>(无)</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅对新插入的行有效</td></tr>
+<tr><td>dataType</td><td>数据类型</td><td>有 string / int / double / bool / date / datetime 这几种</td><td>string</td><td>&nbsp;</td></tr>
+<tr><td>decimal</td><td>小数位数</td><td> -1至8, 仅用于 double 型。 -1表示小数位数不确定, 可以在0位和8位之间可以任意输入</td><td>2</td><td>&nbsp;</td></tr>
+<tr><td rowspan=2>isHyperlink</td><td>是否超链接列</td><td>true/false</td><td rowspan=2>false</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 12.事件"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 请参见下面的<a href="#Memo2">备注2</a></td></tr>
+<tr><td>isHide</td><td>是否隐藏,</td><td><b>true</b> - 隐藏;<br><b>false</b> - 显示;<br><b>absHide 或 absTrue</b> - 绝对隐藏，不会被鼠标右键菜单选择;<br><b>absShow 或 absFalse</b> - 绝对显示，不会被鼠标右键菜单选择;</td><td>false</td><td><img src="document.bmp" title="请参见演示页: 11.显示掩码"></td></tr>
+<tr><td rowspan=2>sortAble</td><td>点击列标题是否执行排序</td><td>true/false</td><td rowspan=2>true</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 如果&lt;Properties&gt;中的sortAble设为false, 则本sortAble无效(false)</td></tr>
+<tr><td rowspan=2>moveAble</td><td>是否允许列的拖动操作</td><td>true/false</td><td rowspan=2>true</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 如果&lt;Properties&gt;中的moveAble设为false, 则本moveAble无效(false)</td></tr>
+<tr><td>pasteAble</td><td>是否允许被粘贴</td><td><b>true</b> - 允许;<br><b>false</b> - 不允许;<br><b>supcan.xml</b> - 通常是允许，但是当列不可编辑时(包括隐藏时)，将以supcan.xml中的 &lt;pasteAbleWhenUnEditAble&gt; 的设定为准;</td><td>supcan.xml</td><td>&nbsp;</td></tr>
+<tr><td rowspan=2>copyExportAble</td><td>列是否允许被复制、被转换输出</td><td>true/false</td><td rowspan=2>true</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: "复制" 是指鼠标右键菜单的 "复制当前行";<br>注2: 如果当前表中有单元格的合并，那么在转换输出时，该选项失效 (相当于全部为 True);<br></td></tr>
+<tr><td>textId</td><td>指向另一列的列名，显示的内容存放在该列中，是另类 <b>key-value对</b> 的简易字典解决方案</td><td>列名</td><td>(无)</td><td><img src="document.bmp" title="请参见演示页: 10.可编辑下拉 中的技术分析区中的例子"></td></tr>
+<tr><td>自定义属性</td><td>自定义属性</td><td>符合变量命名的任意串, 只要不和其它属性重名即可;  此外，允许有多个自定义属性</td><td>(无)</td><td>&nbsp;</td></tr>
+<tr><td rowspan=22 bgColor="#e2e2e2">外观</td><td rowspan=2>isThousandSeparat</td><td>是否以千位符分隔显示</td><td>true/false</td><td rowspan=2>true</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅用于 datatype 为 int 或 double 时</td></tr>
+<tr><td rowspan=2>width</td><td>列宽</td><td><b>整数</b> - 绝对宽度 (单位:像素数);<br><b>百分比</b> - 窗口宽度的百分比, 如：20%;<br><b>为小于1的分数</b> - 比例因子，用于分配剩余的宽度, 如0.2;<br><b>fitHeader 或 header</b> - 自动伸展到能使表头标题能够完整显示;</td><td rowspan=2>0.1</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 请参考开发者指南"Supcan Treelist组件"中的"16.2 关于列宽"</td></tr>
+<tr><td>minWidth</td><td>列的最小宽度</td><td>像素数</td><td>10</td><td><img src="document.bmp" title="请参见演示页: 6.引用外部Treelist"></td></tr>
+<tr><td>align</td><td>水平对齐</td><td>left / center / right</td><td>随datatype而变</td><td>&nbsp;</td></tr>
+<tr><td>vAlign</td><td>垂直对齐</td><td>top / vcenter(或middle) / bottom</td><td>vcenter</td><td>&nbsp;</td></tr>
+<tr><td rowspan=2>isSpaceIndent</td><td>前导空格是否用于整体缩进</td><td>true/false</td><td rowspan=2>false</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅用于左对齐时，"整体缩进"表示空格的空白区域整体有效，例如在自动折行显示时</td></tr>
+<tr><td>alignHeader</td><td>列标题文字的对齐</td><td>left / center / right</td><td>center</td><td>&nbsp;</td></tr>
+<tr><td>fontIndex</td><td>采用的字体</td><td>数字，指向在&lt;Fonts&gt;中定义的字体的顺序号, 从0开始计数, 等级高于&lt;Properties&gt;中的同名属性</td><td>-1</td><td><img src="document.bmp" title="请参见演示页: 6.引用外部Treelist"></td></tr>
+<tr><td>headerFontIndex</td><td>列标题采用的字体</td><td>数字，指向在&lt;Fonts&gt;中定义的字体的顺序号, 从0开始计数, 等级高于&lt;Properties&gt;中的同名属性</td><td>-1</td><td><img src="document.bmp" title="请参见演示页: 6.引用外部Treelist"></td></tr>
+<tr><td>headerTextColor</td><td>列标题文字颜色</td><td>颜色串</td><td>#000000</td><td><img src="document.bmp" title="请参见演示页: 7.计算列、合计行"></td></tr>
+<tr><td>headerIcon</td><td>列标题旁边的小图标</td><td>可以是图标的URL, 也可以是如下格式的串: <br>　　url=[?];pos=[?]<br>pos用于指定图标的位置, 是水平(left/right)、 垂直(top/middle/bottom)方向的组合. 举例如下:<br>　　url=../ac.png;pos=right,bottom<br>建议采用png或ico这类透明的图片</td><td>(无)</td><td><img src="document.bmp" title="请参见演示页: 10.可编辑下拉"></td></tr>
+<tr><td>headerIconTip</td><td>鼠标点击上述小图标时弹出的提示文字</td><td>文字串, 如果不定义这个串，鼠标点击小图标时将触发Clicked事件</td><td>(无)</td><td><img src="document.bmp" title="请参见演示页: 10.可编辑下拉"></td></tr>
+<tr><td>displayMask</td><td>用于显示的格式掩码表达式</td><td>表达式的内容包括显示内容、 背景色、 文字色、 左图、 右图.  请详见Treelist帮助文档的"3.几个重要的属性"</td><td>(无)</td><td><img src="document.bmp" title="请参见演示页: 4.图文并茂(1)、5.图文并茂(2)、7.计算列合计行、11.显示掩码"></td></tr>
+<tr><td>atLayer</td><td>位于多层表头的层位置</td><td>数字，从0开始</td><td>0</td><td><img src="document.bmp" title="请参见演示页: 4.图文并茂(1)"></td></tr>
+<tr><td>extentRows</td><td>当以多层表头显示时，该列可跨越多行显示的额外行数</td><td>数字，从0开始</td><td>0</td><td><img src="document.bmp" title="请参见演示页: 4.图文并茂(1)"></td></tr>
+<tr><td>dropDisplayType</td><td>下拉列(droplis, droptreelist)单元格的文字显示方式</td><td><b>0</b> - 仅显示文字部分;<br><b>1</b> - 仅显示键值(即key)部分;<br><b>2</b> - 键值+" - "+文字;</td><td>0</td><td>&nbsp;</td></tr>
+<tr><td rowspan=2>VColSep</td><td>虚拟列的数据分隔符</td><td>串，比如"/", 如果设了这个串，在加载数据后，程序将按这个分隔符自动对各行数据进行处理，使其看上去呈现多列的效果。此外, 各个段中纵向、横向如果有连续相同的数据，将自动呈现纵、横的合并效果</td><td rowspan=2>(无)</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 32.合并单元格"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 仅改变显示效果，并不改变数据;<br>注2: VColSep列有诸多限制，例如只能用于string型、不能作为树的排序列等等;<br></td></tr>
+<tr><td>VColSepStyle</td><td>虚拟列的合并方式</td><td><b>row</b> - 只允许跨行的垂直合并;<br><b>col</b> - 只允许跨列的横向合并;<br><b>row,col</b> - 跨行、跨列自动合并;</td><td>row,col</td><td>&nbsp;</td></tr>
+<tr><td rowspan=4>图片列</td><td rowspan=2>isImage</td><td>是否图片列</td><td>true/false</td><td rowspan=2>false</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 4.图文并茂(1)"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 若以图片显示, 内容串将是图片的URL(支持<a href="../dev/pub05.htm" target=_blank>图片扩展URL</a>)、或图片二进制的Base64串;<br>注2: 如果是相对URL, 是指相对于填入数据的URL, 而不是相对于当前XML文档或当前页面;<br>注3: 如果是URL, 图片是需要显示时才从URL取得图片数据的, 即所谓即用即下载;<br>注4: 不建议采用Base64串，因为数据包会很大;<br>注5: 请参见下面的<a href="#Memo2">备注2</a>;<br></td></tr>
+<tr><td>isBase64First</td><td>当isImage=true时，内容串是否优先认作是图片的Base64大串</td><td>true/false</td><td>false</td><td>&nbsp;</td></tr>
+<tr><td>imageArrange</td><td>图片展现方式</td><td><b>useOriSize</b> - 采用原始尺寸, 且从不缩放, 若单元格太小则显示局部;<br><b>full</b> - 能自动缩小(但从不放大), 使其完整显示, 保持长宽比;<br><b>stretch</b> - 自动缩放、完整显示, 且全部填满单元格, 不保持长宽比;<br><b>stretchKeepRatio</b> - 自动缩放、完整显示、保持长宽比, 长、宽中至少有一个是伸缩到满格的;</td><td>useOriSize</td><td>&nbsp;</td></tr>
+
+<tr><td rowspan=45 bgColor="#e2e2e2">输入</td><td rowspan=2>editAble</td><td>是否允许输入</td><td>true/false</td><td rowspan=2>true</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 其等级低于Properties中的同名属性，也就是说如果 Properties 中的 editAble 为 false，则本editAble无效</td></tr>
+<tr><td>editAbleNewRow</td><td>当上方的editable=false时，新插入行(即非Load的行)的单元格是否可编辑</td><td>true/false</td><td>false</td><td>&nbsp;</td></tr>
+<tr><td>isSelectEditWhenFocus</td><td>当输入框取得焦点时，光标是否选中全部文字</td><td><b>true</b> - 全选;<br><b>false</b> - 不选;<br><b>auto</b> - 自动, 表示数据类型为int或double时全选;</td><td>沿用&lt;Properties&gt;中的同名属性</td><td>&nbsp;</td></tr>
+<tr><td rowspan=2>editType</td><td>输入控件类型</td><td><b>Edit</b> - 最普通、允许EditMask的编辑;<br><b>EditWithButton</b> - 右侧有按钮的Edit;<br><b>MultiLineEdit</b> - 多行编辑(默认以Ctrl+Enter换行);<br><b>Checkbox/Check</b> - 复选框 (规则请见注1);<br><b>RadioButton/Radio</b> - 单选框 (规则请见注2);<br><b>Button</b> - 按钮;<br><b>Droplist</b> - 下拉列表;<br><b>EditAbleDroplist</b> - 可编辑的下拉列表;<br><b>Droptreelist</b> - 下拉嵌套的treelist;<br><b>EditAbleDroptreelist</b> - 可编辑的下拉嵌套treelist;</td><td rowspan=2>Edit</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 9.各种下拉、10.可编辑的下拉、12.事件"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: Checkbox显示方式和数据的关系:  单元格数据可以为 1 / 0 / 2 / -1,  分别显示为 选中 / 未选中 / 状态不确定(方框内显示一实框) / 不显示Checkbox;<br>注2: Radio显示方式和数据的关系:  单元格数据可以为 1 / 0,  分别显示为 选中 / 未选中(也不显示), 如果要显示未选中的radio, 请参考 &lr;Properties&gt; 的 isDrawUncheckedRadio 属性;<br></td></tr>
+<tr><td rowspan=2>maxChars</td><td>字符串长度限定</td><td>长度限制，以Unicode计(中英文均以 '字' 为单位)</td><td rowspan=2>0</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 8.多种掩码输入"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 不能同时使用maxChars和maxMBytes, 仅用于string型</td></tr>
+<tr><td rowspan=2>maxMBytes</td><td>字符串长度限定</td><td>长度限制，以字节计(中文算2字节、英文1字节)</td><td rowspan=2>0</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 8.多种掩码输入"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 不能同时使用maxChars和maxMBytes, 仅用于string型</td></tr>
+<tr><td rowspan=2>max</td><td>最大值</td><td>值串</td><td rowspan=2>(无)</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 8.多种掩码输入"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅用于int、double、date、datetime型</td></tr>
+<tr><td rowspan=2>min</td><td>最小值</td><td>值串</td><td rowspan=2>(无)</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 8.多种掩码输入"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅用于int、double、date、datetime型</td></tr>
+<tr><td rowspan=2>editmask</td><td>日期型、数值型的输入掩码</td><td>对于日期型，例如YYYY.MM.DD hh:mm:ss<br>对于数值型，例如 ##,###,###.00 (表示千位符分隔、小数点2位)、 +00000 (表示最长5位的正整数)、#,###.#(表示千位符分隔、小数位数不确定)</td><td rowspan=2>如左</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 8.多种掩码输入、11.显示掩码"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: double型的默认值和小数位数有关，例如decimal=3时，EditMask默认为"#.000";<br>注2: 仅用于日期型、数值型的输入;<br></td></tr>
+<tr><td rowspan=2>spin</td><td>输入框内的垂直旋转滚动条</td><td>true/false</td><td rowspan=2>日期型是true</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 2.多种掩码输入"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅用于int、date、datetime型</td></tr>
+<tr><td rowspan=2>spinAsCalendar</td><td>右侧显示下拉按钮、点击弹出日历</td><td>true/false</td><td rowspan=2>false</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 仅用于date、datetime型;<br>注2: spin="true"才生效;<br></td></tr>
+<tr><td rowspan=2>startDate</td><td>日期为空时，在输入时的起跳日期(即开始日期)</td><td>日期串，例如"2015.1.1", 也可以是表达式, 例如=now('%Y-%m-%d')</td><td rowspan=2>2000.1.1</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅用于date、datetime型</td></tr>
+<tr><td rowspan=2>isWordWrap</td><td>超宽时是否自动折行</td><td>true/false</td><td rowspan=2>false</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅用于MultiLineEdit</td></tr>
+
+<tr><td rowspan=2>isAutoTrimRight</td><td>是否自动清空后继的空格</td><td>true/false</td><td rowspan=2>true</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅用于string型</td></tr>
+
+<tr><td rowspan=2>isConvertToZeroIfInputNull</td><td>当清除输入框内容(比如全选后按 Del 键、Backspace键)时, 是否将单元格的内容转为0 (因为0和null是有区别的)</td><td><b>true</b> - 转为0;<br><b>false</b> - 仍然为null;</td><td rowspan=2>false</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅用于数值型的Edit</td></tr>
+<tr><td rowspan=2>droplistId</td><td>下拉框的相关联的下拉资源ID</td><td>串，该ID必须存在于下面的&lt;Droplists&gt;节点中</td><td rowspan=2>(无)</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 9.各种下拉、10.可编辑下拉、27.过滤: 关联下拉"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 仅用于edittype为 droplist / droptreelist / editAbleDroplist / editAbleDropTreelist / editWithButton;<br>注2: 如果是下拉输入, 则为下拉框的相关联的下拉资源ID;<br>注3: 如果是EditWithButton,  则用作Key-Value字典(该ID须存在，或用"auto"表示自动创建);<br></td></tr>
+<tr><td rowspan=2>delayBeforeDropdown</td><td>BeforeDropdown事件重复触发的最短时间差</td><td>秒</td><td rowspan=2>0</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: 仅用于edittype为 droplist / droptreelist / editAbleDroplist / editAbleDropTreelist</td></tr>
+<tr><td rowspan=2>dropdownWidth</td><td>强制设定下拉窗的宽度</td><td>像素数或百分比</td><td rowspan=2>(无)</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 百分比是指相对于列宽;<br>注2: 仅用于下拉;<br></td></tr>
+<tr><td rowspan=2>dropdownHeight</td><td>强制设定下拉窗的高度</td><td>像素数或百分比</td><td rowspan=2>(无)</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 百分比是指相对于屏幕的高度;<br>注2: 仅用于edittype为 droptreelist / editAbleDropTreelist;<br></td></tr>
+<tr><td>isDropDownWhenFocus</td><td>是否得到焦点就自动弹出下拉</td><td>true/false</td><td>false</td><td>&nbsp;</td></tr>
+<tr><td rowspan=2>freeInputAble</td><td>输入内容是否受限</td><td><b>true</b> - 可任意输入，内容不受限制;<br><b>false</b> - 受Droplist中的dataCol、dispCol限制, 输入内容必须和dataCol、dispCol匹配, 否则输入无效;</td><td rowspan=2>false</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 如果EditWithButton绑定了DroplistID，则强制被设为false;<br>注2: 仅用于EditAbleDropTreelist, editWithbutton;<br></td></tr>
+<tr><td rowspan=2>isCheckboxOnly</td><td>是否仅仅用于Checkbox选择</td><td>true/false, 如果是True，则不管 &lt;Properties&gt; 中的"editable"是true还是false，该Checkbox均是可操作的，并且左标尺的鼠标右键有全选、反选等菜单功能</td><td rowspan=2>false</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 15.行的复选"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 仅用于 Checkbox;<br>注2: 一般不允许有多个 isCheckboxOnly 列;<br></td></tr>
+<tr><td rowspan=2>TreeCombine</td><td>以树显示时, CheckBox显示在树的第一列, 本列自动隐藏</td><td>可以包含如下串：<br><b>normal</b> - 树杈不允许有复选框;<br><b>NodeSelectAble 或 node</b> - 树杈允许有复选框;<br><b>AutoSelectChildren 或 auto</b> - 树杈选中后, 将自动影响到其子孙;</td><td rowspan=2>false</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 15.行的复选"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 仅用于Checkbox 且 isCheckboxObly="true";<br>注2: 单列多层树、多列多层树均适用; 例如：treeCombine="node,auto";<br>注3: 仅仅是显示合并，其单元格数据仍然是独立的;<br></td></tr>
+<tr><td rowspan=2>GroupID</td><td>RadioButton(单选框)所在的组</td><td>串</td><td rowspan=2>(无)</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 仅用于 Radio;<br>注2: GroupId="row"表示纵向选择，即只有一行的值为1;<br>注3: 如果仅有一个组, 则可忽略;<br></td></tr>
+<tr><td rowspan=8>按钮列</td><td rowspan=2>buttonText</td><td>按钮上的文字</td><td>串</td><td rowspan=2>(无)</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 12.事件"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注: buttonText 和 buttonImg至少要定义一项</td></tr>
+<tr><td rowspan=2>buttonImg 或 buttonImage</td><td>按钮上的小图标</td><td>URL</td><td rowspan=2>(无)</td><td rowspan=2>&nbsp;</td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: buttonText 和 buttonImg至少要定义一项;<br>注2: buttonImage除了用于按钮列，也能用于EditWithButton、DropTreelist的右侧的图标;<br></td></tr>
+<tr><td>buttonTip</td><td>鼠标划过按钮时的Tip</td><td>文字串</td><td>(无)</td><td>&nbsp;</td></tr>
+<tr><td>buttonWidth</td><td>按钮宽度</td><td>数字，像素数</td><td>(无)</td><td><img src="document.bmp" title="请参见演示页: 12.事件"></td></tr>
+<tr><td>buttonHeight</td><td>按钮高度</td><td>数字，像素数</td><td>(无)</td><td>&nbsp;</td></tr>
+<tr><td>buttonSkin</td><td>强制指定按钮皮肤</td><td><b>windows</b> - 操作系统按钮外观;<br><b>default</b> - 自动，与全局色调一致;<br><b>flat</b> - 平坦，无按钮边框，常用于仅有图标的情形;<br><b>light gray</b> - 浅灰色;<br><b>caramel</b> - 焦糖色;<br><b>lilian</b> - 百合花色;<br><b>lividity</b> - 青黑色;</td><td>windows</td><td>&nbsp;</td></tr>
+<tr  bgcolor=#f6f6f6><td colspan=6>关于按钮状态的<font color=red>重要提示</font>:<br>　　按钮在每行的显示和单元格的值有关: <b>1</b>:正常显示按钮,  <b>0</b>:按钮显示为Disabled,  <b>其它值</b>: 不显示按钮，作为纯文字显示;</td></tr>
+<tr  bgcolor=#f6f6f6><td colspan=6>关于多按钮:<br>　　一列中允许同时有多个按钮， 上述buttonText、buttonTip、buttonImg、buttonWidth的内容只要用逗号(,)分隔即可，例如：  buttonText="审核,  不审核"　buttonWidth="50, 70"  </td></tr>
+<tr><td rowspan=4 bgColor="#e2e2e2">合计<br>小计</td><td rowspan=2>totalExpress<br>subtotalExpress</td><td>合计/小计表达式</td><td>表达式</td><td rowspan=2>(无)</td><td rowspan=2><img src="document.bmp" title="请参见演示页: 7.计算列合计行、13.分类汇总"></td></tr>
+<tr><td colspan=2 bgColor=#ffffdd>注1: 表达式可以包含 <b>@开头的宏</b>, 如 @sum、@rows, 请参见《开发者指南》中的“公共内容”的“3.宏”中的“合计宏”;<br>注2: 表达式可以包含 <b>@开头的其它列的列名</b>, 表示取当前小计范围中第一个明细行中某列的内容;<br>注3: 表达式可以包含 <b>其它列的列名</b>, 表示取同一行中其它列的内容;<br></td></tr>
+<tr><td>totalAlign<br>subtotalAlign</td><td>合计/小计的水平对齐</td><td>left / center / right</td><td>right</td><td><img src="document.bmp" title="请参见演示页: 7.计算列合计行、13.分类汇总"></td></tr>
+<tr><td>totalDecimal<br>subtotalDecimal</td><td>合计/小计保留的小数位数</td><td>0 至 8</td><td>与当前列一致</td><td>&nbsp;</td></tr>
+<tr  bgcolor=#f6f6f6><td colspan=6>多个合计行的语法:<br>　　允许有多个独立的合计行，命名规则为 totalExpress1、 totalExpress2...类推， totalAlign 和 totalDecimal 也可按这个规则书写</td></tr></table>
+<br>
+<div id="Memo1"/><b>备注1</b>: 上述列标题、buttonText，允许以"|"分隔中英文(用于中英文切换);<br>
+<div id="Memo2"/><b>备注2</b>: isHyperLink、isImage的列，如果加载的单元格数据以特征串 “<b>[NoEffect]</b>” 开头(大小写敏感)，表示该单元格以普通文字显示，特征串 <b>[NoEffect]</b> 使用范围为:<br>
+　　1.仅用于初始数据;<br>
+　　2.对 SetCellData( ) 函数设置的值无效;<br>
+　　3.该特征串在加载时能被自动识别、摘除，不会出现在单元格中;<br>
+<br>
+
+
+<br><br><br><br>
+<script type='text/javascript' src='../dev/nstd.js'></script>
+</body></html>

@@ -1,0 +1,53 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    支付验证
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<script type="text/javascript" src="<?php echo $_BASE_DIR;?>public/js/jquery.sound.js"></script>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<div class="FarSearch" >
+	<table>
+		<tbody>
+			<tr>
+				<th>阿里订单号</th>
+				<td>
+					<input name="ali_order_no" type="text" id="ali_order_no" style="width: 200px" value=""><span id="explain" style="margin-left:10px;"></span>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+    
+<?PHP $this->_endblock();?>
+<script type="text/javascript">
+	$(function(){
+		document.getElementById("ali_order_no").focus();
+		//扫描阿里单号
+		$('#ali_order_no').bind('keyup', function (e) {
+			$("#explain").html('')
+			$.ajax({
+				url:'<?php echo url('order/paymentverify')?>',
+				type:'POST',
+				data:{ali_order_no:$("#ali_order_no").val()},
+				success:function(data){
+					if(data=='true'){
+						$("#explain").html('已支付').css('color','green');
+						$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yizhifu.mp3');//已支付
+					}else if(data=='cancel'){
+						$("#explain").html('已取消').css('color','red');
+						$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yiquxiao.mp3');//已取消
+					}else if(data=='notexist'){
+						$("#explain").html('单号不存在').css('color','red');
+						$.sound.play('<?php echo $_BASE_DIR;?>public/sound/danhaobucunzai.mp3');//单号不存在
+					}else{
+						$("#explain").html('未支付').css('color','red');
+						$.sound.play('<?php echo $_BASE_DIR;?>public/sound/weizhifu.mp3');//未支付
+					}
+				}
+			})
+		});
+	})
+</script>
+

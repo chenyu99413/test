@@ -1,0 +1,1 @@
+ALTER TABLE `tb_product` ADD COLUMN `product_chinese_name`  varchar(20) NULL DEFAULT '' COMMENT '产品中文名称' AFTER `product_name`;

@@ -1,0 +1,7 @@
+<?php
+// 应用程序配置信息
+return array(
+	'scan_filepath'=>_INDEX_DIR_.DS.'/public/upload/scanningcopy/',
+	'third_party_product'=>array(32,31,66,87,88,85,199)
+);
+

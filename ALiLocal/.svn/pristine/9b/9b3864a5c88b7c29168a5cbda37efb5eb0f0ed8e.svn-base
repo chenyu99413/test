@@ -1,0 +1,195 @@
+<?php
+class Helper_Label_Abcsp{
+	/**
+	 * @todo   ABC-SP
+	 * @author stt
+	 * @since  2021年1月6日13:17:10
+	 * @link   #85054
+	 */
+	static function abcsp($order){
+		$out=Faroutpackage::find('order_id = ?',$order->order_id)->getSum('quantity_out');
+		if($out > 1){
+			$view['errormessage']='只支持一票一件';
+			return $view;
+		}
+		//url
+		$url='http://sit.oms.chigoose.com';
+		$method = "/login/getToken";
+		//key
+		$appkey = 'APIZY';
+		//security
+		$security = '18a7263a5b3c4f11d7fa51a69de07263';
+		$post_body = array(
+			'appKey'=>$appkey,
+			'security'=>$security
+		);
+		//获取token,2小时有效
+		$gettoken_response=Helper_Curl::post($url.$method, http_build_query($post_body));
+		$gettoken_response_arr = json_decode($gettoken_response,true);
+		//成功
+		if($gettoken_response_arr['resultCode']=='1'){
+			//组织打单数据
+			$time = date('Y-m-d H:i:s',time());
+			//生成32位guid
+			if ($order->guid){
+				$guid = $order->guid;
+			}else{
+				$guid = Helper_Common::createguid(false);
+			}
+			$amount = 0;
+			$weight = 0;
+			$orderdetaillist = array();
+			$goods = Orderproduct::find('order_id = ?',$order->order_id)->getAll();
+			foreach ($goods as $good){
+				$amount += $good->product_quantity;
+			}
+			$order_package = Faroutpackage::find ( 'order_id = ?', $order->order_id )->getOne();
+			foreach ($goods as $good){
+				$orderdetaillist[]=array(
+					//中文品名
+					'itemName'=>$good->product_name_far,
+					//英文品名
+					'itemEnglishName'=>$good->product_name_en_far,
+					//商品单价
+					'unitPrice'=>$good->declaration_price,
+					//商品数量
+					'itemCount'=>$good->product_quantity,
+					//产品净重
+					'goodsNetWeight'=>sprintf('%.3f',$order_package->weight_out/$amount*0.95),
+					//产品毛重
+					'goodsRoughWeight'=>sprintf('%.3f',$order_package->weight_out/$amount),
+					//USD ISO 数字三位 编码
+					'bargainCurrency'=>'840',
+					//申报数量
+					'declareCount'=>$good->product_quantity,
+					//申报单位
+					'declareMeasureUnit'=>'件'
+				);
+			}
+			$country = Country::find('code_word_two=?',$order->consignee_country_code)->getOne();
+			$message = array(
+				'OMSOrder'=>array(
+					'orderNo' => $order->ali_order_no,
+					//测试是APIZY，正式是...
+					'clientCode' => 'APIZY',
+					//I-进口； E -出口
+					'ieFlag' => 'E',
+					//业务类型: 出口转运代收货款（EXTRCOD)
+					'businessType' => 'EXTRCOD',
+					//业务模式编码?
+					'businessModelCode' => 'USPB',
+					//订单总金额
+					'orderTotalAmount' => $order->total_amount,
+					//订单商品总件数
+					'orderTotalCount' => $amount,
+					//订单时间
+					'orderTime' => date('Y-m-d H:i:s',time()),
+					//毛重
+					'roughWeight' => $order_package->weight_out,
+					//净重
+					'netWeight' => sprintf('%.3f',$order_package->weight_out*0.95),
+					//收件人
+					
+					'consignee' =>array(
+						//收件人国家
+						'consigneeCountry'=>$order->consignee_country_code,
+						'consigneeName'=>$order->consignee_name1,
+						'consigneePhone'=>$order->consignee_mobile,
+						'consigneeEmail'=>$order->consignee_email,
+						'consigneePost'=>$order->consignee_postal_code,
+						'consigneeAddress'=>$order->consignee_street1.$order->consignee_street2,
+						'province'=>$order->consignee_state_region_code,
+						'city'=>$order->consignee_city
+					),
+					'destinationCountry'=>$country->chinese_name,
+					'destinationCountryCode'=>$order->consignee_country_code,
+					'orderDetailList'=>$orderdetaillist,
+					'codCurrency'=>'840',
+					'codFee'=>$order->total_amount
+				),
+				//是否强制刷新 1强制刷新
+				'isUpdate' => 0,
+			);
+			
+			$data = array (
+				//系统分配的用户身份ID
+				'appKey' => $appkey,
+				//传输报文的报文数据格式
+				'dataFormat' => 'json',
+				'message'=>json_encode($message),
+				//请求调用的指定接口的接口名称
+				'method' => 'Chigoose.order.addorder',
+				//32位guid
+				'notifyId' => $guid,
+				//调用时间的时间戳(具体到秒)
+				'timestamp' => $time,
+				//版本号
+				'version' => '1.0'
+			);
+			ksort($data);
+			//记录发送报文
+			$log=new OrderLog(array(
+				'order_id'=>$order->order_id,
+				'staff_id'=>MyApp::currentUser('staff_id'),
+				'staff_name'=>MyApp::currentUser('staff_name'),
+				'comment'=>'abcsp订单报文：'.json_encode($data)
+			));
+			//保存
+			$log->save();
+			$sign = $security;
+			foreach ($data as $key => $value){
+				$sign .= $key.'='.$value.':';
+			}
+			$sign = substr($sign,0,strlen($sign)-1);
+			$sign .= $security;
+			$label_header = array (
+				'token:' .$gettoken_response_arr['resultData']['token'],
+				'Sign:'.strtoupper(md5($sign))
+			);
+			$method = "/order/addorder";
+			$result=Helper_Curl::post($url.$method, http_build_query($data), $label_header);
+			QLog::log('abcsp下单回执：'.$result);
+			$result = json_decode($result,true);
+			if($result['resultCode']==1){
+				$resultdata = json_decode($result['resultData'],true);
+				//末端单号
+				$tracking_code = $resultdata['mailNo'];
+				//末端单号超出26位
+				if (strlen($tracking_code)>26){
+					//把前八位截掉
+					//例如4209160792612927005430000027406270->92612927005430000027406270
+					$tracking_code = substr($tracking_code , 8);
+				}
+				//原订单信息
+				$order->guid = $guid;
+				$order->tracking_no = $tracking_code;
+				$order->save();
+				//保存子单信息，用于交货核查
+				$subcode=new Subcode();
+				$subcode->order_id=$order->order_id;
+				$subcode->sub_code=$tracking_code;
+				$subcode->save();
+				$dir=Q::ini('upload_tmp_dir');
+				@Helper_Filesys::mkdirs($dir);
+				$target=$dir.DS.$tracking_code.'.pdf';
+				$source = file_get_contents($resultdata['pfd']);
+				file_put_contents($target,$source);
+				$uploadoss = new Helper_AlipicsOss();
+				//上传到oss
+				$miandan_data = $uploadoss->uploadAlifiles($tracking_code.'.pdf');
+				if ($uploadoss->doesExist($tracking_code.'.pdf')){
+					//上传成功，删除
+					unlink($dir.DS.$tracking_code.'.pdf');
+				}
+				$view['errormessage']='';
+				$view['account']='ABC-SP';
+			}else{
+				$view['errormessage']=$result['resultContent'];
+			}
+		}else{
+			//失败
+			$view['errormessage']='ABC-SP token 获取失败';
+		}
+		return $view;
+	}
+}

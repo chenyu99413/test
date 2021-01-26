@@ -1,0 +1,197 @@
+<?php
+class Controller_Order extends Controller_Abstract{
+    /**
+     * 订单管理页面
+     */
+    function actionSearch(){
+        $orders=Order::find();
+        if(request('ali_order_no')){
+            $orders->where('ali_order_no=?',request('ali_order_no'));
+        }
+        if(request('far_no')){
+            $orders->where('far_no=?',request('far_no'));
+        }
+        $pagination = null;
+        $list=$orders->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), 30 )
+        ->fetchPagination ( $pagination )
+        ->order('order_id desc')->getAll();
+        $this->_view['orders']=$list;
+        $this->_view['pagination']=$pagination;
+    }
+    /**
+     * 订单轨迹
+     */
+    function actionTrace(){
+        $order=Order::find('order_id=?',request('order_id'))->getOne();
+        $trace_code=array('S_CLEARANCE_START'=>'S_CLEARANCE_START','S_CLEARANCE_COMPLETE'=>'S_CLEARANCE_COMPLETE',
+            'S_TH_IN'=>'S_TH_IN','S_TH_ARRANGE'=>'S_TH_ARRANGE','S_TH_OUT'=>'S_TH_OUT','S_TH_IN_LAST'=>'S_TH_IN_LAST',
+            'S_DELIVERY_SCHEDULED'=>'S_DELIVERY_SCHEDULED','S_DELIVERY_SIGNED'=>'S_DELIVERY_SIGNED');
+        $select=Tracking::find('order_id=?',request('order_id'))->getAll();
+        $trace_info_code=Helper_Array::getCols($select, 'tracking_code');
+        foreach ($trace_info_code as $v){
+            unset($trace_code[$v]);
+        }
+        if(request_is_post()){
+            $trace=new Tracking();
+            $trace->changeProps(array(
+                'order_id'=>request('order_id'),
+                'ali_order_no'=>$order->ali_order_no,
+                'tracking_code'=>request('tracking_code'),
+                'location'=>request('location'),
+                'trace_desc_cn'=>request('trace_desc_cn'),
+                'operator_name'=>request('operator_name'),
+                'quantity'=>request('quantity'),
+                'trace_time'=>strtotime(request('trace_time')),
+            ));
+            $trace->save();
+            if(request('tracking_code')=='S_DELIVERY_SIGNED'){
+                $trace->status='1';
+                $trace->save();
+            }
+            return $this->_redirectMessage('新增轨迹', '成功', url('order/trace',array('order_id'=>request('order_id'))));
+        }
+        $this->_view['order']=$order;
+        $this->_view['trace_code']=$trace_code;
+        $this->_view['list']=$select;
+    }
+    /**
+     * 订单事件
+     */
+    function actionEvent(){
+        $order=Order::find('order_id=?',request('order_id'))->getOne();
+        $event_code=array('WAREHOUSE_INBOUND'=>'WAREHOUSE_INBOUND:入库','CHECK_WEIGHT'=>'CHECK_WEIGHT:称重','CONFIRM'=>'CONFIRM:核查','PALLETIZE'=>'PALLETIZE:打托',
+            'WAREHOUSE_OUTBOUND'=>'WAREHOUSE_OUTBOUND:出库','CARRIER_PICKUP'=>'CARRIER_PICKUP:承运商取件','DELIVERY'=>'DELIVERY:派送'
+        );
+//         $event_code=Helper_Array::toHashmap(Eventcode::find()->getAll(), 'event_code', 'event_code');
+        $select=Event::find('order_id=?',request('order_id'))->getAll();
+        $event_info_code=Helper_Array::getCols($select, 'event_code');
+        foreach ($event_info_code as $v){
+            unset($event_code[$v]);
+        }
+        if(request_is_post()){
+            $event=new Event();
+            $event->changeProps(array(
+                'order_id'=>request('order_id'),
+                'event_code'=>request('event_code'),
+                'event_time'=>strtotime(request('event_time')),
+            ));
+            $event->save();
+            if(isset($_POST['package'])){
+                $packages=request('package');
+                if($packages['reason_name']){//有失败原因,无论package是否存在都不保存到数据库中
+                    $event->reason=$packages['reason_name'];
+                    $event->save();
+                }else{
+                    $items=array();
+                    foreach ($packages['quantity_far'] as $i => $v){
+                        $items[]=array(
+                            'quantity_far'=>$v,
+                            'length_far'=>$packages['length_far'][$i],
+                            'width_far'=>$packages['width_far'][$i],
+                            'height_far'=>$packages['height_far'][$i],
+                            'weight_far'=>$packages['weight_far'][$i],
+                        );
+                    }
+                    $order_packages=Orderpackage::find('order_id=?',$order->order_id)->getAll();
+                    foreach ($order_packages as $temp){
+                        if(count($items)>0){
+                            foreach ($items as $key=>$value){
+                                $temp->package_type_far='BOX';
+                                $temp->quantity_far=$value['quantity_far'];
+                                $temp->unit_far='CM';
+                                $temp->length_far=$value['length_far'];
+                                $temp->width_far=$value['width_far'];
+                                $temp->height_far=$value['height_far'];
+                                $temp->weight_far=$value['weight_far'];
+                                $temp->weight_unit_far='KG';
+                                $temp->save();
+                                unset($items[$key]);
+                                break;
+                            }
+                        }else{
+                            break;
+                        }
+                    }
+                }
+            }
+            if(isset($_POST['fee'])){
+                $fee_info=request('fee');
+                if($fee_info['reason_name']){//有失败原因,无论费用项名称是否存在都不保存到数据库中
+                    $event->reason=$packages['reason_name'];
+                    $event->save();
+                }else{
+                    foreach ($fee_info['fee_item'] as $f){
+                        $fee_item=FeeItem::find('item_code=?',$f)->getOne();
+                        //存入fee表中
+                        $fee= new Fee();
+                        $fee->changeProps(array(
+                            'order_id'=>$order->order_id,
+                            'fee_item_code'=>$fee_item->sub_code,
+                            'fee_item_name'=>$fee_item->item_name,
+                            'quantity'=>'1'
+                        ));
+                        $fee->save();
+                    }
+                }
+            }
+            if(isset($_POST['carrier'])){
+                $carrier=request('carrier');
+                if($carrier['reason_name']){
+                    $event->reason=$carrier['reason_name'];
+                    $event->save();
+                }else{
+                    $department=Department::find('department_id=?',MyApp::currentUser('department_id'))->getOne();
+                    if($department->department_name=='杭州分公司'){
+                        $event->location='杭州';
+                    }elseif ($department->department_name=='义乌分公司'){
+                        $event->location='义乌';
+                    }elseif ($department->department_name=='上海分公司'){
+                        $event->location='上海';
+                    }
+                    $event->save();
+                }
+            }
+            return $this->_redirectMessage('新增事件', '成功', url('order/event',array('order_id'=>request('order_id'))));
+        }
+        $this->_view['order']=$order;
+        $this->_view['event_code']=$event_code;
+        $this->_view['list']=$select;
+    }
+    /**
+     * fee_item多选
+     */
+    function actionfeeitemtree(){
+        $fee_items=FeeItem::find()->getAll();
+        foreach ($fee_items as $fee_item){
+            $array [] = array (
+                "id" => $fee_item->item_code,
+                "text" => $fee_item->item_name,
+                "checked" => "",
+                "attributes" => ""
+            );
+        }
+        echo (json_encode ( $array ));
+        exit ();
+    }
+    /**
+     * 事件页面显示具体信息
+     */
+    function actionOrderinfo(){
+        switch (request('event_code')){
+            case 'CHECK_WEIGHT':
+                //获取package信息
+                $package=Orderpackage::find('order_id=?',request('order_id'))->asArray()->getAll();
+                echo json_encode($package);
+                break;
+            case 'CONFIRM':
+                $fee=Fee::find('order_id=?',request('order_id'))->asArray()->getAll();
+                echo json_encode($fee);
+                break;
+            case 'CARRIER_PICKUP':
+                $event=Event::find("order_id=? and event_code='CARRIER_PICKUP'",request('order_id'))->asArray()->getOne();
+                echo json_encode($event);
+                break;
+        }
+        exit();
+    }
+}

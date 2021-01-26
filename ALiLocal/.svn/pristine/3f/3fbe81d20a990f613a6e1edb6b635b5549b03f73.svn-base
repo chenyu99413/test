@@ -1,0 +1,203 @@
+<?php
+class Controller_Pickup extends Controller_Abstract {
+    /**
+     * 取件订单列表
+     */
+    function actionSearch(){
+        //查询当前登录人员业务相关部门
+        $relevant_departments=Helper_Array::getCols(RelevantDepartment::find('staff_id=?',MyApp::currentUser('staff_id'))->getAll(), 'department_id');
+        //获取部门名称
+        $relevant_department_names=Helper_Array::toHashmap(Department::find('department_id in (?)',$relevant_departments)->getAll(), 'department_name', 'department_name');
+        $relevant_department_names=array_diff($relevant_department_names, array('技术中心','杭州仓','上海仓','义乌仓'));
+        $orders=Order::find("ali_testing_order!= '1'")->where("order_status in ('1','14','15','16')")
+        ->where('pick_company in (?)',$relevant_department_names);
+        if(request('pick_company')){
+            $orders->where('pick_company=?',request('pick_company'));
+        }
+        $counts = array ();
+        // 全部总数
+        $order_count=clone $orders;
+        $counts=$order_count->group('order_status')->count()->columns('order_status')->asArray()->getAll();
+        $counts=Helper_Array::toHashmap($counts,'order_status','row_count');
+        $counts [0] = array_sum($counts);
+        $active_id = 0;
+        // 未入库
+        if (request ( "parameters" ) == "no_package") {
+            $orders->where('order_status=1');
+            $active_id = 1;
+        }
+        // 已分派
+        if (request ( "parameters" ) == "assign") {
+            $orders->where('order_status=14');
+            $active_id = 2;
+        }
+        // 已取件
+        if (request ( "parameters" ) == "take") {
+            $orders->where('order_status=15');
+            $active_id = 3;
+        }
+        // 网点入库
+        if (request ( "parameters" ) == "network_in") {
+            $orders->where('order_status=16');
+            $active_id = 4;
+        }
+        //导出
+        if(request('export')=='exportlist'){
+            $pick=clone $orders;
+            $pick->where("ifnull(need_pick_up,'')='1'");
+            $payeds=$pick->getAll();
+            $header = array (
+                '阿里订单号','订单日期','取件网点','省','市','地址','邮编','姓名','手机号','电话','邮箱','件数'
+            );
+            $sheet = array (
+                $header
+            );
+            foreach ($payeds as $p){
+                $item_count=0;
+                foreach ($p->packages as $package){
+                    $item_count+=$package->quantity;
+                }
+                $sheet [] =array(
+                    "'".$p->ali_order_no,Helper_Util::strDate('Y-m-d H:i', $p->create_time),$p->pick_company,$p->sender_state_region_code,$p->sender_city,$p->sender_street1.' '.$p->sender_street2,"'".$p->sender_postal_code,
+                    $p->sender_name1.' '.$p->sender_name2,"'".$p->sender_mobile,"'".$p->sender_telephone,$p->sender_email,$item_count
+                );
+            }
+            Helper_ExcelX::array2xlsx ( $sheet, '取件清单' );
+            exit ();
+        }
+        $pagination = null;
+        $list=$orders->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), 30 )
+        ->fetchPagination ( $pagination )
+        ->order('order_id desc')->getAll();
+        $parameters=request ( "parameters" );
+        $this->_view['orders']=$list;
+        $this->_view['pagination']=$pagination;
+        $this->_view ["counts"] = $counts;
+        $this->_view ["parameters"] = $parameters;
+        $this->_view ["active_id"] = $active_id;
+        $this->_view ["tabs"] = $this->createTabs ( $counts );
+        $this->_view['relevant_department_names']=$relevant_department_names;
+    }
+    /**
+     * 创建标签
+     */
+    function createTabs($counts) {
+        return array (
+            array (
+                "id" => "0","title" => "全部","count" => val($counts,0,0),
+                "href" => "javascript:TabSwitch()"
+            ),
+            array (
+                "id" => "1","title" => "未入库","count" => val($counts,1,0),
+                "href" => "javascript:TabSwitch('no_package')"
+            ),
+            array (
+                "id" => "2","title" => "已分派","count" => val($counts,14,0),
+                "href" => "javascript:TabSwitch('assign')"
+            ),
+            array (
+                "id" => "3","title" => "已取件","count" => val($counts,15,0),
+                "href" => "javascript:TabSwitch('take')"
+            ),
+            array (
+                "id" => "4","title" => "网点入库","count" => val($counts,16,0),
+                "href" => "javascript:TabSwitch('network_in')"
+            ),
+        );
+    }
+    /**
+     * 修改状态
+     */
+    function actionChangestatus(){
+        $order_ids=explode(',', trim(request('order_ids',',')));
+        $flag=false;
+        foreach ($order_ids as $order_id){
+            $order=Order::find('order_id=?',$order_id)->getOne();
+            if($order->order_status!='1' && $order->order_status!='14' && $order->order_status!='15' && $order->order_status!='16'){
+                $flag=true;
+            }else{
+                $order->order_status=request('status');
+                $order->save();
+            }
+        }
+        if($flag){
+            echo 'error';
+        }else{
+            echo 'success';
+        }
+        die();
+    }
+    /**
+     * 网点入库
+     */
+    function actionPickupnetworkin(){
+        if(request_is_post()){
+            $ret = array (
+                'msg' => '',
+                'sound' => 'cuowu.mp3',
+                'status' => false
+            );
+            $order=Order::find();
+            $count1 = Order::find ( 'ali_order_no = ?', request ( 'scan_no' ) )->getCount ();
+            if($count1==1){
+                $order=$order->where('ali_order_no = ?', request ( 'scan_no' ))->getOne();
+            }else{
+                $alireference=Alireference::find('reference_no=?', request ( 'scan_no' ))->getOne();
+                if($alireference->isNewRecord()){
+                    $order=$order->where( '1!=1' )->getOne();
+                }else{
+                    $count2=Alireference::find('reference_no=?', request ( 'scan_no' ))->getCount ();
+                    if($count2 > 1){
+                        $ret ['msg'] = '请拆包';
+                        $ret ['sound'] = 'qingchaibao.mp3';
+                        return json_encode ( $ret );
+                    }elseif ($count2==1){
+                        $count3=Alireference::find('order_id=?', $alireference->order_id)->getCount ();
+                        if($count3 > 1){
+                            $ret ['msg'] = '请合并包裹';
+                            $ret ['sound'] = 'hebingbaoguo.mp3';
+                            return json_encode ( $ret );
+                        }
+                        $order=$order->where( 'reference_no = ? and order_status !="2"', request ( 'scan_no' ) )->getOne();
+                    }
+                }
+            }
+            if ($order->isNewRecord ()) {
+                $ret ['msg'] = '单号错误，或包裹数据不存在';
+                return json_encode ( $ret );
+            }
+            $err_status = array (
+                2 => '已取消',
+                3 => '已退货',
+                4 => '已付款',
+                5 => '已入库',
+                6 => '已出库',
+                7 => '待发送',
+                8 => '已发送',
+                9 => '已签收',
+                10 => '已查验',
+                11 => '待退货',
+                12 => '扣件',
+                13 => '已结束',
+                16=>'网点入库'
+            );
+            if (array_key_exists ( $order->order_status, $err_status )) {
+                $ret ['msg'] = '订单状态为【' . $err_status [$order->order_status] . '】';
+                return json_encode ( $ret );
+            }
+            if (strlen($order->pick_company)<=0) {
+                $ret ['msg'] = '错误';
+                return json_encode ( $ret );
+            }
+            $order->order_status='16';
+            $order->save();
+            $ret ['msg'] = '网点入库成功';
+            $ret ['sound'] = 'chenggong.mp3';
+            $ret ['status'] = true;
+            
+            return json_encode ( $ret );
+            exit ();
+        }
+    }   
+}
+

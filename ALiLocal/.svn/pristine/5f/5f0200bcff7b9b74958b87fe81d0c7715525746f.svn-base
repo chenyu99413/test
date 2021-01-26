@@ -1,0 +1,19 @@
+<?php
+return array(
+	'default'=>array(
+		'driver' => 'mysqli' ,
+        'host' => 'rdsvyv6bibburvi.mysql.rds.aliyuncs.com' ,
+        'login' => 'ali1688' ,
+        'password' => 'ali168812qwasZX' ,
+        'database' => 'ali1688' ,
+        'charset' => 'utf8' ,
+        'prefix' => '',
+	)
+);
+// 'driver' => 'mysqli' ,
+// 'host' => 'localhost' ,
+// 'login' => 'root' ,
+// 'password' => '123456' ,
+// 'database' => 'aliexpress' ,
+// 'charset' => 'utf8' ,
+// 'prefix' => '',

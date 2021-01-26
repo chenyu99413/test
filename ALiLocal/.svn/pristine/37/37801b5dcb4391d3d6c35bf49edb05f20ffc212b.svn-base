@@ -1,0 +1,1 @@
+ALTER TABLE `tb_channel_cost` ADD `threshold` INT(11) NOT NULL COMMENT '阈值' AFTER `tax`;

@@ -1,0 +1,1 @@
+ALTER TABLE `tb_order` ADD COLUMN `remark`  text NULL COMMENT '订单备注信息' AFTER `record_order_date`;

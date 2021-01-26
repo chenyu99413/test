@@ -1,0 +1,36 @@
+<?php
+require_once _INDEX_DIR_ . '/_library/helper/phpmailer/phpmailer.php';
+class Helper_Mailer {
+	/**
+	 * 发送邮件带附件
+	 *      	
+	 */
+	static function send($address, $title, $content,$path,$name) {
+		$mail=new PHPMailer() ;//实例化phpmailer类
+		$mail->CharSet = "utf-8";//设置采用utf8中文编码
+		$mail->IsSMTP();//设置采用SMTP方式发送邮件
+		$mail->Host = "smtp.exmail.qq.com";//设置邮件服务器的地址  smtp.qq.com
+		$mail->Port = 25;//设置邮件服务器的端口，默认为25  gmail  443
+		$mail->From = "redmine@far800.com";//设置发件人的邮箱地址
+		$mail->FromName = "快件系统";  //设置发件人的姓名
+		$mail->SMTPAuth = true;// 设置SMTP是否需要密码验证，true表示需要
+		//$mail->SMTPSecure = 'ssl';// 使用安全协议
+		$mail->Username = "redmine@far800.com";
+		$mail->Password = "74CmEHKnWA0M";
+		$mail->Subject = $title;   //设置邮件的标题
+		$mail->AltBody = "text/html";// optional, comment out and  test  <a href="">abc</a>
+		$mail->Body = $content;//发送的内容
+		$mail->AddAttachment($path,$name); //添加附件,并指定名称
+		$mail->IsHTML(true);//设置内容是否为html类型
+		//$mail ->WordWrap = 50;//设置每行的字符数
+		$mail->AddReplyTo("redmine@far800.com",'阿里专线');//设置回复的收件人的地址
+		foreach ($address as $k => $v) {
+			$mail->AddAddress($v);//设置收件的地址
+		}
+		if (!$mail->Send()) {//发送邮件
+			 echo $mail->ErrorInfo;
+		} else {
+			echo "email_success";
+		}
+	}
+}

@@ -1,0 +1,1 @@
+ALTER TABLE `tb_code_currency` ADD `rate` VARCHAR(20) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '汇率' AFTER `name`;

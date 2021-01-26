@@ -1,0 +1,100 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    退件
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'业务管理' => '','订单查询' => url ( 'order/search' ),'退件明细' => '' 
+	) 
+) )?>
+<form method="post">
+    <div class="FarSearch">
+		<table <?php if(request('return_id')):?>style="width: 90%"<?php else :?>style="width: 70%"<?php endif;?>>
+           <tbody>
+               <tr>
+                   <?php if(request('return_id')):?>
+                   <th>退件编号</th><td><?php echo $return->return_no?></td>
+                   <?php endif;?>
+                   <th>阿里单号</th><td><?php echo $return->ali_order_no?$return->ali_order_no:request('ali_order_no')?></td>
+                   <th>退件类型</th>
+                   <td>
+                    <?php
+						echo Q::control ( "dropdownbox", "return_status", array (
+							"items" => array('1'=>'已全退','2'=>'已部分退'),
+						    "value" => $return->return_status,
+							"style" => "width:70%"
+						) )?>
+                   </td>
+                   <?php if(!request('return_id')):?>
+                   <th></th><td></td>
+                   <?php endif;?>
+               </tr>
+               <?php if(request('return_id')):?>
+                <tr>
+                   <th>发起人</th><td><?php echo $return->return_operator?></td>
+                   <th>发起时间</th><td><?php echo Helper_Util::strDate('Y-m-d H:i', $return->create_time)?></td>
+                   <th></th>
+                   <td>
+                   </td>
+               </tr>
+               <?php endif;?>
+               <tr>
+                   <th>收件人</th>
+					<td>
+						<input name="consignee_name" type="text" style="width: 100%" required
+							value="<?php echo $return->consignee_name?$return->consignee_name:$order->return_name1.' '.$order->return_name2?>">
+					</td>
+					<th>收件人手机号</th>
+					<td>
+						<input name="consignee_phone" type="text" style="width: 100%" required
+							value="<?php echo $return->consignee_phone?$return->consignee_phone:$order->return_mobile?>">
+					</td>
+					<th></th>
+                   <td>
+                   </td>
+               </tr>
+               <tr>
+                   <th>收件人地址</th>
+					<td colspan="3">
+						<input name="consignee_address" type="text" style="width: 100%" required
+							value="<?php echo $return->consignee_address?$return->consignee_address:$order->return_state_region_code.' '.$order->return_city.' '.$order->return_street1.' '.$order->return_street2?>">
+					</td>
+					<th></th>
+                   <td>
+                   </td>
+               </tr>
+               <tr>
+                   <th>快递单号</th>
+					<td>
+						<input name="express_no" type="text" style="width: 100%" required
+							value="<?php echo $return->express_no?>">
+					</td>
+					<th>快递公司</th>
+					<td>
+						<?php
+						echo Q::control ( "dropdownbox", "express_company", array (
+							"items" => array('圆通'=>'圆通','申通'=>'申通','顺丰'=>'顺丰','韵达'=>'韵达','中通'=>'中通','EMS'=>'EMS','天天'=>'天天'),
+						    "value" => $return->express_company,
+							"style" => "width: 70%"
+						) )?>
+					</td>
+					<th></th>
+                   <td>
+                   </td>
+               </tr>
+           </tbody>
+        </table>
+        <div class="FarTool text-center">
+        	<button class="btn btn-small btn-success" id="search">
+                                        保存
+       		</button>
+       	</div>
+     </div>
+</form>    
+<?PHP $this->_endblock();?>
+

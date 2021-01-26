@@ -1,0 +1,119 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    订单轨迹
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <style type="text/css">
+        .table>tbody>tr>td{
+            border:0px;
+        }
+    </style>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'业务管理' => '',
+			'订单查询' => url ( 'order/search' ),
+			'订单轨迹' => ''
+		) 
+	) );
+?>
+<p style="clear: both;color:red">阿里订单号：<?php echo $order->ali_order_no?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;泛远单号：<?php echo $order->far_no?></p>
+<form method="POST" onsubmit=" return checktime();">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th class="required-title">轨迹代码</th>
+					<td>
+						<?php
+						echo Q::control ( "dropdownbox", "tracking_code", array (
+							"items" => $trace_code,
+						    "value" => request ( "tracking_code" ),
+							"style" => "width:200px" ,
+						    "empty"=>true,
+						    "required"=>'required'
+						) )?>
+					</td>
+					<th class="required-title">轨迹时间</th>
+					<td>
+						<input class="easyui-datetimebox"
+						name="trace_time"
+						value="<?php echo Helper_Util::strDate ( "Y-m-d H:i:s", request('trace_time') )?>"
+						style="width: 150px"/>
+					</td>
+					<th class="required-title">地点</th>
+					<td>
+						<input name="location" type="text" style="width: 100px"
+							value="<?php echo request('location')?>">
+					</td>
+					<th class="required-title">中文描述信息</th>
+					<td>
+						<input name="trace_desc_cn" type="text" style="width: 120px" required="required"
+							value="<?php echo request('trace_desc_cn')?>">
+					</td>
+					<th class="required-title">时区号</th>
+					<td>
+						<input  required="required" style="width: 80px;" type="text" maxlength="32" name="timezone" />
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="offset5 span2">
+	   <button class="btn btn-small btn-success" id="search">
+                                保存
+       </button>
+	</div>
+	<h4 style="clear: both;"> 订单轨迹信息</h4>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th class="span3">轨迹代码</th>
+				<th class="span2">轨迹时间</th>
+				<th class="span2">地点</th>
+				<th>中文描述信息</th>
+				<th style="width:80px;">时区</th>
+				<th style="width:120px;">操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php foreach ($list as $temp):?>
+			<tr>
+				<td><?php echo $temp->tracking_code?></td>
+				<td><?php echo Helper_Util::strDate('Y-m-d H:i:s', $temp->trace_time)?></td>
+				<td><?php echo $temp->location?></td>
+				<td><?php echo $temp->trace_desc_cn?></td>
+				<td><?php echo $temp->timezone?></td>
+				<td>
+					<?php if ($temp->confirm_flag !='1'):?>
+					<a class="btn btn-mini btn-info" target="_blank" href="#">
+						<i class="icon-edit"></i>
+						编辑
+					</a>
+					<a class="btn btn-mini btn-info" target="_blank" href="#">
+						<i class="icon-ok"></i>
+						确认
+					</a>
+					<?php endif;?>
+				</td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	<input type="hidden" name="order_id" value="<?php echo $order->order_id?>">
+</form>   
+<?PHP $this->_endblock();?>
+<script type="text/javascript">
+//检查时间是否填写
+function checktime(){
+	var time =$('.textbox-value').val();
+	if(time.length<1){
+		$.messager.alert('Error','请填写轨迹时间');
+		return false;
+	}else{
+		return true;
+	}
+}
+</script>

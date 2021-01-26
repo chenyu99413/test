@@ -1,0 +1,225 @@
+<div class="FarTool">
+    <?php if (request("status")=="0"):?>
+		<a class="btn btn-small" href="javascript:void(0);" onclick="opensplit()">拆分 </a>
+	<?php endif;?>
+	<label style="float: right">
+	 	共有
+	 	<?php echo $pagination['record_count']?>
+	 	条记录，金额总计：
+	 	<span id="sum_moneys"><?php echo strlen(trim($total,';'))>0?trim($total,';'):''?></span>
+		已选择：
+		<span id="selected_tiao">0</span>
+		条数据，金额总计：
+		<span id="selected_money"></span>
+		
+	</label>
+</div>
+
+<div style="width: 960px; height: 330px; overflow: scroll;"
+	class="StickyHeader">
+	<table id="table_waybill" class="FarTable" style="max-width: none;">
+		<thead>
+			<tr>
+				<th nowrap="nowrap" width="40">
+					<input type="checkbox" id="checkall"
+						onclick="SelectAll(this,'checkbox');Check(this);">
+				</th>
+				<th nowrap="nowrap">发件日</th>
+				<th nowrap="nowrap">订单号</th>
+				<th nowrap="nowrap">运单号</th>
+				<th nowrap="nowrap">类型</th>
+				<th nowrap="nowrap">币种</th>
+				<th nowrap="nowrap">应付</th>
+				<th nowrap="nowrap">发票号</th>
+				<th nowrap="nowrap" width="100px">开票日期</th>
+				<th nowrap="nowrap">凭证号</th>
+				<th nowrap="nowrap" width="100px">销账日期</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php foreach ($fees as $key => $fee):?>
+		      <tr>
+				<td nowrap="nowrap" align="center">
+			<?php echo '<input type="checkbox" class="checkbox" id="fee_id" name="checkbox[]" value="'; echo $fee['fee_id'];echo '" onclick="Check(this);" />'?></td>
+				<td nowrap="nowrap" align="center"><?php echo Helper_Util::strDate('Y-m-d', $fee['record_order_date'])?></td>
+				<td nowrap="nowrap" align="left"><?php echo $fee['ali_order_no']?></td>
+				<td nowrap="nowrap" align="left">
+				<?php echo $fee['tracking_no']?>
+					<a target="tracking<?php echo $fee['order_id']?>"
+					   href="<?php echo url('order/detail',array('order_id'=>$fee['order_id']));?>">
+					   <i class="icon-th-large"></i>
+					</a>
+				</td>
+				<td nowrap="nowrap" align="left"><?php echo $fee['fee_item_name']?></td>
+				<td nowrap="nowrap" align="left"><?php echo $fee['currency']?></td>
+				<td nowrap="nowrap" align="right"><?php echo sprintf('%.2f',$fee['amount']);?></td>
+				<td nowrap="nowrap" align="left"><?php echo $fee['invoice_no']?></td>
+				<td align="center"><?php echo Helper_Util::strDate('Y-m-d', $fee['invoice_time']);?></td>
+				<td nowrap="nowrap" align="left"><?php echo $fee['voucher_no']?></td>
+				<td nowrap="nowrap" align="center"><?php echo Helper_Util::strDate('Y-m-d', $fee['voucher_time']);?></td>
+				<td nowrap="nowrap" style="display: none"><?php echo $fee['remark']?></td>
+				<td nowrap="nowrap" style="display: none"><?php echo $fee['waybill_title']?></td>
+				<td nowrap="nowrap" style="display: none"><?php echo $fee['bill_no']?></td>
+			</tr>
+		<?php endforeach;?>
+	</tbody>
+
+	</table>
+</div>
+<?php echo Q::control('paginationa','pagination',array('pagination'=>$pagination))?>
+<table>
+	<tbody>
+		<tr>
+			<th width="80">发票号</th>
+			<td>
+				<input id="invoice_code" name="invoice_code">
+			</td>
+			<th>开票日期</th>
+			<td><?php
+			echo Q::control ( 'datebox', 'billing_dates', array (
+				'name' => 'billing_date',
+				'value' => date ( 'Y-m-d' ) 
+			) )?></td>
+			<th>账单抬头</th>
+			<td>
+				<?php
+				echo Q::control ( 'dropdownbox', 'waybilltitle', array (
+					'items' => Helper_Array::toHashmap(Title::find('supplier_id = ?',$supplier_id)->asArray()->getAll(),'name','name'),
+					'empty' => 'true',
+					"style" => "width:200px" 
+				) )?>
+			</td>
+		</tr>
+		<tr>
+			<th>凭证号</th>
+			<td>
+				<input id="voucher_code" name="voucher_code" >
+			</td>
+			<th>备注</th>
+			<td>
+				<input id="remark" name="remark">
+			</td>
+			<th>账单号</th>
+			<td>
+				<input id="bill_no" name="bill_no">
+			</td>
+		</tr>
+	</tbody>
+</table>
+<div class="FarTool">
+	<button class="btn btn-primary" onclick="Save()">
+		<i class="icon-save"></i>
+		保存
+	</button>
+</div>
+
+<script type="text/javascript">
+var today='<?php echo date('Y-m-d')?>';
+$('.StickyHeader table').floatThead({
+    useAbsolutePositioning: true,
+    scrollContainer: function($table){
+        return $table.closest(".StickyHeader");
+    }
+});
+/**
+ * 多选框勾选事件 
+ */
+function Check(obj){
+	var tds = $('.checkbox:checked').parent().parent().children();
+	if($('.checkbox:checked').length==1){
+		$('#invoice_code').val($(tds).eq(7).text());
+		$('#billing_dates').val($(tds).eq(8).text().length?$(tds).eq(7).text():today);
+		$('#remark').val($(tds).eq(11).text());
+		$('#waybilltitle').val($(tds).eq(12).text());
+		$('#voucher_code').val($(tds).eq(9).text());
+		$('#bill_no').val($(tds).eq(13).text());
+	}else{
+		$('#invoice_code').val('');
+	    $('#remark').val('');
+	    $('#billing_dates').val('');
+	    $('#voucher_code').val('');
+	    $('#waybilltitle').val('');
+	    $('#bill_no').val('');
+	}
+	//已选择条数赋值
+	$('#selected_tiao').text($('.checkbox:checked').length);
+	//已选择金额赋值
+	var checkbox = $('.checkbox');
+	var selected_money=0;
+	var selected_currency='';
+	var currency = new Array();
+	var currency_amount = new Array();
+	var selected_str = '';
+	for(var i=0;i<checkbox.length;i++){
+		if(checkbox[i].checked==true){
+			selected_currency = $("#table_waybill tr").eq(i+1).find('td').eq(5).text();
+			selected_money = parseFloat($("#table_waybill tr").eq(i+1).find('td').eq(6).text());
+			var j = $.inArray(selected_currency,currency);
+			if(j == -1){
+				currency.push(selected_currency);
+				currency_amount[selected_currency] = selected_money.toFixed(2);
+			}else{
+				currency_amount[selected_currency] = (Number(currency_amount[selected_currency])+selected_money).toFixed(2);
+			}
+		}
+	}
+	$.each(currency,function(k,v){
+		if(v != ''){
+			selected_str += v + ':' + currency_amount[v] + ';';
+		}
+	});
+	$('#selected_money').text(selected_str);
+}
+
+/**
+ * 保存按钮操作 
+ */
+function Save(){
+	var fee_id = new Array();
+	$('.checkbox:checked').each(function(){
+		fee_id.push($(this).val());
+	});
+	if($('.checkbox:checked').length>0){
+		if($('#waybilltitle').val()==''){
+			   alert("请选择账单抬头");
+			   return false;
+		}
+    	$.ajax({
+			type:'post',
+			url:'<?php echo url('statistics/offsedit')?>',
+			dataType:'json',
+			data : {  
+					 'fee_id' : fee_id,
+					 'invoice_code' : $('#invoice_code').val(),
+					 'billing_date' : $('#billing_dates').val(),
+					 'voucher_code' : $('#voucher_code').val(),
+					 'waybill_title' :$('#waybilltitle').val(),
+					 'remark' : $('#remark').val(),
+					 'bill_no' : $('#bill_no').val()
+ 				 },
+ 			success:function(data){
+	 			alert("保存成功");
+	 			loadDeatil();
+ 			}
+		});
+	}else{
+		alert("没有选中的记录，请先在列表中勾选。");
+	}
+	return false;
+}
+/**
+* 打开拆分费用表框
+*/
+function opensplit(){
+	var fee_id = new Array();
+	$('.checkbox:checked').each(function(){
+		fee_id.push($(this).val());
+	});
+	if($('.checkbox:checked').length !=1){
+		alert("每次必须选中一条数据");
+	}else{
+		$('#hidden_originamount').val($('.checkbox:checked').parent().parent().children().eq(6).text());
+		$('#dialog_split').dialog('open');
+	}
+}
+</script>

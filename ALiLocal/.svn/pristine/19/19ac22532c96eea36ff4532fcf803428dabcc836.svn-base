@@ -1,0 +1,115 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    订单查询
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>
+						订单日期从：
+					</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date" )
+						) )?>
+					</td>
+					<th>到</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date")
+						) )?>
+					</td>
+					<th>阿里订单号</th>
+					<td>
+						<input name="ali_order_no" type="text" style="width: 150px"
+							value="<?php echo request('ali_order_no')?>">
+					</td>
+					<th>泛远单号</th>
+					<td>
+						<input name="far_no" type="text" style="width: 150px"
+							value="<?php echo request('far_no')?>">
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <button type="submit" name="export" class="btn btn-small btn-info" value="export">
+							<i class="icon-download"></i>
+							导出取件清单
+						</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th>No</th>
+				<th>阿里订单号</th>
+				<th>泛远单号</th>
+				<th>末端运单号</th>
+				<th>服务</th>
+				<th>目的地</th>
+				<th>申报</th>
+				<th>申报总价</th>
+				<th>计费重</th>
+				<th>上门取件</th>
+				<th>状态</th>
+				<th>订单日期</th>
+				<th width="120px">操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php $i=1;$status=array('1'=>'未入库','2'=>'已取消','3'=>'已退货','4'=>'已支付','5'=>'已入库','6'=>'已出库','7'=>'待发送','8'=>'已发送','9'=>'已签收');?>
+		<?php foreach ($orders as $order):?>
+			<tr>
+				<td><?php echo $i++ ?></td>
+				<td><a  target="_blank"
+					    href="<?php echo url('order/detail', array('order_id' => $order->order_id))?>">
+					    <?php echo $order->ali_order_no ?>
+					</a>
+				</td>
+				<td><?php echo $order->far_no?></td>
+				<td><a target="_blank" href="<?php echo $_BASE_DIR?>_tmp/upload/<?php echo $order->tracking_no?>.pdf"><?php echo $order->tracking_no?></a></td>
+				<td><?php echo $order->service_code?></td>
+				<td><?php echo $order->consignee_country_code?></td>
+				<td><?php echo $order->declaration_type?></td>
+				<td align="right"><?php echo $order->total_amount?></td>
+				<td align="right"><?php if ($order->weight_income_in ) echo $order->weight_income_in?></td>
+				<td width="80px"><?php echo $order->need_pick_up=='1'?'是':$order->reference_no?></td>
+				<td><?php echo $status[$order->order_status]?></td>
+				<td align="center" title="<?php echo Helper_Util::strDate('Y-m-d H:i:s', $order->create_time)?>"><?php echo Helper_Util::strDate('Y-m-d', $order->create_time)?></td>
+				<td>
+				    <a class="btn btn-mini btn-primary" target="_blank" href="<?php echo url('order/event', array('order_id' => $order->order_id))?>">
+						<i class="icon-asterisk"></i>
+						事件
+					</a>
+					<a class="btn btn-mini btn-info" target="_blank" href="<?php echo url('order/trace', array('order_id' => $order->order_id))?>">
+						<i class="icon-plane"></i>
+						轨迹
+					</a>
+				</td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+</form>
+<script type="text/javascript">
+</script>
+<?PHP $this->_endblock();?>
+

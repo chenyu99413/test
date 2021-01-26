@@ -1,0 +1,21 @@
+<?php
+class Controller_Department extends Controller_Abstract {
+	/**
+	 * 检索
+	 */
+	function actionSearch() {
+	   $departments=Department::find()->getAll();
+	   $this->_view['departments']=$departments;
+	}
+	/**
+	 * 部门编辑
+	 */
+	function actionEdit(){
+	    $department=Department::find('department_id=?',request('department_id'))->getOne();
+	    if(request_is_post()){
+	        $department->department_name=request('department_name');
+	        $department->save();
+	    }
+	    $this->_view['department']=$department;
+	}
+}

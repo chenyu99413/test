@@ -1,0 +1,110 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>用户列表<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<div class="FarSearch">
+		<table>
+			<tbody>
+				<tr>
+					<th width=80>姓名</th>
+					<td width=120>
+						<input type="text" name="user_name"
+							value="<?php echo request("user_name")?>" />
+					</td>
+					<td>
+						<?php
+						echo Q::control ( "check", "check_receiver", array (
+							"name" => "receiver",
+							"value" => request ( "receiver" ),
+							"text" => "取件员" 
+						) )?>
+					</td>
+				</tr>
+				<tr>
+					<th>部门</th>
+					<td>
+						<input class="easyui-combotree" name="department[]"
+							data-options="url:'<?php echo url('common/departmenttree',array("checked"=>(implode(",",request("department",array())))))?>', method:'get',cascadeCheck:false"
+							multiple style="width: 200px;">
+					</td>
+					<td>
+						<?php
+						echo Q::control ( "check", "check_salesperson", array (
+							"name" => "salesperson",
+							"value" => request ( "salesperson" ),
+							"text" => "销售" 
+						) )?>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="FarTool">
+		<?php if (MyApp::checkVisible("manage-user")):?>
+		<a class="btn btn-success" href="<?php echo url('user/edit')?>">
+			<i class="icon-plus"></i>
+			新建
+		</a>
+		<?php endif;?>
+		<button class="btn btn-primary">
+			<i class="icon-search"></i>
+			搜索
+		</button>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th width="120">工号</th>
+				<th>姓名</th>
+				<th>部门</th>
+				<th>联系电话</th>
+				<th width=50>取件员</th>
+				<th width=50>销售</th>
+				<th width=160>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		    <?php foreach($users as $user):?>
+			<tr>
+				<td><?php echo $user->user_account;?></td>
+				<td><a target="edit_user_<?php echo $user->user_id?>" href="<?php echo url("user/edit",array("id"=>$user->user_id))?>"><?php echo $user->user_name;?></a></td>
+				<td><?php echo $user->department->abbreviation?></td>
+				<td><?php echo $user->tel?></td>
+				<td style="text-align: center;">
+					<?php echo $user->receiver == "1" ? "<i class='icon-ok'></i>" : ""?>
+				</td>
+				<td style="text-align: center;">
+					<?php echo $user->salesperson == "1" ? "<i class='icon-ok'></i>" : ""?>
+				</td>
+				<td>
+					<a class="btn btn-mini"
+						target="edit_user_<?php echo $user->user_id?>"
+						href="<?php echo url("user/edit",array("id"=>$user->user_id))?>">
+						<i class="icon-edit"></i>
+						编辑
+					</a>
+					<?php if (MyApp::checkVisible("manage-user")):?>
+					<?php if($user->status == "0"):?>
+					<a class="btn btn-mini btn-success"
+					    href="javascript:void(0);"
+						onclick="if(confirm('确认启用该用户吗')){window.location.href='<?php echo url('user/interdicted',array('id'=>$user->user_id,'status'=>'1'))?>'}else{return false;}">
+						<i class="icon-unlock"></i>
+						启用
+					</a>
+					<?php else:?>
+					<a class="btn btn-mini btn-danger"
+					     href="javascript:void(0);"
+						 onclick="if(confirm('确认禁用该用户吗')){window.location.href='<?php echo url('user/interdicted',array('id'=>$user->user_id,'status'=>'0'))?>'}else{return false;}">
+						<i class="icon-lock"></i>
+						禁用
+					</a>
+					<?php endif;?>
+					<?php endif;?>
+				</td>
+			</tr>
+			<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+
+<?PHP $this->_endblock();?>

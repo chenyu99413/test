@@ -1,0 +1,2 @@
+ALTER TABLE `tb_event` ADD COLUMN `operator`  varchar(10) NULL COMMENT '操作人' AFTER `update_time`;
+ALTER TABLE `tb_order` ADD COLUMN `weight_label`  decimal(10,3) NULL COMMENT '标签重' AFTER `weight_actual_out`;

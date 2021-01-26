@@ -1,0 +1,56 @@
+<?PHP $this->_extends('_layouts/common_layout'); ?>
+<?php $this->_block('title'); ?>登录<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="post">
+	<div style="height: 50px;"></div>
+	<div class="form-horizontal span6 offset3">
+		<div class="control-group">
+			<label class="control-label" for="user_account">用户名</label>
+			<div class="controls">
+				<input id="user_account" autocomplete="off" type="text"
+					required="required" name="user_account" tabindex="1"
+					value="<?php echo post("user_account")?>"
+					style="ime-mode: disabled; height: 28px; width: 180px;" />
+			</div>
+		</div>
+		<div class="control-group">
+			<label class="control-label" for="user_password">密码</label>
+			<div class="controls">
+				<input type="password" required="required" name="user_password"
+					id="user_password" tabindex="2"
+					style="ime-mode: disabled; height: 28px; width: 180px;" />
+			</div>
+		</div>
+		<div class="control-group">
+			<div class="controls">
+				<label>
+					<font color="red"><?php if (@count($errors['errors'])){echo  implode(',', $errors['errors']);} ?></font>
+				</label>
+				<br />
+				<button class="btn btn-primary" type="submit" tabindex="3">
+					<i class="icon-signin"></i>
+					登录
+				</button>
+				<a href="<?php echo Controller_OA::getLoginURL()?>" class="btn btn-primary">使用泛远通行证登录</a>
+			</div>
+		</div>
+		<div style="height: 50px;"></div>
+		<div class="text-center">
+			<a style="color: red"
+				href="<?php echo url('download/firefoxclient')?>">
+				<i class="icon-circle-arrow-down"></i>
+				请先下载火狐专用浏览器
+			</a>
+		</div>
+	</div>
+</form>
+
+<script type="text/javascript">
+	/**
+	 * 初始化
+	 */
+	$(function() {
+		document.getElementById("user_account").focus();
+	});
+</script>
+<?PHP $this->_endblock();?>

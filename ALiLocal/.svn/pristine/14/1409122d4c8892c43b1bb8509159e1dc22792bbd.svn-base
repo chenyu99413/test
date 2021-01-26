@@ -1,0 +1,470 @@
+<?php
+class Controller_Staff extends Controller_Abstract {
+	function actionTestFormula(){
+		// 下面公式展示例子是，如果目的地是美国，每公斤收取5块，否则超过20kg部分每0.5收3块
+		// $r===false 可以判断公式是否正常
+		$r=Helper_Formula::parse('IF(country="US",5*CEIL(weight),CEIL((weight-20)/0.5)*3)',array(
+			'weight'=>10.5,	//计费重
+			'country'=>'US',	//目的地
+			'baf'=>0.1,	//燃油费率
+			'area'=>6,	//分区号
+			'freight'=>120,//基础运费
+			'icount'=>3, //件数
+		));
+		dump($r);
+		exit;
+	}
+	/**
+	 * 工作台
+	 */
+	function actionIndex() {
+		if(request("order_no")){
+			$order=Order::find('ali_order_no=? or far_no=? or tracking_no=?',request("order_no"),request("order_no"),request("order_no"))->getOne();
+			if(!$order->isNewRecord()){
+				return $this->_redirect(url("order/detail",array("order_id"=>$order->order_id)));
+			}
+		}
+		$orders=Order::find("ali_testing_order!= '1' and order_status='1' and need_pick_up='1'");
+		//导出取件清单
+		if(request("export")=='exportpick'){
+			$pick=clone $orders;
+			$pick->where("ifnull(need_pick_up,'')='1'");
+			$payeds=$pick->getAll();
+			$header = array (
+				'阿里订单号','订单日期','取件网点','省','市','地址','邮编','姓名','手机号','电话','邮箱','件数'
+			);
+			$sheet = array (
+				$header
+			);
+			foreach ($payeds as $p){
+				$item_count=0;
+				foreach ($p->packages as $package){
+					$item_count+=$package->quantity;
+				}
+				$sheet [] =array(
+					"'".$p->ali_order_no,Helper_Util::strDate('Y-m-d H:i', $p->create_time),$p->pick_company,$p->sender_state_region_code,$p->sender_city,$p->sender_street1.' '.$p->sender_street2,"'".$p->sender_postal_code,
+					$p->sender_name1.' '.$p->sender_name2,"'".$p->sender_mobile,"'".$p->sender_telephone,$p->sender_email,$item_count
+				);
+			}
+			Helper_ExcelX::array2xlsx ( $sheet, '取件清单' );
+			exit ();
+			 
+		}
+		
+		//审单预警
+		$before_out_order=Order::find("order_status = '4' || order_status = '5' || order_status = '10' || order_status = '1' || order_status = '14' || order_status = '15' || order_status = '16' ")
+		->where('warning_handled="0"')->getAll();
+		$status = Order::$status;
+		$warning_order=array();
+		foreach ($before_out_order as $temp){
+		    $detail=array(
+		        'reason'=>array(),
+		        'order_status'=>$temp->order_status,
+		        'order_create_time'=>$temp->create_time
+		    );
+		    $glasses_flag=false;
+		    $battery_flag=false;
+		    foreach ($temp->product as $v){
+		        if($temp->consignee_country_code=='US'){
+		            if(strstr($v->product_name_far, '眼镜') || strstr($v->product_name_far, '太阳镜') || strstr($v->product_name, '眼镜') || strstr($v->product_name, '太阳镜')){
+		                $glasses_flag=true;
+		            }
+		        }
+		        if($v->has_battery){
+		            $battery_flag=true;
+		        }
+		    }
+		    // US 产品品名里含：“眼镜”，“太阳镜”
+		    if($glasses_flag){
+		        $detail['reason'][]='US 产品品名里含：“眼镜”，“太阳镜”';
+		    }
+		    //检查订单详情里，有产品“带电”
+		    if($battery_flag){
+		        $detail['reason'][]='检查订单详情里，有产品“带电”';
+		    }
+		    //US 检查电话号码是否不足10位
+		    if($temp->consignee_country_code=='US'){
+		        if(strlen($temp->consignee_mobile)<10){
+		            $detail['reason'][]='US 检查电话号码是否不足10位';
+		        }
+		    }
+		    //BR 检查订单详情里没有提供税号信息
+		    if($temp->consignee_country_code=='BR'){
+		        if($temp->tax_payer_id==''){
+		            $detail['reason'][]='BR 检查订单详情里没有提供税号信息';
+		        }
+		    }
+		    //订单申报总金额超过700.00USD,且报关方式为：QT的订单。
+		    if($temp->total_amount>700 && $temp->declaration_type=='QT'){
+		        $detail['reason'][]='订单申报总金额超过700.00USD,且报关方式为：QT的订单';
+		    }
+		    //订单申报总金额低于5.00USD的订单
+		    if($temp->total_amount<5){
+		        $detail['reason'][]='订单申报总金额低于5.00USD的订单';
+		    }
+		    //订单申报方式为：DL
+		    if($temp->declaration_type=='DL'){
+		        if($temp->service_code=='EMS-FY'){
+		            $detail['reason'][]='EMS不提供报关服务';
+		        }else {
+		            $detail['reason'][]='订单申报方式为：DL';
+		        }
+		    }
+		    //地址1+地址2字符总数超过105的订单
+		    if(strlen($temp->consignee_street1.' '.$temp->consignee_street2)>105){
+		        $detail['reason'][]='地址1加地址2字符总数超过105的订单';
+		    }
+		    //假发专线地址1+地址2字符总数超过70的订单
+		    if($temp->service_code=='WIG-FY'){
+		        if(strlen($temp->consignee_street1)>35){
+		            $detail['reason'][]='全球假发专线地址1字符总数超过35的订单';
+		        }
+		        if(strlen($temp->consignee_street2)>35){
+		            $detail['reason'][]='全球假发专线地址2字符总数超过35的订单';
+		        }
+		    }
+// 		    //判断收件人地址1和地址2 如果包含英文和数字、空格、英文逗号以外的字符
+// 		    if($temp->consignee_street1){
+//     		    if(!preg_match('/^[0-9a-zA-Z,\s\n\r]+$/', $temp->consignee_street1)){
+//     		        $detail['reason'][]='收件人地址1中有特殊字符';
+//     		    }
+// 		    }
+// 		    if($temp->consignee_street2){
+//     		    if(!preg_match('/^[0-9a-zA-Z,\s\n\r]+$/', $temp->consignee_street2)){
+//     		        $detail['reason'][]='收件人地址2中有特殊字符';
+//     		    }
+// 		    }
+		    //收件人公司里，如果有数字进行预警，预警原因：收件公司信息含有数字
+		    if($temp->consignee_name1){
+		        if(preg_match('/\d/',$temp->consignee_name1)){
+		            $detail['reason'][]='收件公司/客户名称1含有数字';
+		        }
+		    }
+		    if($temp->consignee_name2){
+		        if(preg_match('/\d/',$temp->consignee_name2)){
+		            $detail['reason'][]='收件公司/客户名称2含有数字';
+		        }
+		    }
+		    //收件人、收件人公司、地址1、地址2、城市、省州、邮编 这六个信息里如有非英文符，进行预警，预警原因：某某字段有非英文字符。
+		    //地址1、地址2、城市、省州、邮编这五个信息里：英文状态下以下符号不作预警："#" "/" "" "-" "." "," "&" "*" ";" ":" "?" ";" ""
+		    if($temp->consignee_name1){
+		        if(preg_match('/[^0-9a-zA-Z\s\n\r]/',$temp->consignee_name1)){
+		            $detail['reason'][]='收件公司/客户名称1有非英文字符';
+		        }
+		    }
+		    if($temp->consignee_name2){
+		        if(preg_match('/[^0-9a-zA-Z\s\n\r]/',$temp->consignee_name2)){
+		            $detail['reason'][]='收件公司/客户名称2有非英文字符';
+		        }
+		    }
+		    if($temp->consignee_street1){
+		        if(preg_match('/[^0-9a-zA-Z\s\n\r\/\\#\-\.,*;:?\'\"]/',$temp->consignee_street1)){
+		            $detail['reason'][]='收件人地址1有非英文字符';
+		        }
+		    }
+		    if($temp->consignee_street2){
+		        if(preg_match('/[^0-9a-zA-Z\s\n\r\/\\#\-\.,*;:?\'\"]/',$temp->consignee_street2)){
+		            $detail['reason'][]='收件人地址2有非英文字符';
+		        }
+		    }
+		    if($temp->consignee_city){
+		        if(preg_match('/[^0-9a-zA-Z\s\n\r\/\\#\-\.,*;:?\'\"]/',$temp->consignee_city)){
+		            $detail['reason'][]='收件人城市有非英文字符';
+		        }
+		    }
+		    if($temp->consignee_state_region_code){
+		        if(preg_match('/[^0-9a-zA-Z\s\n\r\/\\#\-\.,*;:?\'\"]/',$temp->consignee_state_region_code)){
+		            $detail['reason'][]='收件人省/州有非英文字符';
+		        }
+		    }
+		    if($temp->consignee_postal_code){
+		        if(preg_match('/[^0-9a-zA-Z\s\n\r\/\\#\-\.,*;:?\'\"]/',$temp->consignee_postal_code)){
+		            $detail['reason'][]='收件人邮编有非英文字符';
+		        }
+		    }
+		    if($temp->suspected_remote=='1'){
+		            $detail['reason'][]='城市疑似偏远，需人工介入';
+		    }
+		    // EMS订单邮编校验
+		    if($temp->service_code == 'EMS-FY'){
+		        $zipFormat = Zipformat::find('country_code_two = ?',$temp->consignee_country_code)->getOne();
+		        if(!$zipFormat->isNewRecord()){
+		            if(!preg_match($zipFormat->zip_format_preg_match, trim($temp->consignee_postal_code))){
+		                $detail['reason'][]='收件人邮编格式不正确,'.$temp->consignee_country_code.'的邮编格式为：'.$zipFormat->zip_format;
+		            }
+		        }
+		    }
+		    
+		    if(count($detail['reason'])>0){
+		        $detail['ali_order_no']=$temp->ali_order_no;
+		        $detail['order_id']=$temp->order_id;
+		        $warning_order[]=$detail;
+		    }
+		}
+		$list=$orders->order('create_time desc')->getAll();
+		$this->_view['warning_orders']=$warning_order;
+		$this->_view['status']=$status;
+		$this->_view['orders']=$list;
+	}
+	/**
+	 * 用户登录
+	 */
+	function actionLogin() {
+		if (request_is_post ()) {
+			$staff = Staff::find ( 'staff_code=?', request ( 'staff_code' ) )->getOne ();
+			session_start ();
+			// 将登录用户的信息存入 SESSION，以便应用程序记住用户的登录状态
+			$this->_app->changeCurrentUser ( $staff->toArray (), "MEMBER" );
+			// 登录成功后，重定向浏览器
+			return $this->_redirect ( url ( "staff/index" ) );
+		}
+		if (MyApp::currentUser ()) {
+			// session 信息不为空，则跳至工作台
+			return $this->_redirect ( url ( "staff/index" ) );
+		}
+	}
+	/**
+	 * 校验用户登录信息
+	 */
+	function actioncheck(){
+	    $message='true';
+	    if ((post ( "account" ) == '') || (post ( "password" ) == '')) {
+	        $message = "用户名和密码不能为空";
+	    }
+	    $staff = Staff::find ( "staff_code = ?", request('account') )->getOne ();
+	    if ($staff->isNewRecord ()) {
+	        $message='用户名不存在';
+	    }
+	    if ($staff->status!='1') {
+	        $message='账号已停用';
+	    }
+	    if (!$staff->checkPassword ( request('password') )) {
+	        $message='密码错误';
+	    }
+	    echo $message;
+	    exit();
+	}
+	/**
+	 * 用户注销
+	 */
+	function actionLoginout() {
+	    session_start();
+	    $this->_app->cleanCurrentUser ();
+	    return $this->_redirectMessage('注销登录','成功', url ( 'staff/login' ) );
+	}
+	/**
+	 * 员工查询
+	 */
+	function actionSearch() {
+	    $staffs=Staff::find();
+	    if(request('staff_name')){
+	        $staffs->where('staff_name=?',request('staff_name'));
+	    }
+	    $staffs=$staffs->getAll();
+	    $this->_view['staffs']=$staffs;
+	}
+	/**
+	 * 员工编辑
+	 */
+	function actionEdit(){
+	    $staff=Staff::find('staff_id=?',request('staff_id'))->getOne();
+	    $relevants = array ();
+	    $staffrole = array ();
+	    if (request ( "staff_id" ) != null) {
+	        $relevants = RelevantDepartment::find ( "staff_id = ?", $staff->staff_id )->getAll ();
+	        $staffrole = StaffRole::find ( "staff_id = ?", $staff->staff_id )->getAll ();
+	    }
+	    // 保存
+	    if (request_is_post ()) {
+	        $conn = QDB::getConn ();
+	        $conn->startTrans ();
+	        $department=Department::find("department_id=?",request('department'))->getOne();
+	        // 用户
+	        $staff->staff_code = request('staff_code');
+	        $staff->staff_name = request('staff_name');
+	        $staff->department_id = request('department');
+	        $staff->department_name = $department->department_name;
+	        if(request('password')!=$staff->password){
+	            $staff->password = request('password');
+	        }
+            $staff->status = "1";
+            $staff->save ();
+            // 权限角色
+            if (request ( "role" ) != null || strlen ( request ( "role" ) ) > 0) {
+                StaffRole::meta ()->destroyWhere ( "staff_id = ?", $staff->staff_id );
+                $content='';
+                foreach ( request ( "role" ) as $value ) {
+                    $staffrole = new StaffRole ();
+                    $staffrole->role_id = $value;
+                    $staffrole->staff_id = $staff->staff_id;
+                    $staffrole->save ();
+                }
+            }
+            // 相关部门
+            if (request ( "relevant" ) != null || strlen ( request ( "relevant" ) ) > 0) {
+                RelevantDepartment::meta ()->destroyWhere ( "staff_id = ?", $staff->staff_id );
+                foreach ( explode ( ",", request ( "relevant" ) ) as $value ) {
+                    $relevantDepartment = new RelevantDepartment ();
+                    $relevantDepartment->staff_id = $staff->staff_id;
+                    $relevantDepartment->department_id = $value;
+                    $relevantDepartment->save ();
+                }
+            }
+            $conn->completeTrans ();
+            return $this->_redirectMessage ( "员工保存", "保存成功", url ( "staff/edit", array (
+                "staff_id" => $staff->staff_id
+            ) ) );
+	    }
+	    // 显示角色
+	    $staffrole_id = Helper_Array::getCols ( $staffrole, "role_id" );
+	    $roles = array ();
+	    foreach ( Role::find ()->getAll () as $value ) {
+	        if (in_array ( $value->role_id, $staffrole_id )) {
+	            $roles [] = array (
+	                "id" => $value->role_id,
+	                "name" => $value->role_name,
+	                "checked" => true
+	            );
+	        } else {
+	            $roles [] = array (
+	                "id" => $value->role_id,
+	                "name" => $value->role_name,
+	                "checked" => false
+	            );
+	        }
+	    }
+	    $this->_view ["roles"] = $roles;
+	    $this->_view['staff']=$staff;
+	    $this->_view ["relevants"] = array (
+	        "state" => true,
+	        "checked" => implode ( ",", Helper_Array::getCols ( $relevants, "department_id" ) )
+	    );
+	}
+	/**
+	 * 停职操作
+	 */
+	function actionInterdicted() {
+	    if (request ( "staff_id" ) != null) {
+	        $staff = staff::find ( "staff_id = ?", request ( "staff_id" ) )->getOne ();
+	        $staff->status = request ( "status" );
+	        $staff->save ();
+	    }
+	    return $this->_redirectMessage ( "用户状态", "保存成功", url ( "staff/search" ) );
+	}
+	/**
+	 * 判断员工工号唯一
+	 */
+	function actionCodecheck(){
+	    $staff=Staff::find('staff_code=?',request('staff_code'))->getOne();
+	    if(!$staff->isNewRecord() && $staff->staff_id!=request('staff_id')){
+	        echo 'error';
+	    }else{
+	        echo 'success';
+	    }
+	    exit();
+	}
+	/**
+	 * 轨迹匹配规则
+	 */
+	function actionMatchRules(){
+		$select=RouteMatchRule::find();
+		if (request('network_code')){
+		    $select->where('network_code = ?',request('network_code'));//网络
+		}
+		if (request('ali_code')){
+			$select->where('ali_code like ?','%'.request('ali_code').'%');//阿里代码模糊查询
+		}
+		if (request('keyword')){
+		    $select->where('keyword like ?','%'.request('keyword').'%');//关键字模糊查询
+		}
+		$rules=$select->limitPage(request('page'))
+			->fetchPagination($this->_view['pagination'])
+			->order('id desc')
+			->getAll();
+		$this->_view['rules']=$rules;
+	}
+	/**
+	 * 轨迹匹配规则编辑
+	 */
+	function actionMatchRulesEdit(){
+	    $select=RouteMatchRule::find('id = ?',request('route_matchrules_id'))->getOne();
+	    if(request_is_post()){
+	        $select->network_code=request('network_code');
+	        $select->keyword=request('keyword');
+	        $select->auto=request('auto')?1:0;
+	        $select->ali_code=request('ali_code');
+	        $select->cn_desc=request('cn_desc');
+	        $select->en_desc=request('en_desc');
+	        $select->save();
+	        return $this->_redirectMessage('轨迹匹配规则编辑', '保存成功', url('/MatchRulesEdit',array('route_matchrules_id'=>$select->id)));
+	    }
+	    $this->_view['info']=$select;
+	}
+	/**
+	 * 轨迹匹配规则删除
+	 */
+	function actionMatchRulesDel(){
+	    RouteMatchRule::find('id=?',request('route_matchrules_id'))->getOne()->destroy();
+	    return $this->_redirectMessage('轨迹匹配规则', '删除成功', url('/MatchRules'));
+	}
+	
+	/*
+	 * 未处理预警改未已处理
+	 */
+	function actionhandled(){
+	    $order_id=request('order_id');
+	    $order=Order::find('order_id=?',$order_id)->getOne();
+	    if($order->isNewRecord()){
+	        return $this->_redirectMessage('该订单不存在', '失败', url('/index'));
+	    }else {
+	        $order->warning_handled='1';
+	        $order->save();
+	        return $this->_redirectMessage('已处理', '成功', url('/index'));
+	    }
+	}
+	/**
+	 *  发件人管理
+	 */
+	function actionsender(){
+	    $select = Sender::find()->getAll();
+	    $this->_view['senders']=$select;
+	}
+	/**
+	 * 新建发件人
+	 */
+	function actionsenderEdit(){
+	    $request_sender=request ( "sender" );
+	    if(request('sender_id')){
+	        $sender = Sender::find('sender_id = ?',request('sender_id'))->getOne();
+	        if($sender->isNewRecord()){
+	            return $this->_redirectMessage('获取发件人信息失败', '失败', url('/sender'));
+	        }
+	        if(request_is_post()){
+	            $check = Sender::find ( "sender_code != ? and sender_code = ?", $sender->sender_code, $request_sender['sender_code'] )->getOne ();
+	            if (! $check->isNewRecord ()) {
+	                return $this->_redirectMessage('失败', '发件人代码已存在', url('/senderEdit',array('sender_id'=>$sender->sender_id)));
+	            }
+	            //保存信息
+	            $sender->changeProps ( request ( "sender" ) );
+	            $sender->save();
+	            return $this->_redirectMessage('修改成功', '成功', url('/senderEdit',array('sender_id'=>$sender->sender_id)));
+	        }else{
+	            $this->_view['sender']=$sender;
+	        }
+	    }else{
+	        $sender = new Sender();
+	        if(request_is_post()){
+	            $check = Sender::find ( "sender_code = ?", $request_sender['sender_code'] )->getOne ();
+	            if (! $check->isNewRecord ()) {
+	                return $this->_redirectMessage('失败', '发件人代码已存在', url('/senderEdit',array('sender_id'=>$sender->sender_id)));
+	            }
+	            $sender->changeProps ( request ( "sender" ) );
+	            $sender->save();
+	            return $this->_redirectMessage('保存成功', '成功', url('/senderEdit',array('sender_id'=>$sender->sender_id)));
+	        }else{
+	            $this->_view['sender']=$sender;
+	        }
+	    }
+	    
+	}
+}

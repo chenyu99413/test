@@ -1,0 +1,175 @@
+<?php
+
+/**
+ * Order 封装来自 tb_order 数据表的记录及领域逻辑
+ */
+class Order extends QDB_ActiveRecord_Abstract {
+	static $department = array(
+		'义乌OGP' => array(
+			'52870W',
+			'5V120W',
+			'4F1R24',
+			'4FV328'
+		),
+		'嘉兴' => array(
+			'73X574'
+		)
+	);
+	/**
+	 * 预报、未入库
+	 */
+	CONST STATUS_PREPARE=1;
+	/**
+	 * 已入库
+	 */
+	CONST STATUS_IN=5;
+	/**
+	 * 取消
+	 */
+	CONST STATUS_CANCEL=2;
+	/**
+	 * 已退货
+	 */
+	CONST STATUS_RETURN=3;
+	/**
+	 * 已支付
+	 */
+	CONST STATUS_PAID=4;
+	/**
+	 * 已出库
+	 */
+	CONST STATUS_OUT=6;
+	/**
+	 * 待发送
+	 */
+	CONST STATUS_PRESEND=7;
+	/**
+	 * 已发送
+	 */
+	CONST STATUS_SENT=8;
+	/**
+	 * 已签收
+	 */
+	CONST STATUS_SIGN=9;
+	/**
+	 * 已查验
+	 */
+	CONST STATUS_CHECKED=10;
+	/**
+	 * 待退货
+	 */
+	CONST STATUS_PRERETURN=11;
+	
+	/**
+	 * 返回对象的定义
+	 *
+	 * @static
+	 *
+	 * @return array
+	 */
+	static function __define() {
+		return array (
+			
+			// 用什么数据表保存对象
+			'table_name' => 'tb_order',
+			
+			// 指定数据表记录字段与对象属性之间的映射关系
+			// 没有在此处指定的属性，QeePHP 会自动设置将属性映射为对象的可读写属性
+			'props' => array (
+				'order_id' => array (
+					'readonly' => true 
+				),
+				'packages' => array (
+					QDB::HAS_MANY => 'Orderpackage','target_key' => 'order_id',
+					'source_key' => 'order_id','skip_empty' => true,'on_delete'=>'skip'
+				),
+			    'product' => array (
+			        QDB::HAS_MANY => 'Orderproduct','target_key' => 'order_id',
+			        'source_key' => 'order_id','skip_empty' => true,'on_delete'=>'skip'
+			    ),
+			    'farpackages' => array (
+			        QDB::HAS_MANY => 'Farpackage','target_key' => 'order_id',
+			        'source_key' => 'order_id','skip_empty' => true,'on_delete'=>'skip'
+			    ),
+			    'faroutpackages' => array (
+			        QDB::HAS_MANY => 'Faroutpackage','target_key' => 'order_id',
+			        'source_key' => 'order_id','skip_empty' => true,'on_delete'=>'skip'
+			    ),
+				'fees' => array (
+					QDB::HAS_MANY => 'Fee','target_key' => 'order_id',
+					'source_key' => 'order_id','skip_empty' => true,'on_delete'=>'skip'
+				),
+				'logs'=>array(
+					QDB::HAS_MANY=>'OrderLog','target_key' => 'order_id','on_find_order'=>'create_time desc',
+					'source_key' => 'order_id','skip_empty' => true,'on_delete'=>'skip'
+				),
+			    'pictures'=>array(
+			        QDB::HAS_MANY=>'File','target_key' => 'order_id',
+			        'source_key' => 'order_id','skip_empty' => true,'on_delete'=>'skip'
+			    ),
+				// 1_渠道:1_订单
+				'channel' => array (
+					QDB::BELONGS_TO => 'Channel','source_key' => 'channel_id','target_key' => 'channel_id','skip_empty' => true
+				)
+			),
+			'validations' => array (),
+			'create_autofill' => array (
+				
+				// 自动填充修改和创建时间
+				'create_time' => self::AUTOFILL_TIMESTAMP,
+				'update_time' => self::AUTOFILL_TIMESTAMP 
+			),
+			'update_autofill' => array (
+				'update_time' => self::AUTOFILL_TIMESTAMP 
+			),
+			'attr_protected' => 'order_id' 
+		);
+	}
+	
+	/**
+	 * 开启一个查询，查找符合条件的对象或对象集合
+	 *
+	 * @static
+	 *
+	 * @return QDB_Select
+	 */
+	static function find() {
+		$args = func_get_args ();
+		return QDB_ActiveRecord_Meta::instance ( __CLASS__ )->findByArgs ( $args );
+	}
+	
+	/**
+	 * 返回当前 ActiveRecord 类的元数据对象
+	 *
+	 * @static
+	 *
+	 * @return QDB_ActiveRecord_Meta
+	 */
+	static function meta() {
+		return QDB_ActiveRecord_Meta::instance ( __CLASS__ );
+	}
+	
+	/* ------------------ 以上是自动生成的代码，不能修改 ------------------ */
+	function _before_update(){
+		$changes=array();
+		foreach ($this->changes() as $field){
+			if (!in_array($field,array('create_time','update_time'))){
+				$desc=$this->getMeta()->table_meta[$field]['desc'];
+				if (empty($desc)){
+					$desc=$field;
+				}
+				$changes[]=$desc.': '.$this->_changed_prop_old_values[$field].' > '.$this[$field];
+			}
+		}
+		if (!empty($changes)){
+			$log=new OrderLog(array(
+				'order_id'=>$this->order_id,
+				'staff_id'=>MyApp::currentUser('staff_id'),
+				'staff_name'=>MyApp::currentUser('staff_name'),
+				'comment'=>implode(', ',$changes)
+			));
+			$log->save();
+		}
+	}
+}
+class OrderException extends QException {}

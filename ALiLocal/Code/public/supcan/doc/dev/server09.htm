@@ -1,0 +1,115 @@
+<HTML>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=gb2312">
+<link rel="stylesheet" href="temp1.css" type="text/css">
+</head>
+<body bgcolor=#ffffff vlink=#0000ff>
+<div id="Tag1"/>
+<br>
+<p class="sz1">9.报表转换模板</p><hr color=#2266ee size=1>
+<p class="sz3">1.关于模板</p>
+　　用 callfunc 函数调用 105 功能号，是后端动态转换的主要手段，通常情况下，直接将内容转换到一个新的 html 文件即可，但在某些情况下，需要将报表按照模板转换，即将报表 html 中的各个段落安插到另一个文件中，为此，我们定义了
+模板的规则，一个典型的模板文件内容如下：<br>
+<pre class='xml'>
+&lt;html&gt;
+&lt;head&gt;&lt;meta http-equiv=Content-Type content="text/html; charset=utf-8"&gt;
+&lt;style&gt;
+&lt;!--SUPCAN_REPORT_STYLE  prefix="dx"--&gt;&lt;/style&gt;
+&lt;script&gt;
+&lt;!--SUPCAN_REPORT_JS--&gt;
+&lt;/script&gt;
+&lt;/head&gt;
+&lt;body onresize="supcan_Resize()" onload="supcan_Resize()" leftmargin="0" topmargin="0"&gt;
+&lt;!--SUPCAN_REPORT_dTitle id="dTitle"--&gt;
+&lt;!--SUPCAN_REPORT_dHeadLeft--&gt;
+&lt;!--SUPCAN_REPORT_dHead--&gt;
+&lt;!--SUPCAN_REPORT_dLeft--&gt;
+&lt;!--SUPCAN_REPORT_dMain--&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+　　脚本中的注释内容 <font color=red><b>&lt;!--  ... --&gt;</b></font> 就是模板规则的核心，这些注释符相当于就是 "占位符"，最终它们会被替换成真正的内容.<br>
+<img src='glass.bmp' class="imgleft"><p class="glass">Callfunc 调用 105 功能号，可以用 "Template" 参数指定模板，请参考报表开发文档 “4.工具条功能号”.</p>
+<br>
+<br>
+<p class="sz3">2.占位符(&lt;!--  ... --&gt;)规则</p>
+　　占位符如 "<b>&lt;!--SUPCAN_REPORT_STYLE--&gt;</b>"，其中的“<b>SUPCAN_REPORT_STYLE</b>”是有固定含义的(注意: 大小写敏感)，目前我们一共定义了9种。<br>
+　　这些占位符并不是要全部填写，您只要选择所需的占位符即可。<br>
+<br>
+<p class="sz5">2.1 SUPCAN_REPORT_STYLE</p>
+　　表示在该处生成CSS内容，因为报表的各个单元格的外观不尽相同，报表会动态生成大量的 style 样式类。<br>
+　　为了让生成的样式的类名不和您的页面中其它样式类名冲突，您可以定义名为 "prefix" 的属性，表示动态类名的前缀，例如：<br>
+<pre class='xml'>
+&lt;!--SUPCAN_REPORT_STYLE  prefix="dx"--&gt;</pre>
+　　该占位符最终可能会被替换成如下的串，类名是以"dx"开头的：<br>
+<pre class='xml'>
+.dx41 {
+ border-left:0px;
+ border-top:1px solid #CCCCCC;
+ border-right:0px;
+ border-bottom:0px;
+ padding-left:1px;
+}
+.dx30 {
+ border-left:0px;
+ border-top:1px solid #FFFFFF;
+ border-right:0px;
+ border-bottom:0px;
+}
+.dx42 {
+ border-left:0px;
+ border-top:1px solid #C0C0C0;
+ border-right:0px;
+ border-bottom:0px;
+ text-decoration:none;
+}</pre>
+<br>
+<br>
+<p class="sz5">2.2 SUPCAN_REPORT_MAXHeight</p>
+SUPCAN_REPORT_MAXWidth</i><br>
+　　表示在该处生成所有层如果要全部都展现的话，所需的最大高度和宽度，单位是像素。<br>
+<br>
+<br>
+<p class="sz5">2.3 SUPCAN_REPORT_dTitle</p>
+SUPCAN_REPORT_dHeadLeft<br>
+SUPCAN_REPORT_dHead<br>
+SUPCAN_REPORT_dLeft<br>
+SUPCAN_REPORT_dMain</i><br>
+　　生成的报表的 5 个 div 区域。报表转换到 html ，主体是 &lt;Table&gt; , 并再在外部包绕一层 &lt;div&gt;, 根据报表的设定，有如下三种情况。<br>
+A).单个层<br>
+　　这是最简单的情形, 生成单个<br>
+<pre class='xml'>
+&lt;div&gt;
+ &lt;Table&gt; 
+  ...
+ &lt;/Table&gt;
+&lt;/div&gt; </pre>
+　　您只要包含这5个区域占位符中的 <b>SUPCAN_REPORT_dMain</b> 即可.<br>
+<br>
+B).2个层<br>
+　　生成 2 个层：表头和表体，表头是固定的 (冻结)，表体可以上下滚动, 您需要包含 <b>SUPCAN_REPORT_dTitle</b> 和 <b>SUPCAN_REPORT_dMain</b> 占位符.<br>
+<br>
+B).5个层<br>
+　　这是最复杂的情形，除了有表头，还可以让左侧的某些列固定在左侧, 如图:<br>
+<center><img src='server5.png'/></center>
+　　为了让生成的这些 div 层的 id 不和您的页面元素同名，您还可以指定其名称，比如：<br>
+<pre class='xml'>
+&lt;!--SUPCAN_REPORT_dTitle id="supcanTitle"--&gt;</pre>
+　　表示标题 div 层的 id 是"supcanTitle".<br>
+<br>
+<br>
+<p class="sz5">2.4 SUPCAN_REPORT_JS</p>
+　　2个层和5个层的报表, 会包含2个js函数： supcan_Resize( ) 函数、supcan_ScrollMain( ) 函数，那么该占位符表示将动态生成的js函数安置到此处.<br>
+<b>2.4.1 supcan_Resize( ) 函数的作用</b><br>
+　　用于动态控制  dMain 层的高度和宽度(5层时)，让 dMain 层自动浮现或隐藏垂直滚动条和水平滚动条(5层时)， 函数的调用时机是在容器尺寸变化时，比如:<br>
+<pre class='xml'>
+&lt;body onresize="supcan_Resize()" onLoad="supcan_Resize()" leftmargin="0" topmargin="0"&gt;</pre>
+<b>2.4.2 supcan_ScrollMain( ) 函数的作用</b><br>
+　　用于5层的情形：当拖动 dMain 层垂直或水平滚动时，让 dLeft、dHead 层动态改变其位置，使其能和 dMain 层保持同步，这个函数不需要您再外部调用，我们生成的 dMain 层会调用该函数的：<br>
+<pre class='xml'>
+&lt;div id="dMain" onscroll="supcan_ScrollMain()"&gt;
+...</pre>
+
+
+<br><br><br>
+<script type='text/javascript' src='nstd.js'></script>
+</body></html>

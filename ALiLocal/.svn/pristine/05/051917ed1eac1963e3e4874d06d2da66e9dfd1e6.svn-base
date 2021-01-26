@@ -1,0 +1,68 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>
+邮件模板编辑
+<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<?php
+if (request('id') != null) {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'邮件模板管理' => '',
+			'邮件模板列表' => url ( 'product/emailtemplate' ),
+			'邮件模板编辑' => url ( 'product/templateedit', array (
+				'id' => $template->id 
+			) ) 
+		) 
+	) );
+} else {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'邮件模板管理' => '',
+			'邮件模板列表' => url ( 'product/emailtemplate' ),
+			'新建邮件模板' => url ( 'product/templateedit' ) 
+		) 
+	) );
+}
+?>
+<form method="post">
+	<div class="FarSearch span10" style="padding:5px;">
+	<div>
+		<table>
+			<tbody>
+				<tr>
+					<th class="required-title">模板名称</th>
+    				<td>
+    					<input name="template_name" id="template_name" type="text" style="width: 150px" required="required" value="<?php echo $template->template_name?>">
+    				</td>
+				</tr>
+				<tr>
+				    <th>模板字段</th>
+				    <td >
+    				    <span style="color:red;">
+    				                阿里单号:ali_order_no;末端单号:tracking_no;国内单号:reference_no;网络:network_code;目的国家:consignee_country_code;
+    				    </span><br/>
+    				    <span style="color:red;">目的国邮政客服电话:servicetel;目的国邮政客服作息时间:servicesch;目的国邮政海关电话:customtel;</span>
+				    </td>
+				</tr>
+				<tr>
+				    <th class="required-title">模板内容</th>
+    				<td>
+    					<textarea rows="13" required="required" style="width:900px;" name='template_text'><?php echo $template->template_text ?></textarea>
+    				</td>
+				</tr>
+			</tbody>
+		</table>
+		</div>
+    	<div class="FarTool span10" style="text-align: center">
+    		<a class="btn btn-inverse" href="<?php echo url('product/emailtemplate')?>">
+    			<i class="icon-reply"></i> 返回
+    		</a>
+    		<button type="submit" class="btn btn-primary">
+    			<i class="icon-save"></i> 保存
+    		</button>
+    	</div>
+    </div>
+</form>
+<script type="text/javascript">
+</script>
+<?PHP $this->_endblock();?>

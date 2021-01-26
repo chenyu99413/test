@@ -1,0 +1,69 @@
+<?php
+/**
+ * 公式解析器
+ * @author firzen
+ *
+ */
+class Helper_Formula {
+	/**
+	 * 附加费公式解析器
+	 * 	为了安全，会先将变量替换成对应的数值，然后再将所有的函数替换成 Helper_Formula::func_xxx ，
+	 * 	例如 IF(a,b,c) 会被替换成 Helper_Formula::func_IF(a,b,c)
+	 * @param string $str 公式
+	 * @param array $params 变量，例如 计费重weight，分区area，燃油baf，税率 tax，件数 icount
+	 * @return float
+	 */
+	static function parse($str,$params){
+		foreach ($params as $k => $v){
+			if (is_numeric($v)){
+				$str=str_ireplace($k,$v,$str);
+			}else {
+				$str=str_ireplace($k,"'".strtoupper($v)."'",$str);
+			}
+		}
+		$str=str_replace('=','==',$str);
+		$str=preg_replace_callback('/([A-Za-z_][\w]+)/i','helper_formula_repalce_callback',$str);
+		try {
+			$ret= eval("return $str;");
+			return $ret;
+		}catch (Exception $ex){
+			return false;
+		}catch (Error $ex){
+			return false;
+		}
+	}
+	/**
+	 * IF 函数，仿Excel 的 IF函数
+	 * @param mixed $condition 条件
+	 * @param mixed $true 条件成立，计算
+	 * @param mixed $false 条件不成立，计算
+	 * @example IF( weight> 3 , weight*1.5, 0 )
+	 * @return mixed
+	 */
+	static function func_IF($condition,$true,$false){
+		if ($condition){
+			return $true;
+		}
+		return $false;
+	}
+	/**
+	 * 向上取整
+	 * @param float $var
+	 * @example CEIL((weight-20)/0.5)*3
+	 * @return number
+	 */
+	static function func_CEIL($var){
+		return ceil($var);
+	}
+	/**
+	 * 返回最大值
+	 * @return mixed
+	 */
+	static function func_MAX(){
+		$args=func_get_args();
+		return call_user_func_array('max',$args);
+	}
+}
+function helper_formula_repalce_callback($matches){
+	return 'Helper_Formula::func_'.strtoupper($matches[1]);
+}

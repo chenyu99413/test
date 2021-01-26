@@ -1,0 +1,194 @@
+<?php
+class Controller_Staff extends Controller_Abstract {
+	
+	/**
+	 * 工作台
+	 */
+	function actionIndex() {
+		$orders=Order::find("ali_testing_order!= '1' and order_status='1' and need_pick_up='1'");
+		//导出取件清单
+		if(request("export")=='exportpick'){
+			$pick=clone $orders;
+			$pick->where("ifnull(need_pick_up,'')='1'");
+			$payeds=$pick->getAll();
+			$header = array (
+				'阿里订单号','订单日期','省','市','地址','邮编','姓名','手机号','固定电话','邮箱','件数'
+			);
+			$sheet = array (
+				$header
+			);
+			foreach ($payeds as $p){
+				$item_count=0;
+				foreach ($p->packages as $package){
+					$item_count+=$package->quantity;
+				}
+				$sheet [] =array(
+					"'".$p->ali_order_no,Helper_Util::strDate('Y-m-d H:i', $p->create_time),$p->sender_state_region_code,$p->sender_city,$p->sender_street1.' '.$p->sender_street2,"'".$p->sender_postal_code,
+					$p->sender_name1.' '.$p->sender_name2,"'".$p->sender_mobile,"'".$p->sender_telephone,$p->sender_email,$item_count
+				);
+			}
+			Helper_ExcelX::array2xlsx ( $sheet, '取件清单' );
+			exit ();
+			 
+		}
+		$list=$orders->order('create_time desc')->getAll();
+		$this->_view['orders']=$list;
+	}
+	/**
+	 * 用户登录
+	 */
+	function actionLogin() {
+		if (request_is_post ()) {
+			$staff = Staff::find ( 'staff_code=?', request ( 'staff_code' ) )->getOne ();
+			session_start ();
+			// 将登录用户的信息存入 SESSION，以便应用程序记住用户的登录状态
+			$this->_app->changeCurrentUser ( $staff->toArray (), "MEMBER" );
+			// 登录成功后，重定向浏览器
+			return $this->_redirect ( url ( "staff/index" ) );
+		}
+		if (MyApp::currentUser ()) {
+			// session 信息不为空，则跳至工作台
+			return $this->_redirect ( url ( "staff/index" ) );
+		}
+	}
+	/**
+	 * 校验用户登录信息
+	 */
+	function actioncheck(){
+	    $message='true';
+	    if ((post ( "account" ) == '') || (post ( "password" ) == '')) {
+	        $message = "用户名和密码不能为空";
+	    }
+	    $staff = Staff::find ( "staff_code = ?", request('account') )->getOne ();
+	    if ($staff->isNewRecord ()) {
+	        $message='用户名不存在';
+	    }
+	    if ($staff->status!='1') {
+	        $message='账号已停用';
+	    }
+	    if (!$staff->checkPassword ( request('password') )) {
+	        $message='密码错误';
+	    }
+	    echo $message;
+	    exit();
+	}
+	/**
+	 * 用户注销
+	 */
+	function actionLoginout() {
+	    session_start();
+	    $this->_app->cleanCurrentUser ();
+	    return $this->_redirectMessage('注销登录','成功', url ( 'staff/login' ) );
+	}
+	/**
+	 * 员工查询
+	 */
+	function actionSearch() {
+	    $staffs=Staff::find();
+	    if(request('staff_name')){
+	        $staffs->where('staff_name=?',request('staff_name'));
+	    }
+	    $staffs=$staffs->getAll();
+	    $this->_view['staffs']=$staffs;
+	}
+	/**
+	 * 员工编辑
+	 */
+	function actionEdit(){
+	    $staff=Staff::find('staff_id=?',request('staff_id'))->getOne();
+	    $relevants = array ();
+	    $staffrole = array ();
+	    if (request ( "staff_id" ) != null) {
+	        $relevants = RelevantDepartment::find ( "staff_id = ?", $staff->staff_id )->getAll ();
+	        $staffrole = StaffRole::find ( "staff_id = ?", $staff->staff_id )->getAll ();
+	    }
+	    // 保存
+	    if (request_is_post ()) {
+	        $conn = QDB::getConn ();
+	        $conn->startTrans ();
+	        $department=Department::find("department_id=?",request('department'))->getOne();
+	        // 用户
+	        $staff->staff_code = request('staff_code');
+	        $staff->staff_name = request('staff_name');
+	        $staff->department_id = request('department');
+	        $staff->department_name = $department->department_name;
+	        if(request('password')!=$staff->password){
+	            $staff->password = request('password');
+	        }
+            $staff->status = "1";
+            $staff->save ();
+            // 权限角色
+            if (request ( "role" ) != null || strlen ( request ( "role" ) ) > 0) {
+                StaffRole::meta ()->destroyWhere ( "staff_id = ?", $staff->staff_id );
+                $content='';
+                foreach ( request ( "role" ) as $value ) {
+                    $staffrole = new StaffRole ();
+                    $staffrole->role_id = $value;
+                    $staffrole->staff_id = $staff->staff_id;
+                    $staffrole->save ();
+                }
+            }
+            // 相关部门
+            if (request ( "relevant" ) != null || strlen ( request ( "relevant" ) ) > 0) {
+                RelevantDepartment::meta ()->destroyWhere ( "staff_id = ?", $staff->staff_id );
+                foreach ( explode ( ",", request ( "relevant" ) ) as $value ) {
+                    $relevantDepartment = new RelevantDepartment ();
+                    $relevantDepartment->staff_id = $staff->staff_id;
+                    $relevantDepartment->department_id = $value;
+                    $relevantDepartment->save ();
+                }
+            }
+            $conn->completeTrans ();
+            return $this->_redirectMessage ( "员工保存", "保存成功", url ( "staff/edit", array (
+                "staff_id" => $staff->staff_id
+            ) ) );
+	    }
+	    // 显示角色
+	    $staffrole_id = Helper_Array::getCols ( $staffrole, "role_id" );
+	    $roles = array ();
+	    foreach ( Role::find ()->getAll () as $value ) {
+	        if (in_array ( $value->role_id, $staffrole_id )) {
+	            $roles [] = array (
+	                "id" => $value->role_id,
+	                "name" => $value->role_name,
+	                "checked" => true
+	            );
+	        } else {
+	            $roles [] = array (
+	                "id" => $value->role_id,
+	                "name" => $value->role_name,
+	                "checked" => false
+	            );
+	        }
+	    }
+	    $this->_view ["roles"] = $roles;
+	    $this->_view['staff']=$staff;
+	    $this->_view ["relevants"] = array (
+	        "state" => true,
+	        "checked" => implode ( ",", Helper_Array::getCols ( $relevants, "department_id" ) )
+	    );
+	}
+	/**
+	 * 停职操作
+	 */
+	function actionInterdicted() {
+	    if (request ( "staff_id" ) != null) {
+	        $staff = staff::find ( "staff_id = ?", request ( "staff_id" ) )->getOne ();
+	        $staff->status = request ( "status" );
+	        $staff->save ();
+	    }
+	    return $this->_redirectMessage ( "用户状态", "保存成功", url ( "staff/search" ) );
+	}
+	/**
+	 * 判断员工工号唯一
+	 */
+	function actionCodecheck(){
+	    $staff=Staff::find('staff_code=?',request('staff_code'))->getOne();
+	    if(!$staff->isNewRecord() && $staff->staff_id!=request('staff_id')){
+	        echo 'error';
+	    }else{
+	        echo 'success';
+	    }
+	    exit();
+	}
+}

@@ -1,0 +1,961 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!--By Supcan Report -->
+<Report>
+	<WorkSheet name="Sheet">
+		<Properties>
+			<BackGround bgColor="#FFFFFF"/>
+			<DefaultTD>
+				<TD fontIndex="0" textColor="#000000" transparent="true" leftBorder="0" topBorder="0" leftBorderColor="#C0C0C0" leftBorderStyle="solid" topBorderColor="#C0C0C0" topBorderStyle="solid" decimal="2" align="left" vAlign="middle" isProtected="false" isThousandSeparat="true" isRound="true" isPrint="true"/>
+			</DefaultTD>
+			<Other isShowZero="true" isRefOriPrecision="true" AutoBreakLine="2" LineDistance="0" isRowHeightAutoExtendAble="false"/>
+		</Properties>
+		<Fonts>
+			<Font faceName="等线" charSet="134" height="-13" weight="400" pitchAndFamily="2" quality="1" outPrecision="3" clipPrecision="2"/>
+			<Font faceName="等线" charSet="134" height="-16" weight="400" pitchAndFamily="2" quality="1" outPrecision="3" clipPrecision="2"/>
+		</Fonts>
+		<Table>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="19"/>
+			<Col width="15"/>
+			<TR height="19" sequence="0">
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="1">
+				<TD/>
+				<TD align="center" vAlign="bottom" datatype="1" formula="=&apos;http://wms.checkout2cn.com/link/barcode/html/image.php?filetype=PNG&amp;dpi=90&amp;scale=1&amp;rotation=0&amp;font_family=0&amp;font_size=0&amp;thickness=30&amp;start=C&amp;code=BCGcode128&amp;text=&apos;+data(&apos;ds1&apos;, 1, &apos;ali_order_no&apos;)" maskid="1">ali_order_no*</TD>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="2">
+				<TD/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="3">
+				<TD/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="4">
+				<TD/>
+				<TD leftBorder="1" topBorder="1" align="center"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="5">
+				<TD/>
+				<TD fontIndex="1" align="center" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;ali_order_no&apos;)">ali_order_no*</TD>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="6">
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="7">
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="8">
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD datatype="1"/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="9">
+				<TD/>
+				<TD align="center" vAlign="bottom" datatype="1" formula="=&apos;http://wms.checkout2cn.com/link/barcode/html/image.php?filetype=PNG&amp;dpi=90&amp;scale=1&amp;rotation=0&amp;font_family=0&amp;font_size=0&amp;thickness=30&amp;start=C&amp;code=BCGcode128&amp;text=&apos;+data(&apos;ds1&apos;, 1, &apos;far_no&apos;)" maskid="1">far_no*</TD>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="10">
+				<TD/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="11">
+				<TD/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="12">
+				<TD/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="13">
+				<TD/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="14">
+				<TD/>
+				<TD fontIndex="1" align="center" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;far_no&apos;)">far_no*</TD>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1" datatype="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD leftBorder="1" topBorder="1"/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="15">
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="16">
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="17">
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="19" sequence="18">
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+			</TR>
+			<TR height="15" sequence="19">
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+				<TD/>
+			</TR>
+		</Table>
+		<Merges>
+			<Range row1="1" col1="1" row2="4" col2="17"/>
+			<Range row1="5" col1="1" row2="5" col2="17"/>
+			<Range row1="9" col1="1" row2="13" col2="17"/>
+			<Range row1="14" col1="1" row2="14" col2="17"/>
+		</Merges>
+		<PrintPage>
+			<Paper paperNumber="-1" paperName="10*10">
+				<Margin left="0" top="0" right="0" bottom="0"/>
+				<UserDefine Name="10*10" Width="100000" Height="100000">
+					<Border left="0" top="0" right="100000" bottom="100000"/>
+				</UserDefine>
+			</Paper>
+			<Page align="center" vAlign="middle" isIgnoreValidBorder="false">
+				<Page-break isLandscapePaging="false">
+				</Page-break>
+				<PageCode isPrint="false"/>
+			</Page>
+		</PrintPage>
+	</WorkSheet>
+	<DataSources Version="255" isAutoCalculateWhenOpen="false" isSaveCalculateResult="false">
+		<DataSource type="4"><!-- Desc: Supcan Report Component DataSource Specification -->
+<Data>
+	<ID>ds1</ID>
+	<Version>2</Version>
+	<Type>4</Type>
+	<TypeMeaning>JSON</TypeMeaning>
+	<Source>InFarLabel?aliorderno=ALI-1000000009</Source>
+	<XML_RecordAble_Nodes>
+		<Node>
+			<name/>
+		</Node>
+	</XML_RecordAble_Nodes>
+	<Columns>
+		<Column>
+			<name>order_id</name>
+			<text>order_id</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>ali_order_no</name>
+			<text>ali_order_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>reference_no</name>
+			<text>reference_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>far_no</name>
+			<text>far_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>service_code</name>
+			<text>service_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>sender_mobile</name>
+			<text>sender_mobile</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>7</sequence>
+		</Column>
+		<Column>
+			<name>sender_telephone</name>
+			<text>sender_telephone</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>8</sequence>
+		</Column>
+		<Column>
+			<name>sender_email</name>
+			<text>sender_email</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>9</sequence>
+		</Column>
+		<Column>
+			<name>sender_name1</name>
+			<text>sender_name1</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>10</sequence>
+		</Column>
+		<Column>
+			<name>sender_name2</name>
+			<text>sender_name2</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>11</sequence>
+		</Column>
+		<Column>
+			<name>sender_street1</name>
+			<text>sender_street1</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>12</sequence>
+		</Column>
+		<Column>
+			<name>sender_street2</name>
+			<text>sender_street2</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>13</sequence>
+		</Column>
+		<Column>
+			<name>sender_country_code</name>
+			<text>sender_country_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>14</sequence>
+		</Column>
+		<Column>
+			<name>sender_city</name>
+			<text>sender_city</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>15</sequence>
+		</Column>
+		<Column>
+			<name>sender_postal_code</name>
+			<text>sender_postal_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>16</sequence>
+		</Column>
+		<Column>
+			<name>sender_state_region_code</name>
+			<text>sender_state_region_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>17</sequence>
+		</Column>
+		<Column>
+			<name>consignee_mobile</name>
+			<text>consignee_mobile</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>18</sequence>
+		</Column>
+		<Column>
+			<name>consignee_telephone</name>
+			<text>consignee_telephone</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>19</sequence>
+		</Column>
+		<Column>
+			<name>consignee_email</name>
+			<text>consignee_email</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>20</sequence>
+		</Column>
+		<Column>
+			<name>consignee_name1</name>
+			<text>consignee_name1</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>21</sequence>
+		</Column>
+		<Column>
+			<name>consignee_name2</name>
+			<text>consignee_name2</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>22</sequence>
+		</Column>
+		<Column>
+			<name>consignee_street1</name>
+			<text>consignee_street1</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>23</sequence>
+		</Column>
+		<Column>
+			<name>consignee_street2</name>
+			<text>consignee_street2</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>24</sequence>
+		</Column>
+		<Column>
+			<name>consignee_country_code</name>
+			<text>consignee_country_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>25</sequence>
+		</Column>
+		<Column>
+			<name>consignee_city</name>
+			<text>consignee_city</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>26</sequence>
+		</Column>
+		<Column>
+			<name>consignee_postal_code</name>
+			<text>consignee_postal_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>27</sequence>
+		</Column>
+		<Column>
+			<name>consignee_state_region_code</name>
+			<text>consignee_state_region_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>28</sequence>
+		</Column>
+		<Column>
+			<name>declaration_type</name>
+			<text>declaration_type</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>29</sequence>
+		</Column>
+		<Column>
+			<name>total_amount</name>
+			<text>total_amount</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>30</sequence>
+		</Column>
+		<Column>
+			<name>currency_code</name>
+			<text>currency_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>31</sequence>
+		</Column>
+		<Column>
+			<name>need_insurance</name>
+			<text>need_insurance</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>32</sequence>
+		</Column>
+		<Column>
+			<name>tax_payer_id</name>
+			<text>tax_payer_id</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>33</sequence>
+		</Column>
+		<Column>
+			<name>remarks</name>
+			<text>remarks</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>34</sequence>
+		</Column>
+		<Column>
+			<name>order_status</name>
+			<text>order_status</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>35</sequence>
+		</Column>
+		<Column>
+			<name>reason_code</name>
+			<text>reason_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>36</sequence>
+		</Column>
+		<Column>
+			<name>reason_name</name>
+			<text>reason_name</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>37</sequence>
+		</Column>
+		<Column>
+			<name>reason_remark</name>
+			<text>reason_remark</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>38</sequence>
+		</Column>
+		<Column>
+			<name>return_type</name>
+			<text>return_type</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>39</sequence>
+		</Column>
+		<Column>
+			<name>return_mobile</name>
+			<text>return_mobile</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>40</sequence>
+		</Column>
+		<Column>
+			<name>return_telephone</name>
+			<text>return_telephone</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>41</sequence>
+		</Column>
+		<Column>
+			<name>return_email</name>
+			<text>return_email</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>42</sequence>
+		</Column>
+		<Column>
+			<name>return_name1</name>
+			<text>return_name1</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>43</sequence>
+		</Column>
+		<Column>
+			<name>return_name2</name>
+			<text>return_name2</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>44</sequence>
+		</Column>
+		<Column>
+			<name>return_street1</name>
+			<text>return_street1</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>45</sequence>
+		</Column>
+		<Column>
+			<name>return_street2</name>
+			<text>return_street2</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>46</sequence>
+		</Column>
+		<Column>
+			<name>return_country_code</name>
+			<text>return_country_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>47</sequence>
+		</Column>
+		<Column>
+			<name>return_city</name>
+			<text>return_city</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>48</sequence>
+		</Column>
+		<Column>
+			<name>return_postal_code</name>
+			<text>return_postal_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>49</sequence>
+		</Column>
+		<Column>
+			<name>return_state_region_code</name>
+			<text>return_state_region_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>50</sequence>
+		</Column>
+		<Column>
+			<name>need_pick_up</name>
+			<text>need_pick_up</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>51</sequence>
+		</Column>
+		<Column>
+			<name>warehouse_code</name>
+			<text>warehouse_code</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>52</sequence>
+		</Column>
+		<Column>
+			<name>warehouse_name</name>
+			<text>warehouse_name</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>53</sequence>
+		</Column>
+		<Column>
+			<name>packing_type</name>
+			<text>packing_type</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>54</sequence>
+		</Column>
+		<Column>
+			<name>volumn_chargeable</name>
+			<text>volumn_chargeable</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>55</sequence>
+		</Column>
+		<Column>
+			<name>weight_income_ali</name>
+			<text>weight_income_ali</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>56</sequence>
+		</Column>
+		<Column>
+			<name>weight_actual_ali</name>
+			<text>weight_actual_ali</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>57</sequence>
+		</Column>
+		<Column>
+			<name>weight_income_in</name>
+			<text>weight_income_in</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>58</sequence>
+		</Column>
+		<Column>
+			<name>weight_actual_in</name>
+			<text>weight_actual_in</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>59</sequence>
+		</Column>
+		<Column>
+			<name>weight_cost_out</name>
+			<text>weight_cost_out</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>60</sequence>
+		</Column>
+		<Column>
+			<name>weight_actual_out</name>
+			<text>weight_actual_out</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>61</sequence>
+		</Column>
+		<Column>
+			<name>create_time</name>
+			<text>create_time</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>62</sequence>
+		</Column>
+		<Column>
+			<name>update_time</name>
+			<text>update_time</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>63</sequence>
+		</Column>
+	</Columns>
+</Data>
+
+		</DataSource>
+	</DataSources>
+	<Masks>
+		<mask id="1" datatype="1">picture()</mask>
+	</Masks>
+</Report>

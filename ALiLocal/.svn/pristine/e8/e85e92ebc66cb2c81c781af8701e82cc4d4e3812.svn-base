@@ -1,0 +1,37 @@
+<?php
+class Controller_Channel extends Controller_Abstract {
+	/**
+	 * 检索
+	 */
+	function actionSearch() {
+		$this->_view ['channels'] = Channel::find ()->getAll ();
+	}
+	
+	/**
+	 * 编辑
+	 */
+	function actionEdit() {
+	    if(request_is_post()){
+	        //判断渠道名称是否存在
+	        $channel_check=Channel::find('channel_name=?',request('channel_name'))->getOne();
+	        if(!$channel_check->isNewRecord() && ($channel_check->channel_id!=request('channel_id'))){
+	            return $this->_redirectMessage('渠道编辑失败', '渠道名称已存在', url('/search'));
+	        }else{
+	            $channel=Channel::find('channel_id=?',request('channel_id'))->getOne();
+	            $channel->channel_name=request('channel_name');
+	            $channel->save();
+	            return $this->_redirectMessage('渠道编辑', '渠道编辑成功', url('/search'));
+	        }
+	    }
+	    exit();
+	}
+	/**
+	 * 获取渠道信息
+	 */
+	function actionGetchannel(){
+	    $channel=Channel::find('channel_id=?',request('channel_id'))->asArray()->getOne();
+	    echo json_encode($channel);
+	    exit();
+	}
+}
+

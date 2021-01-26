@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!--By Supcan Report -->
+<Report>
+	<WorkSheet name="Sheet">
+		<Properties>
+			<BackGround bgColor="#FFFFFF"/>
+			<DefaultTD>
+				<TD fontIndex="0" textColor="#000000" transparent="true" leftBorder="1" topBorder="1" leftBorderColor="#C0C0C0" leftBorderStyle="solid" topBorderColor="#C0C0C0" topBorderStyle="solid" decimal="2" align="left" vAlign="middle" isProtected="false" isThousandSeparat="true" isRound="true" isPrint="true"/>
+			</DefaultTD>
+			<Other isShowZero="true" isRefOriPrecision="true" LineDistance="0" isRowHeightAutoExtendAble="false"/>
+		</Properties>
+		<Fonts>
+			<Font faceName="Microsoft YaHei UI" charSet="134" height="-14" weight="400"/>
+			<Font faceName="Microsoft YaHei UI" charSet="134" height="-22" weight="400"/>
+			<Font faceName="Microsoft YaHei UI" charSet="134" height="-32" weight="400"/>
+			<Font faceName="Microsoft YaHei UI" charSet="134" height="-22" weight="700"/>
+		</Fonts>
+		<Table>
+			<Col width="3"/>
+			<Col width="38"/>
+			<Col width="58"/>
+			<Col width="38"/>
+			<Col width="29"/>
+			<Col width="38"/>
+			<Col width="33"/>
+			<Col width="38"/>
+			<Col width="38"/>
+			<Col width="31"/>
+			<Col width="38"/>
+			<Col width="15"/>
+			<TR height="38" sequence="0">
+				<TD col="0" leftBorder="0" topBorder="0"/>
+				<TD col="1" leftBorder="0" topBorder="0"/>
+				<TD col="2"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="91" sequence="1">
+				<TD col="2"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="22" sequence="2">
+				<TD col="0" leftBorder="0" topBorder="0" align="center" datatype="1" maskid="1" imageArrange="stretchKeepRatio"/>
+				<TD col="1" leftBorder="0" topBorder="0" align="center" datatype="1" maskid="1" imageArrange="stretchKeepRatio"/>
+				<TD col="2" leftBorder="0" topBorder="0" datatype="1" formula="=&apos;http://kuaijian.far800.com/public/barcode/html/image.php?filetype=PNG&amp;dpi=90&amp;scale=20&amp;rotation=0&amp;font_family=0&amp;font_size=0&amp;thickness=35&amp;start=C&amp;code=BCGcode128&amp;text=&apos;+data(&apos;ds1&apos;,1,&apos;pallet_no&apos;)" maskid="1" imageArrange="stretchKeepRatio">pallet_no*</TD>
+				<TD col="10" leftBorder="0" topBorder="0"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="38" sequence="3">
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="38" sequence="4">
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="4" sequence="5">
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="36" sequence="6">
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="18" sequence="7">
+				<TD col="0" fontIndex="2" leftBorder="0" topBorder="0" align="center" datatype="1" charSpace="15"/>
+				<TD col="1" fontIndex="2" leftBorder="0" topBorder="0" align="center" datatype="1" formula="=data(&apos;ds1&apos;,1,&apos;pallet_no&apos;)">pallet_no*</TD>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="38" sequence="8">
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="20" sequence="9">
+				<TD col="0" leftBorder="0" topBorder="0"/>
+				<TD col="1" leftBorder="0" topBorder="0"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="38" sequence="10">
+				<TD col="0" fontIndex="3" leftBorder="0" topBorder="0" align="center"/>
+				<TD col="1" fontIndex="3" leftBorder="0" topBorder="0" align="center">总件数：</TD>
+				<TD col="3" fontIndex="1" leftBorder="0" topBorder="0" datatype="1" formula="=data(&apos;ds1&apos;,1,&apos;quantity&apos;)">quantity*</TD>
+				<TD col="5" fontIndex="3" leftBorder="0" topBorder="0" align="center">渠道：</TD>
+				<TD col="7" fontIndex="1" leftBorder="0" topBorder="0" datatype="1" formula="=data(&apos;ds1&apos;,1,&apos;channel_name&apos;)">channel_name*</TD>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="38" sequence="11">
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="2" sequence="12">
+				<TD col="0" leftBorder="0" topBorder="0"/>
+				<TD col="1" leftBorder="0" topBorder="0"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="38" sequence="13">
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="38" sequence="14">
+				<TD col="0" leftBorder="0" topBorder="0"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="15" sequence="15">
+				<TD col="0" leftBorder="0" topBorder="0"/>
+				<TD col="1" leftBorder="0" topBorder="0"/>
+				<TD col="2" leftBorder="0" topBorder="0"/>
+				<TD col="3" leftBorder="0" topBorder="0"/>
+				<TD col="4" leftBorder="0" topBorder="0"/>
+				<TD col="5" leftBorder="0" topBorder="0"/>
+				<TD col="6" leftBorder="0" topBorder="0"/>
+				<TD col="7" leftBorder="0" topBorder="0"/>
+				<TD col="8" leftBorder="0" topBorder="0"/>
+				<TD col="9" leftBorder="0" topBorder="0"/>
+				<TD col="10" leftBorder="0" topBorder="0"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+		</Table>
+		<Merges>
+			<Range row1="7" col1="1" row2="8" col2="10"/>
+			<Range row1="10" col1="1" row2="11" col2="2"/>
+			<Range row1="10" col1="3" row2="11" col2="4"/>
+			<Range row1="10" col1="5" row2="11" col2="6"/>
+			<Range row1="10" col1="7" row2="11" col2="10"/>
+			<Range row1="0" col1="1" row2="1" col2="10"/>
+			<Range row1="9" col1="1" row2="9" col2="10"/>
+			<Range row1="12" col1="1" row2="14" col2="10"/>
+			<Range row1="0" col1="0" row2="13" col2="0"/>
+			<Range row1="2" col1="2" row2="6" col2="9"/>
+			<Range row1="2" col1="1" row2="6" col2="1"/>
+			<Range row1="2" col1="10" row2="6" col2="10"/>
+		</Merges>
+		<PrintPage>
+			<Paper>
+				<Margin left="1" top="0" right="1" bottom="0"/>
+			</Paper>
+			<Page align="center" isIgnoreValidBorder="false">
+				<PageCode isPrint="false"/>
+			</Page>
+		</PrintPage>
+	</WorkSheet>
+	<DataSources Version="255" isAutoCalculateWhenOpen="false" isSaveCalculateResult="false">
+		<DataSource type="4"><!-- Desc: Supcan Report Component DataSource Specification -->
+<Data>
+	<ID>ds1</ID>
+	<Version>2</Version>
+	<Type>4</Type>
+	<TypeMeaning>JSON</TypeMeaning>
+	<Source>http://localhost/aliexpress/code/index.php?controller=warehouse&amp;action=printpallet&amp;pallet_no=T1902260024</Source>
+	<XML_RecordAble_Nodes>
+		<Node>
+			<name/>
+		</Node>
+	</XML_RecordAble_Nodes>
+	<Columns>
+		<Column>
+			<name>pallet_no</name>
+			<text>pallet_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>quantity</name>
+			<text>quantity</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>channel_name</name>
+			<text>channel_name</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+	</Columns>
+</Data>
+
+		</DataSource>
+	</DataSources>
+	<Masks>
+		<mask id="1" datatype="1">picture()</mask>
+	</Masks>
+</Report>

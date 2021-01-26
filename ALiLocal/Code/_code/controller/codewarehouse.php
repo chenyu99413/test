@@ -1,0 +1,72 @@
+<?php
+/**
+ * @todo 仓库代码管理
+ * @author 石亭亭
+ * @since 2020-07-01 14:23
+ * @param 
+ * @return json
+ * @link #80732
+ */
+class Controller_CodeWarehouse extends Controller_Abstract {
+	function actionSearch() {
+	}
+	function actionList() {
+		$page = intval ( request ( 'page', 1 ) );
+		$page_size = intval ( request ( 'page_size', 30 ) );
+		$pagination = null;
+	
+		$select = CodeWarehouse::find ();
+	
+		if (request ( 'department_id' )) {
+			$select->where ( 'department_id = ?', request ( 'department_id' ) );
+		}
+		if (request ( 'warehouse' )) {
+			$select->where ( 'warehouse like ?', '%'.request('warehouse').'%' );
+		}
+	
+		$codewarehouses = $select->limitPage ( $page, $page_size )
+		->fetchPagination ( $pagination )
+		->getAll ();
+	
+		$this->_view ['codewarehouses'] = $codewarehouses;
+		$this->_view ['pagination'] = $pagination;
+	}
+	function actionEditModal() {
+		$codewarehouse = CodeWarehouse::find ( 'id = ?', request ( 'id' ) )->getOne ();
+		$this->_view ['codewarehouse'] = $codewarehouse;
+	}
+	function actionEditSave() {
+		if (! request_is_ajax ()) {
+			return $this->_redirectAjax ( false );
+		}
+		
+		// 保存数据
+		$codewarehouse = new CodeWarehouse();
+		if (request ( 'id' )) {
+			$codewarehouse = CodeWarehouse::find ( 'id = ?', request ( 'id' ) )->getOne ();
+			if ($codewarehouse->isNewRecord ()) {
+				return $this->_redirectAjax ( false, '数据错误' );
+			}
+		}
+		// 数据重复检查
+		$check=CodeWarehouse::find ( 'warehouse = ?', request('warehouse') )->getOne ();
+		if (request ( 'id' ) && !$check->isNewRecord () && ($check->id!=request ( 'id' ))) {
+			return $this->_redirectAjax ( false, '仓库代码已存在' );
+		}elseif (!request ( 'id' ) && !$check->isNewRecord ()){
+			return $this->_redirectAjax ( false, '仓库代码已存在' );
+		}
+		$codewarehouse->department_id = request ( 'department_id' );
+		$codewarehouse->department_name = Department::find('department_id=?',request ( 'department_id' ))->getOne()->department_name;
+		$codewarehouse->warehouse = request ( 'warehouse' );
+		
+		$codewarehouse->warehouse_enname = request ( 'warehouse_enname' );
+		$codewarehouse->warehouse_contact = request ( 'warehouse_contact' );
+		$codewarehouse->warehouse_mobile = request ( 'warehouse_mobile' );
+		$codewarehouse->warehouse_address = request ( 'warehouse_address' );
+		
+		$codewarehouse->save ();
+		return $this->_redirectAjax ( true, '保存成功' );
+	}
+}
+
+?>

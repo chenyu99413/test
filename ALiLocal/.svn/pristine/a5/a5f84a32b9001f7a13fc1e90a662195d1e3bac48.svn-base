@@ -1,0 +1,30 @@
+<?php
+class Controller_Supplier extends Controller_Abstract{
+    /**
+     * 检索
+     */
+    function actionSearch() {
+        $this->_view ['suppliers'] = Supplier::find ()->getAll ();
+    }
+    /**
+     * 编辑
+     */
+    function actionEdit(){
+	    $supplier = Supplier::find('supplier_id = ?',request('supplier_id'))->getOne();
+	    if(request_is_post()){
+	        //判断供应商名称是否存在
+	        $supplier_check=Supplier::find('supplier = ?',request('supplier'))->getOne();
+	        if(!$supplier_check->isNewRecord() && ($supplier_check->supplier_id!=request('supplier_id'))){
+	            return $this->_redirectMessage('供应商编辑失败', '供应商名称已存在', url('/edit',array('supplier_id'=>$supplier->supplier_id)),2);
+	        }else{
+	            $supplier=Supplier::find('supplier_id = ?',request('supplier_id'))->getOne();
+	            $supplier->supplier = request('supplier');
+	            $supplier->save();
+	            return $this->_redirectMessage('供应商编辑', '供应商编辑成功', url('/edit',array('supplier_id'=>$supplier->supplier_id)));
+	        }
+	    }
+	    $this->_view['supplier']=$supplier;
+	}
+}
+
+?>

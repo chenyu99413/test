@@ -1,0 +1,50 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>角色编辑<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="post">
+	<div class="FarSearch">
+		<table>
+			<tbody>
+				<tr>
+					<th width="80" class="required-title">角色名称</th>
+					<td>
+						<input name="role_name" value="<?php echo $role->role_name?>"
+							required="required" />
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<?php echo Q::control('purview','description', array("checked"=>$purviews))?>
+	<div class="FarTool text-center">
+		<a class="btn btn-inverse" href="<?php echo url('role/search')?>">
+			<i class="icon-reply"></i>
+			返回
+		</a>
+		<button class="btn btn-primary" type="submit" onclick="Save();">
+			<i class="icon-save"></i>
+			保存
+		</button>
+	</div>
+	<input type="hidden" name="role_id" value="<?php echo $role->role_id?>" />
+	<input id="purviews_hidden" type="hidden" name="purviews" />
+</form>
+<script type="text/javascript">
+    /**
+     * 保存
+     */
+    function Save(){
+    	var json = "";
+    	$(".checkbox_purview").each(function(obj){
+    		var checkbox = $(this).children().eq(0);
+    		if(checkbox.attr("checked") == "checked"){
+    			var name= $(this).text().trim();
+    			json += '{"name":"'+name+'","path":"'+checkbox.val()+'"},';
+    		}
+    	});
+    	json = "["+json.substring(0,json.length-1)+"]";
+    	$("#purviews_hidden").val(json);
+    }
+</script>
+
+<?PHP $this->_endblock();?>

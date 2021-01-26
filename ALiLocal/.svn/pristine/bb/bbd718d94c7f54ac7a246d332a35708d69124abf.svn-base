@@ -1,0 +1,223 @@
+<?PHP $this->_extends("_layouts/default_layout"); ?>
+<?php $this->_block('title'); ?>偏派表信息<?php $this->_endblock(); ?>
+<?PHP $this->_block("contents");?>
+<?php
+echo Q::control ( "path", "", array (
+	"path" => array (
+		"产品管理" => "",
+		"偏派列表" => url ( "remote/search" ),
+		"偏派编辑" => '' 
+	) 
+) );
+?>
+<form method="post" onSubmit="return Check();">
+	<?php echo Q::control ( "tabs", "description", array ( "tabs" => $tabs, "active_id" => request ( "active_tab", "0" ) ) ); ?>
+	<div class="tabs-panels">
+		<div class="panel-body panel-body-noheader panel-body-noborder"
+			style="padding: 10px;">
+			<?php if(request ( "active_tab" ,"0") == "0"):?>
+			<div class="FarSearch">
+				<table>
+					<tbody>
+						<tr>
+							<th class="required-title">偏派名称</th>
+							<td>
+								<input id="text_remote_name" type="text"
+									name="remoteManage[remote_name]"
+									value="<?php echo $remoteManage->remote_name?>"
+									required="required" />
+							</td>
+							<th></th>
+							<td></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="FarTool text-center">
+				<a class="btn btn-inverse" href="<?php echo url('remote/search')?>">
+					<i class="icon-reply"></i>
+					返回
+				</a>
+				<button type="submit" class="btn btn-primary" onclick="Save();">
+					<i class="icon-save"></i>
+					保存
+				</button>
+			</div>
+			<?php else:?>
+			<div class="FarSearch">
+				<table>
+					<tbody>
+					   <tr>
+						<th>国家二字码</th>
+						<td>
+							<input type="text" name="country_code_two" value="<?php echo request('country_code_two')?>"/>
+						</td>
+						<td>
+							<button class="btn btn-primary btn-mini">
+								<i class="icon-search"></i>
+								检索
+							</button>
+						</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="FarTool">
+				<a class="btn btn-inverse" href="<?php echo url('remote/search')?>">
+					<i class="icon-reply"></i>
+					返回
+				</a>
+				<?php
+				echo Q::control ( "uploadfile", "file", array (
+					"url" => url ( "/import", array (
+						"id" => $remoteManage->remote_manage_id 
+					) ) 
+				) )?>
+				<a class="btn btn-info" href="javascript:void(0)"
+					onclick="ExportTable('<?php echo url('/export',array("id"=>$remoteManage->remote_manage_id))?>',null,'<?php echo $remoteManage->remote_name?>_偏远派送_<?php echo Helper_Util::strDate('Y-m-d', time())?>')">
+					<i class="icon-download"></i>
+					导出
+				</a>
+			</div>
+			<div style="width: 100%; height: 400px; overflow: scroll;">
+				<table id="table_remote" class="FarTable">
+					<thead>
+						<tr>
+							<th width=60>二字码</th>
+							<th width=>起始邮编</th>
+							<th width=>结束邮编</th>
+							<th width=>最低费用</th>
+							<th width=>首重重量(kg)</th>
+							<th width=>首重费用</th>
+							<th width=>续重单位(kg)</th>
+							<th width=>续重费用</th>
+							<th width=>封顶费用</th>
+							<th width=140>操作</th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach($remotes as $value):?>
+						<tr id="<?php echo $value->remote_id?>">
+							<td style="text-align: center">
+								<?php echo $value->country_code_two?>
+								<input type="hidden"
+									value="<?php echo $value->country_code_two?>" />
+							</td>
+							<td><?php echo $value->start_postal_code?></td>
+							<td><?php echo $value->end_postal_code?></td>
+							<td style="text-align: right"><?php echo sprintf ( "%.2f", $value->lowest_fee )?></td>
+							<td style="text-align: right"><?php echo sprintf ( "%.2f", $value->first_weight )?></td>
+							<td style="text-align: right"><?php echo sprintf ( "%.2f", $value->first_fee )?></td>
+							<td style="text-align: right"><?php echo sprintf ( "%.2f", $value->additional_weight )?></td>
+							<td style="text-align: right"><?php echo sprintf ( "%.2f", $value->additional_fee )?></td>
+							<td style="text-align: right"><?php echo sprintf ( "%.2f", $value->highest_fee )?></td>
+							<td>
+								<a class="btn btn-mini" href="javascript:void(0);"
+									onclick="EditRow([{'type':'combogrid','option':'country','url':'<?php echo url('common/countrygrid')?>','checkUrl':'<?php echo url('common/checkcountryexist')?>','required':'true'},{'type':'text'},{'type':'text'},{'type':'number','precision':'2','min':'0'},{'type':'number','precision':'2','min':'0'},{'type':'number','precision':'2','min':'0'},{'type':'number','precision':'2','min':'0'},{'type':'number','precision':'2','min':'0'},{'type':'number','precision':'2','min':'0'}],this);">
+									<i class="icon-pencil"></i>
+									编辑
+								</a>
+								<a class="btn btn-mini btn-danger" href="javascript:void(0);"
+									onclick="DeleteRow(this);">
+									<i class="icon-trash"></i>
+									删除
+								</a>
+							</td>
+						</tr>
+						<?php endforeach;?>
+						<tr>
+							<td></td>
+							<td></td>
+							<td></td>
+							<td></td>
+							<td></td>
+							<td></td>
+							<td></td>
+							<td></td>
+							<td></td>
+							<td>
+								<a class="btn btn-mini btn-success" href="javascript:void(0);"
+									onclick="NewRow([{'type':'combogrid','option':'country','url':'<?php echo url('common/countrygrid')?>','checkUrl':'<?php echo url('common/checkcountryexist')?>','required':'true'},{'type':'text'},{'type':'text'},{'type':'number','precision':'2','min':'0'},{'type':'number','precision':'2','min':'0'},{'type':'number','precision':'2','min':'0'},{'type':'number','precision':'2','min':'0'},{'type':'number','precision':'2','min':'0'},{'type':'number','precision':'2','min':'0'}],this);">
+									<i class="icon-plus"></i>
+									新建
+								</a>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<?php
+				$this->_control ( "pagination", "my-pagination", array (
+					"pagination" => $pagination 
+				) );
+				?>
+				<?php endif;?>
+		</div>
+	</div>
+</form>
+
+<script type="text/javascript">
+	/**
+	 * 回调 删除数据
+	 */
+	function DeleteBefore(obj){
+		$.ajax({
+			url:"<?php echo url('remote/del')?>",
+			type:"POST",
+			data:{"remote_id":$(obj).attr("id")==undefined?"":$(obj).attr("id")},
+			success:function(msg){
+			}
+		});
+	}
+				
+	/**
+	 * 回调 保存数据
+	 */
+	function CallBack(obj,name){
+		if(obj==null){
+			return false;
+		}
+		$.ajax({
+			url:"<?php echo url('remote/save')?>",
+			type:"POST",
+			data:{"id":"<?php echo request('id')?>",
+				  "remote":{
+					"remote_id":$(obj).attr("id")==undefined?"":$(obj).attr("id"),
+					"country_code_two":$(obj).children().eq(0).text(),
+					"start_postal_code":$(obj).children().eq(1).text(),
+					"end_postal_code":$(obj).children().eq(2).text(),
+					"lowest_fee":$(obj).children().eq(3).text(),
+					"first_weight":$(obj).children().eq(4).text(),
+					"first_fee":$(obj).children().eq(5).text(),
+					"additional_weight":$(obj).children().eq(6).text(),
+					"additional_fee":$(obj).children().eq(7).text(),
+					"highest_fee":$(obj).children().eq(8).text()}},
+			success:function(msg){
+				$(obj).attr("id",msg);
+			}
+		});
+	}
+
+	/**
+	 * 判断价格名称是否重复
+	 */
+	function Check(){
+		var result = true;
+		$.ajax({
+			url:"<?php echo url('remote/checkname')?>",
+			type:"POST",
+			data:{"id":"<?php echo request("id")?>","name":$("#text_remote_name").val()},
+			async : false,
+			success:function(msg){
+				if(msg!="true"){
+					alert(msg);
+					result = false;
+				}
+			}
+		});
+		return result;
+	}
+</script>
+
+<?PHP $this->_endblock();?>
+

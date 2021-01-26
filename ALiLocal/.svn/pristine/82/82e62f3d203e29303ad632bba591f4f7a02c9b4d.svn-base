@@ -1,0 +1,146 @@
+<?php
+
+class Controller_Kwaiquick extends Controller_Abstract {
+	/**
+	 * @todo   快手签入
+	 * @author stt
+	 * @since  August 10th 2020
+	 */
+	function actionIn() {
+	}
+	
+	/**
+	 * @todo   快手签入ajax
+	 * @author stt
+	 * @since  August 10th 2020
+	 */
+	function actionAjaxin() {
+		$data = request('kwaiquick_text');
+		$data = explode(",",$data);
+		if (count($data)==2){
+			$order=Order::find('ali_order_no=?',trim($data[0]))->getOne();
+			if ($order->isNewRecord()){
+				$data['message']='noorder';
+				echo json_encode($data);
+				exit();
+			}
+			if ($order->order_status!='1' && $order->order_status!='14'){
+				$data['message']='orderstatuserror';
+				echo json_encode($data);
+				exit();
+			}
+			if (trim($data[1])=='0'){
+				$data['message']='weightiszero';
+				echo json_encode($data);
+				exit();
+			}
+			$order->order_status = '5'; // 5 入库
+			$order->department_id = MyApp::currentUser('department_id');
+			$order->warehouse_in_department_id = MyApp::currentUser('department_id');
+			$order->far_warehouse_in_time=time();
+			$order->far_warehouse_in_operator=MyApp::currentUser('staff_name');
+			$order->save();
+			$event_location = '';
+			$department = Department::find ( 'department_id=?', MyApp::currentUser ( 'department_id' ) )->getOne ();
+			if ($department->department_name == '杭州仓') {
+				$event_location = '杭州';
+			} elseif ($department->department_name == '义乌仓') {
+				$event_location = '义乌';
+			} elseif ($department->department_name == '上海仓') {
+				$event_location = '上海';
+			}elseif ($department->department_name == '广州仓') {
+				$event_location = '广州';
+			}elseif ($department->department_name == '青岛仓') {
+				$event_location = '青岛';
+			}elseif ($department->department_name == '深圳仓') {
+				$event_location = '深圳';
+			}elseif ($department->department_name == '南京仓') {
+				$event_location = '南京';
+			}elseif ($department->department_name == '连云港仓') {
+				$event_location = '连云港';
+			}
+			$helper_event = new Helper_Event();
+			$event_time = time()- rand(5, 7)*60+rand(1, 59);
+			if($order->customer->customs_code=='FARA00001'){
+				$in=Event::find('order_id= ? and event_code="WAREHOUSE_INBOUND"',$order->order_id)->getOne();
+				if($in->isNewRecord()){
+					$event_code = 'WAREHOUSE_INBOUND';
+					$this->saveEvent($order->customer_id, $order->order_id, $event_code,$event_time , $event_location );
+				}
+			}elseif($order->customer->customs_code=='ALPL'){
+				$in=Event::find('order_id= ? and event_code="SORTING_CENTER_INBOUND_CALLBACK"',$order->order_id)->getOne();
+				if($in->isNewRecord()){
+					$event_code = 'SORTING_CENTER_INBOUND_CALLBACK';
+					$helper_event->saveEvent($order->customer_id, $order->order_id, $event_code,$event_time , $event_location );
+				}
+			}
+			$order->warehouse_in_time =$event_time;
+			$order->save();
+			Farpackage::meta ()->deleteWhere ( 'order_id=?', $order->order_id );
+			$far_package = new Farpackage ();
+			$far_package->order_id = $order->order_id;
+			$far_package->weight = $data[1];
+			
+			$far_package->length = 22;
+			$far_package->width = 22;
+			$far_package->height = 2.22;
+			
+			$far_package->quantity = 1;
+			$far_package->save ();
+			$weightarr = Helper_Quote::getweightarr($order, 1);
+			
+			//是否计泡:1代表本票货物是泡货，只要有一个包裹是泡货，这里就填1
+			$order->volumn_chargeable = $weightarr['is_jipao'];
+			
+			//入库的包裹总计费重，用于计算应收
+			$order->weight_income_in = $weightarr['total_cost_weight'];
+			
+			//入库的包裹总实重
+			$order->weight_actual_in = $weightarr['total_real_weight'];
+			
+			//入库的包裹总体积重
+			$order->total_volumn_weight = $weightarr['total_volumn_weight'];
+			$order->save();
+			$data['message']='success';
+			$data['order_id']=$order->order_id;
+			echo json_encode($data);
+			exit();
+		}else{
+			$data['message']='dataerror';
+			echo json_encode($data);
+			exit();
+		}
+	}
+	/**
+	 * @todo   保存事件
+	 * @author stt
+	 * @since  August 21th 2020
+	 * @link   #81992
+	 */
+	function saveEvent( $customer_id, $order_id, $event_code, $event_time, $event_location,$reason=NULL,$flag=0) {
+		$current_event=Event::find('order_id= ? and event_code=?',$order_id,$event_code)->getOne();
+		
+		if($current_event->isNewRecord()){
+			if (in_array($event_code, array('WAREHOUSE_INBOUND','CHECK_WEIGHT','CONFIRM'))){
+				$event = Event::find ( 'order_id=? and event_code="CONFIRM"', $order_id )->getOne ();
+			}elseif (in_array($event_code, array('SORTING_CENTER_INBOUND_CALLBACK','CHECK_WEIGHT_CALLBACK','CONFIRM_CALLBACK'))){
+				$event = Event::find ( 'order_id=? and event_code="CONFIRM_CALLBACK"', $order_id )->getOne ();
+			}else{
+				$event = new Event();
+			}
+			$event->order_id = $order_id;
+			$event->customer_id = $customer_id;
+			$event->event_code = $event_code;
+			$event->event_time = $event_time;
+			if ($flag==1){
+				$event->location = $event_location;
+			}
+			$event->event_location = $event_location;
+			$event->reason = $reason;
+			$event->timezone = '8';
+			$event->confirm_flag = '1';
+			$event->operator =MyApp::currentUser('staff_name');
+			$event->save ();
+		}
+	}
+}

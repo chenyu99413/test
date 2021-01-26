@@ -1,0 +1,96 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php 
+	$d = array();
+	foreach(Order::$department as $k => $v){
+		$d[$k] = $k;
+	}
+?>
+<form action="" method="post">
+<table class="table table-bordered checkin-table-1" style="margin-bottom: 10px;">
+	<tbody>
+		<tr>
+			<th style="width: 100px;">部门</th>
+			<td style="width: 350px;">
+				<?php
+				echo Q::control ( 'dropdownlist', 'account', array (
+					'items' => $d,
+					'value' => request('account','义乌OGP'),
+					'style' => 'width: 180px'
+				) )?>
+			</td>
+		</tr>
+	</tbody>
+</table>
+<div class="row-fluid" style="width:100%">
+	<div class="span8">
+		<table class="table table-bordered">
+			<tr>
+				<th>系统单号</th>
+				<th>扫描货物</th>
+				<th>核对成功<input type="submit" value="提交"  class="btn btn-small btn-success" style="float:right" /></th>
+				<th>有货无单</th>
+				<th>有单无货</th>
+			</tr>
+			<tr>
+				<td>
+					<textarea readonly id="order_id" style="width:200px; height:400px"><?php foreach($order as $v){
+							echo $v['sub_code'].'&#10;';
+						}?></textarea>
+				</td>
+				<td><textarea style="width:200px; height:400px" id="goods"></textarea></td>
+				<td><textarea style="width:200px; height:400px" id="id1" name="sub_code" readonly></textarea></td>
+				<td><textarea style="width:200px; height:400px" id="id2" readonly></textarea></td>
+				<td><textarea style="width:200px; height:400px" id="id3" readonly></textarea></td>
+			</tr>
+		</table>
+	</div>
+</div>   
+</form>
+<?PHP $this->_endblock();?>
+<script>
+//修改部门事件
+$('#account').bind('input',function(){
+	var account = $(this).val()
+	window.location.href = "<?php echo url('/comparison')?>"+"?account="+account;
+})
+$('#goods').bind('input',function(){
+	//每次编辑都先清空原数据
+	$('#id1').val('');
+	$('#id2').val('');
+	$('#id3').val('');
+	var account = $('#order_id').val();
+	var arr1 = account.split('\n'); //arr1是单号
+	var arr1=$.grep(arr1,function(n,i){
+		return n;
+	},false)
+	console.log(arr1)
+	var goods = $(this).val();
+	var arr2 = goods.split('\n'); //arr2是货物
+	var arr2=$.grep(arr2,function(n,i){
+		return n;
+	},false)
+	console.log(arr2)
+	var i;
+	$.each(arr1,function(k,v){
+		i = $.inArray(v, arr2);
+		if(i == -1){
+			$('#id3').val($('#id3').val()+v+'\n')
+		}else{
+			$('#id1').val($('#id1').val()+v+'\n')
+		}
+	});
+	$.each(arr2,function(k,v){
+		i = $.inArray(v, arr1);
+		if(i == -1){
+			$('#id2').val($('#id2').val()+v+'\n')
+		}
+	});
+})
+</script>

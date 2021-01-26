@@ -1,0 +1,73 @@
+<!DOCTYPE html> 
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title><?php echo __t('泛远国际（835110）物流服务平台,国际快件查询,UPS,DHL,FEDEX,TNT,海空运快件在线下单订舱')?></title>
+<meta name="Keywords" content="<?php echo __t('新三板,835110,国际快件查询,UPS,DHL,FEDEX,TNT,国际专线,海空运在线下单订舱')?>" />
+<meta name="Description" content="<?php echo __t('杭州泛远国际物流股份有限公司（835110）始创于2002年1月,注册资本金1000万元,现有员工200余人提供专业的国际快件查询，专线查询，海空运快件在线下单订舱。')?>" />
+<meta name="viewport" content="width=device-width, initial-scale=1" /> 
+<script type="text/javascript" src="jquery-1.8.0.js"></script>
+<script type="text/javascript" src="down.js"></script>
+<link href="style.css" rel="stylesheet">
+<?php $this->_block('head'); ?>
+<?php $this->_endblock(); ?>
+</head>
+<?php flush();?>
+<body>
+	<div id="all">
+		<div class="headline">
+			<div id="tel">
+				<a href="<?php echo url('/index')?>"><img src="img.png" class="topLogo" width="160px" height="100px" align="absmiddle" /></a>
+				<?php if (!request('en')):?>
+				<span style="display: block;float: left;">
+				<font style="font-size: 14px;display: inline-block;color: black;margin: 0;font-family:cursive;">
+				<img align="absmiddle" alt="<?php echo __t('电话')?>" src="phone.png" width="12px" height="12px" style="margin:0 2px 4px 0"/>服务热线 0571-28121835
+				</font>
+				&nbsp;&nbsp;&nbsp;&nbsp;
+				</span>
+				<?php endif?>
+			</div>
+			<div id="header">
+				<?php if (!request('en')):?>
+				<?php if (MyApp::getLangeuage()=='cn'):?>
+				<a href="<?php echo url('/Changelanguage',array('language'=>'en'))?>">English</a>
+				<?php else:?>
+				<a href="<?php echo url('/Changelanguage',array('language'=>'cn'))?>">中文</a>
+				<?php endif;?>
+				<a href="./"><?php echo __t('快件查询')?></a>
+				<a href="./shipfly.html"><?php echo __t('航班船期查询')?></a> 
+				<a target="_blank" href="http://client.far800.com/"><?php echo __t('TPS')?></a> 
+				<!-- <a target="_blank" href="http://115.29.198.137/"><?php echo __t('国际小包系统')?></a> -->
+				<?php else:?>
+				<?php endif?>
+			</div>
+			<div style="clear:both;"></div>
+		</div>
+	
+		<?php $this->_block('contents'); ?>
+		<?php $this->_endblock(); ?>
+		<br>
+		<div style="clear:both;"></div>
+	</div>
+	<div id="footer">
+		<?php if (!request('en')):?>
+		<a href="http://www.far-group.com"><?php echo __t('关于泛远')?></a>
+		<a href="http://www.kuaidi100.com" target="_blank">快递查询</a>
+		<br>
+		<span>©2014 Far International Logistics 浙ICP备05006815号 </span>
+		<div style="width:300px;margin:0 auto; padding:5px 0 0 0;">
+	 		<a target="_blank" href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=33010302001087" style="display:inline-block;text-decoration:none;height:20px;line-height:20px;"><p style="float:left;height:20px;line-height:20px;margin: 0px 0px 0px 5px; color:#939393;">浙公网安备 33010302001087号</p></a>
+	 	</div>
+	 	<?php else:?>
+	 	<div id="google_translate_element"></div><script type="text/javascript">
+				function googleTranslateElementInit() {
+				  new google.translate.TranslateElement({pageLanguage: 'zh-CN', includedLanguages: 'de,en,fr,ja,zh-TW', layout: google.translate.TranslateElement.InlineLayout.SIMPLE, multilanguagePage: true}, 'google_translate_element');
+				}
+				</script><script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+		 <?php endif?>
+		 <!-- 
+		<script type="text/javascript" src="http://js.tongji.linezing.com/3568552/tongji.js"></script><noscript><a href="http://www.linezing.com"><img src="http://img.tongji.linezing.com/3568552/tongji.gif"/></a></noscript>
+		 -->
+	</div>
+</body>
+</html>

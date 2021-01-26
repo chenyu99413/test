@@ -1,0 +1,240 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>
+客户编辑
+<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<?php
+if (request('customer_id') != null) {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'客户管理' => '',
+			'客户列表' => url ( 'customer/search' ),
+			'客户编辑' => url ( 'customer/edit', array (
+				'customer_id' => $customer->customer_id 
+			) ) 
+		) 
+	) );
+} else {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'客户管理' => '',
+			'客户列表' => url ( 'customer/search' ),
+			'新建客户' => url ( 'customer/edit' ) 
+		) 
+	) );
+}
+?>
+<form method="post" onsubmit="return Save();">
+	<div class="row-fluid">
+		<div class="FarSearch span8">
+			<table>
+				<tbody>
+					<tr>
+						<th class="required-title" style="width: 80px">客户代码</th>
+	    				<td>
+	    					<input name="customs_code" id="customs_code" type="text" style="width: 150px" required="required" value="<?php echo $customer->customs_code?>">
+	    				</td>
+						<th class="required-title" style="width: 80px">客户名称</th>
+	    				<td>
+	    					<input name="customer" id="customer" type="text" style="width: 150px" required="required" value="<?php echo $customer->customer?>">
+	    				</td>
+	    				<th class="required-title">密钥</th>
+						<td colspan="2">
+							<input type="text" name="customer_sign" id="customer_sign" style="width:150px;" required="required"	value="<?php echo $customer->customer_sign;?>">
+							<a class="btn btn-mini btn-success" href="javascript:void(0);" onclick="makesign();" style="margin-left:5px;">生成
+	                    	</a>
+						</td>
+					</tr>
+					<tr>
+						<th style="width: 80px">国家</th>
+	    				<td>
+	    					<input name="sender_country_code" id="sender_country_code" type="text" style="width: 150px" value="<?php echo $customer->sender_country_code?>">
+	    				</td>
+						<th style="width: 80px">省</th>
+	    				<td>
+	    					<input name="sender_state_region_code" id="sender_state_region_code" type="text" style="width: 150px" value="<?php echo $customer->sender_state_region_code?>">
+	    				</td>
+						<th style="width: 80px">城市</th>
+	    				<td>
+	    					<input name="sender_city" id="sender_city" type="text" style="width: 150px" value="<?php echo $customer->sender_city?>">
+	    				</td>
+	    			</tr>
+					<tr>
+						<th style="width: 80px">邮编</th>
+	    				<td>
+	    					<input name="sender_postal_code" id="sender_postal_code" type="text" style="width: 150px" value="<?php echo $customer->sender_postal_code?>">
+	    				</td>
+						<th style="width: 80px">地址1</th>
+	    				<td>
+	    					<input name="sender_street1" id="sender_street1" type="text" style="width: 150px" value="<?php echo $customer->sender_street1?>">
+	    				</td>
+						<th style="width: 80px">地址2</th>
+	    				<td>
+	    					<input name="sender_street2" id="sender_street2" type="text" style="width: 150px" value="<?php echo $customer->sender_street2?>">
+	    				</td>
+	    			</tr>
+					<tr>
+						<th style="width: 80px">公司</th>
+	    				<td>
+	    					<input name="sender_name2" id="sender_name2" type="text" style="width: 150px" value="<?php echo $customer->sender_name2?>">
+	    				</td>
+						<th style="width: 80px">姓名</th>
+	    				<td>
+	    					<input name="sender_name1" id="sender_name1" type="text" style="width: 150px" value="<?php echo $customer->sender_name1?>">
+	    				</td>
+	    				<th style="width: 80px">手机号</th>
+	    				<td>
+	    					<input name="sender_mobile" id="sender_mobile" type="text" style="width: 150px" value="<?php echo $customer->sender_mobile?>">
+	    				</td>
+	    			</tr>
+	    			<tr>
+						<th style="width: 80px">电话</th>
+	    				<td>
+	    					<input name="sender_telephone" id="sender_telephone" type="text" style="width: 150px" value="<?php echo $customer->sender_telephone?>">
+	    				</td>
+	    				<th style="width: 80px">邮箱</th>
+	    				<td>
+	    					<input name="sender_email" id="sender_email" type="text" style="width: 150px" value="<?php echo $customer->sender_email?>">
+	    				</td>
+	    				
+					    <th>合同号</th>
+						<td>
+							<input type="text" name="contract_code" id="contract_code" style="width:150px;"
+								value="<?php echo $customer->contract_code;?>">
+						</td>
+					</tr>
+					<tr>
+						<th>合同签订</th>
+							<td>
+							<?php
+							echo Q::control ( 'datebox', 'contract_date', array (
+								'value' => Helper_Util::strDate ( 'Y-m-d', $customer->contract_date ) 
+							) )?>
+						</td>
+						<th>合同到期</th>
+						<td>
+						<?php
+						echo Q::control ( 'datebox', 'contract_expiration_date', array (
+							'value' => Helper_Util::strDate ( 'Y-m-d', $customer->contract_expiration_date ) 
+						) )?>
+						</td>
+					    <th>状态</th>
+						<td colspan="2">
+						<?php
+						echo Q::control ( 'dropdownbox', 'status', array (
+							'items' => array (
+								'0' => '合作','1' => '不合作','2' => '待定' 
+							),'value' => $customer->status 
+						) )?>
+						<a class="btn btn-mini btn-success" href="javascript:void(0);" onclick="add(this);" style="margin-left:5px;">
+	                    		<i class="icon-plus"></i>
+	                    		<?php echo '添加账单抬头'?>
+	                    	</a>
+						</td>
+					</tr>
+					<?php if($title):?>
+					<?php foreach ($title as $t):?>
+					<tr>
+					    <th class="required-title" style="width: 80px">账单抬头</th>
+	    				<td>
+	    					<input name="title_name[]" type="text" style="width: 150px" required="required" value="<?php echo $t['name']?>">
+	    				</td>
+	    				<td>
+	        				<a class="btn btn-mini btn-danger" href="javascript:void(0);" onclick="deleteWares(this);" style='margin-left:5px;'>
+	                		  <?php echo '删除'?>
+	                	    </a>
+	    				</td>
+					</tr>
+					<?php endforeach;?>
+					<?php else :?>
+					<tr>
+					    <th class="required-title" style="width: 80px">账单抬头</th>
+	    				<td>
+	    					<input name="title_name[]" type="text" style="width: 150px" required="required" value="">
+	    				</td>
+					</tr>
+					<?php endif;?>
+				</tbody>
+			</table>
+		</div>
+		<div class="span4">
+		          运输方式
+			<label style="margin-left: 4px;">
+				<input id="check_all" type="checkbox" style="margin-top: -4px;"
+					onclick="CheckAll(this);" />
+				全选
+			</label>
+			<div class="easyui-panel" style="padding: 5px">
+				<ul id="relevant_tree" class="easyui-tree"
+					data-options="url:'<?php echo url('codetransport/transporttree',array("state" => true,"checked" => $customer->transports))?>',method:'get',checkbox:true,cascadeCheck:false"></ul>
+			</div>
+		</div>
+		</div>
+    	<div class="FarTool span10" style="text-align: center">
+    		<a class="btn btn-inverse" href="<?php echo url('customer/search')?>">
+    			<i class="icon-reply"></i> 返回
+    		</a>
+    		<button type="submit" class="btn btn-primary">
+    			<i class="icon-save"></i> 保存
+    		</button>
+    	</div>
+    	<input id="relevant_hidden" type="hidden" name="relevant" />
+</form>
+<script type="text/javascript">
+var pasArr = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','0','1','2','3','4','5','6','7','8','9'];
+//pasLen是你想要的密码的长度
+function passwords(pasLen) {
+	var password = '';
+	var pasArrLen = pasArr.length;
+	console.log(Math.random()*pasArrLen)
+	for (var i=0; i<pasLen; i++){
+		var x = Math.floor(Math.random()*pasArrLen);
+		password += pasArr[x];
+	}
+	return password;
+}
+    /**
+     * 添加商品页面
+     */
+	function add(obj){
+	    var tr="<tr><th class='required-title'>账单抬头</th><td><input name='title_name[]' type='text' style='width: 150px' required='required' value=''></td><td><a class='btn btn-mini btn-danger' href='javascript:void(0);' onclick='deleteWares(this);' style='margin-left:5px;'><?php echo '删除'?></a></td></tr>";
+	    $(obj).parent().parent().parent().append(tr);
+	}
+	 
+     /**
+      * 删除商品信息
+      */
+      function deleteWares(obj){
+    	  $(obj).parent().parent().remove();   
+      }
+      function makesign(){
+    	 var sign = passwords(16);
+    	 $('#customer_sign').val(sign);
+    	 console.log(sign);
+      }
+      /**
+       * 全选
+       */
+      function CheckAll(obj){
+      	var check = obj.checked ? "check" : "uncheck";
+      	var roots = $("#relevant_tree").tree("getRoots");
+      	for(var i=0;i<roots.length;i++){
+      		var notes = $("#relevant_tree").tree("getChildren", roots[i]);
+      		for(var i=0;i<notes.length;i++){
+      			$("#relevant_tree").tree(check,notes[i].target);
+      		}
+      	}
+      }
+      /**
+       * 保存 
+       */
+      function Save(){
+      	//相关部门
+      	var relevant = "";
+      	$($("#relevant_tree").tree("getChecked")).each(function(){
+      		relevant += $(this)[0].id+",";
+      	});
+      	$("#relevant_hidden").val(relevant.substring(0,relevant.length-1));
+      }      
+</script>
+<?PHP $this->_endblock();?>

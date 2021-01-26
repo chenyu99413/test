@@ -1,0 +1,1401 @@
+<?php
+class Controller_Api extends Controller_Abstract{
+	static $FARCODES=array(
+		'WAREHOUSE_INBOUND'=>'仓库收到包裹',
+		'CHECK_WEIGHT'=>'仓内货物查验',
+		'CONFIRM'=>'待发件方确认',
+		'PALLETIZE'=>'开始准备发货',
+		'WAREHOUSE_OUTBOUND'=>'已出库待提取',
+		'CARRIER_PICKUP'=>'承运商已取件',
+		'DELIVERY'=>'快件已签收',
+		'CARRIER_INTRANSMIT'=>'货物中转交航',
+		'E_CLEARANCE_FLIGHT'=>'出口清关交航中',
+		'S_CLEARANCE_START'=>'目的地清关开始',
+		'S_CLEARANCE_COMPLETE'=>'目的地清关完成',
+		'S_TH_IN'=>'到达转运中心',
+		'S_TH_ARRANGE'=>'安排下一站转运',
+		'S_TH_OUT'=>'离开转运中心',
+		'S_TH_IN_LAST'=>'到达最后投递站',
+	    'S_DELIVERY_SCHEDULED' => '安排投递',
+	    'S_DELIVERY_SIGNED' => '快件已签收',
+	    "F_CARRIER_PICKUP_5033"=>"交货失败，包裹退回到物流商",
+		'F_CARRIER_PICKUP_RT_5035' => '派送延迟:已更新派送信息和计划，将重派',
+		'F_CARRIER_PICKUP_RT_5034' => '承运商收件失败，包裹退回到物流商',
+		'F_CLEARANCE_5037' => '进口清关延迟:查验,海关要求提供更多的清关资料（如税号、发票、许可证、货物详情、授权委托书等单据)',
+		'F_CLEARANCE_5038' => '海关没收或销毁，请联络承运商',
+		'F_DELIVERY_5043' => '需要进⼀步确认收件⼈信息',
+		'F_DELIVERY_5044' => '预约派送',
+		'F_DELIVERY_5045' => '收件⼈联系不上',
+		'F_DELIVERY_5046' => '收件人拒收，在联系收/发件方处理中',
+		'F_DELIVERY_5047' => '派送异常:退运给发件方',
+		'F_DELIVERY_5048' => '派送异常:收发件方弃件、销毁',
+		'F_DELIVERY_5049' => '派送异常:收件地址不在服务范围之内',
+		'F_DELIVERY_5050' => '等待收件方支付税费',
+		'F_DELIVERY_5051' => '收件方要求暂扣、延迟派送或自提',
+		'F_DELIVERY_5052' => '部分签收',
+		'F_DELIVERY_5053' => '包裹滞留中，即将派送',
+	    "F_CLEARANCE_5054"=>"出口清关延迟:等待放行",
+	    "F_CLEARANCE_5055"=>"出口清关延迟:安检、技术或系统等不可抗力因素",
+	    "F_CLEARANCE_5056"=>"出口清关延迟:申报信息（如HS，价格等）有问题",
+	    "F_CLEARANCE_5057"=>"出口清关延迟:查验",
+	    "F_CLEARANCE_5058"=>"出口清关异常:包裹即将退运",
+	    "F_CLEARANCE_5059"=>"进口清关延迟:查验",
+	    "F_CLEARANCE_5060"=>"进口清关异常:包裹含限制产品",
+	    "F_DELIVERY_5061"=>"派送延迟:偏远地址，将延迟派送",
+	    "F_DELIVERY_5062"=>"派送异常:包裹放置在失物招领处，将退运",
+	    "F_DELIVERY_5063"=>"派送异常:收件人未按约定自提，将退运",
+	    "F_DELIVERY_5064"=>"派送异常:货物破损或丢失，在联系发件人",
+	    "F_DELIVERY_5065"=>"派送异常:等待发件人退运指令",
+	    "F_DELIVERY_5066"=>"派送异常:其它不可预见原因",
+	    "F_CHECK_5067"=>"核查异常",
+	    "F_PICKUP_5068"=> "提取异常",
+	    "F_TH_5069"=>"转运异常,正在解决中"
+	);
+	static $FARCODES_EN= array(
+		'WAREHOUSE_INBOUND' => 'Arrived at Warehouse',
+		'CHECK_WEIGHT' => 'Inspection by Warehouse',
+		'CONFIRM' => 'Await Release from Sender',
+		'PALLETIZE' => 'Ready for Carrier',
+		'WAREHOUSE_OUTBOUND' => 'Departed Warehouse',
+		'CARRIER_PICKUP' => 'Pickup Scan',
+		'DELIVERY' => 'DELIVERED',
+		'CARRIER_INTRANSMIT' => 'In Transit to Export Port',
+		'E_CLEARANCE_FLIGHT' => 'Export Custom Clearance Processing and Flight Booking',
+		'S_CLEARANCE_START' => 'Import Custom Clearance Processing',
+		'S_CLEARANCE_COMPLETE' => 'Released by The Clearing Agency',
+		'S_TH_IN' => 'Arrival Scan',
+		'S_TH_ARRANGE' => '',
+		'S_TH_OUT' => 'Departure Scan',
+		'S_TH_IN_LAST' => 'Destination Scan',
+		'S_DELIVERY_SCHEDULED' => 'Out For Delivery',
+		'S_DELIVERY_SIGNED' => 'DELIVERED',
+	    "F_CARRIER_PICKUP_5033"=>"Carrier failed to pickup the package",
+		'F_CARRIER_PICKUP_RT_5035' => 'Delivery delay: A delivery change for this package is in progress, will make reattempt.',
+		'F_CARRIER_PICKUP_RT_5034' => 'Returned to logistics company.',
+		'F_CLEARANCE_5037' => 'Import clearance delay: Inspection, the customs require to provide more clearance documents (tax number, invoice, license, merchandise description, power of attorney , etc).',
+		'F_CLEARANCE_5038' => 'Please contact Carrier.',
+		'F_DELIVERY_5043' => 'Delivery information needed,attempting to update it',
+		'F_DELIVERY_5044' => 'Scheduled for delivery as agreed',
+		'F_DELIVERY_5045' => 'Delivery attempted,recipient not home',
+		'F_DELIVERY_5046' => 'Recipient refused delivery,contact the shipper',
+		'F_DELIVERY_5047' => 'Delivery failure: Returning to the shipper.',
+		'F_DELIVERY_5048' => 'Delivery failure: The package was abandoned by both the sender and receiver.',
+		'F_DELIVERY_5049' => 'Delivery failure: We do not currently serve this special destination address, will transferred to a local agent for delivery.',
+		'F_DELIVERY_5050' => 'Delivery delay: Related fees cannot be collected, will make reattempt.',
+		'F_DELIVERY_5051' => 'Delivery delay: Delivered to Carrier Access Point.',
+		'F_DELIVERY_5052' => 'Partial delivery.',
+		'F_DELIVERY_5053' => 'Shipment on hold,scheduled for delivery',
+	    "F_CLEARANCE_5054"=>"Export clearance delay: Awaiting release from customs",
+	    "F_CLEARANCE_5055"=>"Export clearance delay: Aviation security/technical/system etc.force majeure issue",
+	    "F_CLEARANCE_5056"=>"Export clearance delay: Declaration information issue (HS code, price, etc.)",
+	    "F_CLEARANCE_5057"=>"Emport clearance delay: Inspection",
+	    "F_CLEARANCE_5058"=>"Emport clearance failure: Package will return to shipper",
+	    "F_CLEARANCE_5059"=>"Import clearance delay: Inspection",
+	    "F_CLEARANCE_5060"=>"Import clearance failure: The package contains a restricted/prohibits commodity",
+	    "F_DELIVERY_5061"=>"Delivery delay: Remote address, delivery will be delayed",
+	    "F_DELIVERY_5062"=>"Delivery failure: The package is placed in the Lost and Found, will return",
+	    "F_DELIVERY_5063"=>"Delivery failure: The receiver fails to pick up the package as agreed, will return ",
+	    "F_DELIVERY_5064"=>"Delivery failure: Package may be damaged or lost,contact the shipper",
+	    "F_DELIVERY_5065"=>"Delivery failure: Awaiting return to sender authorization",
+	    "F_DELIVERY_5066"=>"Delivery failure: Other unexpected reason",
+	    "F_CHECK_5067"=>"Check failure",
+	    "F_PICKUP_5068"=>"Pick up failure",
+	    "F_TH_5069"=>"ransfer failure"
+	);
+	
+	function actionTestImg(){
+		$dir=realpath(INDEX_DIR);
+		exec("/usr/bin/convert -density 300 -depth 8 -quality 85 {$dir}/1Z4F1R246707811679.pdf -append {$dir}/1Z4F1R246707811679.pdf.jpg");
+		$filename=$dir.DS.'1Z4F1R246707811679.pdf.jpg';
+		dump($filename);
+		$image = new ZBarCodeImage($filename);
+		dump($image);
+		$scanner = new ZBarCodeScanner();
+		$barcode = $scanner->scan($image);
+		dump($barcode);
+		exit;
+	}
+	function actionTestDSA(){
+		/*
+		$hex=file_get_contents(INDEX_DIR.'/publickey.dsa.hex.txt');
+		file_put_contents(INDEX_DIR.'/publickey.dsa.blob.txt',hex2bin($hex));
+		$pem=base64_encode(hex2bin($hex));
+		$pem=chunk_split($pem, 64, "\n");
+		file_put_contents(INDEX_DIR.'/publickey.dsa.blob.pem',"-----BEGIN PUBLIC KEY-----\n".$pem."-----END PUBLIC KEY-----");
+		echo $hex;
+		*/
+		$pkeyid=openssl_get_publickey(file_get_contents(INDEX_DIR.'/publickey.dsa.blob.pem'));
+		var_dump($pkeyid);
+		$r=openssl_verify("{\"aliOrderNo\":\"ALS00000390010\"}",'302d021500955dd38a484dea766092dcb63420e537d307e8570214145450fd8f25bed23b90d10236f24331751cd4b1',$pkeyid,OPENSSL_ALGO_SHA1);
+		echo openssl_error_string();
+		var_dump($r);
+		exit;
+	}
+	static function toPinyin($str){
+		$py=Helper_Chinese::toPinYin($str);
+		if ($py){
+			return ucfirst($py);
+		}
+		return $str;
+	}
+	/**
+	 * 将一个字符串中的全角字符转换为半角,返回转换后的字符串
+	 *
+	 * @param string $str 待转换字串
+	 * @return string $str 处理后字串
+	 */
+	static function convertStrType($str)
+	{
+	    $dictionary= array( 
+            '０'=>'0', '１'=>'1', '２'=>'2', '３'=>'3', '４'=>'4','５'=>'5', '６'=>'6', '７'=>'7', '８'=>'8', '９'=>'9', 
+            'Ａ'=>'A', 'Ｂ'=>'B', 'Ｃ'=>'C', 'Ｄ'=>'D', 'Ｅ'=>'E','Ｆ'=>'F', 'Ｇ'=>'G', 'Ｈ'=>'H', 'Ｉ'=>'I', 'Ｊ'=>'J', 
+            'Ｋ'=>'K', 'Ｌ'=>'L', 'Ｍ'=>'M', 'Ｎ'=>'N', 'Ｏ'=>'O','Ｐ'=>'P', 'Ｑ'=>'Q', 'Ｒ'=>'R', 'Ｓ'=>'S', 'Ｔ'=>'T', 
+            'Ｕ'=>'U', 'Ｖ'=>'V', 'Ｗ'=>'W', 'Ｘ'=>'X', 'Ｙ'=>'Y','Ｚ'=>'Z', 'ａ'=>'a', 'ｂ'=>'b', 'ｃ'=>'c', 'ｄ'=>'d', 
+            'ｅ'=>'e', 'ｆ'=>'f', 'ｇ'=>'g', 'ｈ'=>'h', 'ｉ'=>'i','ｊ'=>'j', 'ｋ'=>'k', 'ｌ'=>'l', 'ｍ'=>'m', 'ｎ'=>'n', 
+            'ｏ'=>'o', 'ｐ'=>'p', 'ｑ'=>'q', 'ｒ'=>'r', 'ｓ'=>'s', 'ｔ'=>'t', 'ｕ'=>'u', 'ｖ'=>'v', 'ｗ'=>'w', 'ｘ'=>'x', 
+            'ｙ'=>'y', 'ｚ'=>'z', 
+            '（'=>'(', '）'=>')', '〔'=>'(', '〕'=>')', '【'=>'[','】'=>']', '〖'=>'[', '〗'=>']', '“'=>'"', '”'=>'"', 
+            '‘'=>'\'', '\''=>'\'', '｛'=>'{', '｝'=>'}', '《'=>'<','》'=>'>','％'=>'%', '＋'=>'+', '—'=>'-', '－'=>'-', 
+            '～'=>'~','：'=>':', '。'=>'.', '、'=>',', '，'=>',', '、'=>',', '；'=>';', '？'=>'?', '！'=>'!', '…'=>'-', 
+            '‖'=>'|', '”'=>'"', '\''=>'`', '‘'=>'`', '｜'=>'|', '〃'=>'"','　'=>' ', '×'=>'*', '￣'=>'~', '．'=>'.', '＊'=>'*', 
+            '＆'=>'&','＜'=>'<', '＞'=>'>', '＄'=>'$', '＠'=>'@', '＾'=>'^', '＿'=>'_', '＂'=>'"', '￥'=>'$', '＝'=>'=', 
+            '＼'=>'\\', '／'=>'/' ,'＃'=>'#','！'=>'!'
+        ); 
+	    return strtr($str, $dictionary);
+	}
+	/**
+	 * 根据原子生成固定随机数
+	 * @example
+	 * 	staticRand(9,15,30) =44
+	 * @param int $atom
+	 * @param int $range
+	 * @param int $base
+	 */
+	static function staticRand($atom,$start,$end){
+		$range=$end-$start;
+		$base=$start;
+		$atom=substr($atom,-1,1);
+		return $base+ceil($atom/10*$range);
+	}
+	/**
+	 * far800 查询接口
+	 */
+	function actionFarTrack(){
+		$o=Order::find('far_no=?',request('num'))->order("order_id desc")->getOne();
+		if ($o->isNewRecord()){
+			echo json_encode(array('message'=>'单号不正确'));
+			exit;
+		}
+		$ets=Event::find('order_id =? and event_time<? and confirm_flag="1" and event_code !="DELIVERY"',$o->order_id,time())->order('event_time')->getAll();
+		$trs=Tracking::find('order_id =? and trace_time<? and confirm_flag="1"',$o->order_id,time())->order('trace_time')->getAll();
+		$ret=array('message'=>'OK','data'=>array(),'num'=>$o->far_no,'dest'=>$o->consignee_country_code);
+		// 时间修正
+		$oldStyle=false;
+		$etsHash=Helper_Array::toHashmap($ets,'event_code','event_time');
+		if ($etsHash['WAREHOUSE_OUTBOUND']-$etsHash['PALLETIZE'] <600){
+			$oldStyle=true;
+		}
+		foreach ($ets as $e){
+			$ret['data'][]=array(
+				'location'=>self::toPinyin($e->event_location),
+				'context'=>self::$FARCODES[$e->event_code]. ' '.self::$FARCODES_EN[$e->event_code],
+				'time'=>$e->event_time,
+				'timeFormat'=>date('Y-m-d H:i:s',$e->event_time),
+				'timezone'=>$e->timezone
+			);
+			
+			if (!$oldStyle && $o->service_code !='EMS-FY' && $o->service_code !='WIG-FY' && $o->service_code !='EUUS-FY' && $o->service_code !='US-FY'){
+				if($e->event_code=='CARRIER_PICKUP'){
+					//如果承运商已取件，义乌仓出库的订单，同时满足A1,A2,A3三个条件时：A1当订单目的地为：US/CA/MX/PR，A2且实际出库时间在当天9:00-12：00之间,A3且属于义乌OGP的订单时,那么增加CARRIER_INTRANSMIT事件，当天 13:A分(B+2)秒 （30≤A≤45）
+					if($o->department_id=='8' && in_array($order->consignee_country_code, array('US','CA','MX','PR')) && '09:00:00'<=date("H:i:s",$order->warehouse_out_time) && date("H:i:s",$order->warehouse_out_time)<='12:00:00' && $order->channel->channelgroup->channel_group_name=='义乌OGP' && (strtotime(date("Y-m-d 13:46:00",$e->event_time)))<time()){
+						$transmit_time=strtotime(date("Y-m-d",$e->event_time))+13*60*60+ self::staticRand($e->order_id,30,45) *60+self::staticRand($e->order_id,45,55)+2;
+						$ret['data'][]=array(
+							'location'=>self::toPinyin($e->event_location),
+							'context'=>'货物中转交航 In Transit to Export Port',
+							'time'=>$transmit_time,
+							'timeFormat'=>date('Y-m-d H:i:s',$transmit_time),
+							'timezone'=>$e->timezone
+						);
+						//如果承运商已取件，那么增加CARRIER_INTRANSMIT事件，第二天 13:A分(B+2)秒 （30≤A≤45）
+					}elseif ((strtotime(date("Y-m-d 13:46:00",$e->event_time))+86400)<time()){
+						$transmit_time=strtotime(date("Y-m-d",$e->event_time))+86400+13*60*60+ self::staticRand($e->order_id,30,45) *60+self::staticRand($e->order_id,45,55)+2;
+						$ret['data'][]=array(
+							'location'=>self::toPinyin($e->event_location),
+							'context'=>'货物中转交航 In Transit to Export Port',
+							'time'=>$transmit_time,
+							'timeFormat'=>date('Y-m-d H:i:s',$transmit_time),
+							'timezone'=>$e->timezone
+						);
+					}
+				}
+				
+				if($e->event_code=='CARRIER_PICKUP'){
+					//如果承运商已取件，义乌仓出库的订单，同时满足A1,A2,A3三个条件时：A1当订单目的地为：US/CA/MX/PR，A2且实际出库时间在当天9:00-12：00之间,A3且属于义乌OGP的订单时,那么增加CARRIER_INTRANSMIT事件，18:B分(A+2)秒 （45≤B≤55）
+					if($o->department_id=='8' && in_array($order->consignee_country_code, array('US','CA','MX','PR')) && '09:00:00'<=date("H:i:s",$order->warehouse_out_time) && date("H:i:s",$order->warehouse_out_time)<='12:00:00' && $order->channel->channelgroup->channel_group_name=='义乌OGP' && (strtotime(date("Y-m-d 18:56:00",$e->event_time)))<time()){
+						$flight_time=strtotime(date("Y-m-d",$e->event_time))+18*60*60+self::staticRand($e->order_id,45,55)*60+self::staticRand($e->order_id,30,45)+2;
+						$ret['data'][]=array(
+							'location'=>self::toPinyin($e->event_location),
+							'context'=>'出口清关交航中 Export Custom Clearance Processing and Flight Booking',
+							'time'=>$flight_time,
+							'timeFormat'=>date('Y-m-d H:i:s',$flight_time),
+							'timezone'=>$e->timezone
+						);
+					}elseif ((strtotime(date("Y-m-d 18:56:00",$e->event_time))+86400)<time()){
+						//如果承运商已取件，那么增加E_CLEARANCE_FLIGHT事件，第二天 18:B分(A+2)秒 （45≤B≤55）
+						$flight_time=strtotime(date("Y-m-d",$e->event_time))+86400+18*60*60+self::staticRand($e->order_id,45,55)*60+self::staticRand($e->order_id,30,45)+2;
+						$ret['data'][]=array(
+							'location'=>self::toPinyin($e->event_location),
+							'context'=>'出口清关交航中 Export Custom Clearance Processing and Flight Booking',
+							'time'=>$flight_time,
+							'timeFormat'=>date('Y-m-d H:i:s',$flight_time),
+							'timezone'=>$e->timezone
+						);
+					}
+				}
+				
+				if($e->event_code=='CARRIER_PICKUP'){
+					//如果承运商已取件，义乌仓出库的订单，同时满足A1,A2,A3三个条件时：A1当订单目的地为：US/CA/MX/PR，A2且实际出库时间在当天9:00-12：00之间,A3且属于义乌OGP的订单时,那么增加CARRIER_INTRANSMIT事件，18:B分(A+2)秒 （45≤B≤55）
+					if($o->department_id=='8' && in_array($order->consignee_country_code, array('US','CA','MX','PR')) && '09:00:00'<=date("H:i:s",$order->warehouse_out_time) && date("H:i:s",$order->warehouse_out_time)<='12:00:00' && $order->channel->channelgroup->channel_group_name=='义乌OGP' && (strtotime(date("Y-m-d 18:56:00",$e->event_time)))<time()){
+						$willfly_time=strtotime(date("Y-m-d 23:25:00",$e->event_time));
+						$ret['data'][]=array(
+							'location'=>'Shanghai',
+							'context'=>'等待航班离境 Scheduled to Take off',
+							'time'=>$willfly_time,
+							'timeFormat'=>date('Y-m-d H:i:s',$willfly_time),
+							'timezone'=>$e->timezone
+						);
+					}elseif ((strtotime(date("Y-m-d 23:25:00",$e->event_time))+86400)<time()){
+						//如果承运商已取件，那么增加E_CLEARANCE_WILLFLY事件，第二天 23:25:00
+						$willfly_time=strtotime(date("Y-m-d 23:25:00",$e->event_time))+86400;
+						$ret['data'][]=array(
+							'location'=>'Shanghai',
+							'context'=>'等待航班离境 Scheduled to Take off',
+							'time'=>$willfly_time,
+							'timeFormat'=>date('Y-m-d H:i:s',$willfly_time),
+							'timezone'=>$e->timezone
+						);
+					}
+				}
+			}
+		}
+		foreach ($trs as $e){
+			$cn_desc=$e->trace_desc_cn?$e->trace_desc_cn:self::$FARCODES[$e->tracking_code];
+			$en_desc=$e->trace_desc_en?$e->trace_desc_en:self::$FARCODES_EN[$e->tracking_code];
+			
+			$ret['data'][]=array(
+				'location'=>$o->service_code=='EMS-FY'?self::toPinyin($e->location):$e->location,
+				'context'=>$cn_desc. ' '.$en_desc,
+				'time'=>$e->trace_time,
+				'timeFormat'=>date('Y-m-d H:i:s',$e->trace_time),
+				'timezone'=>$e->timezone
+			);
+			if ($e->tracking_code =='S_DELIVERY_SIGNED'){
+				$ret['state']=3;
+			}
+		}
+// 		$ret['data']=Helper_Array::sortByCol($ret['data'], 'time',SORT_ASC);
+		echo json_encode($ret);
+		exit;
+	}
+    /**
+     * Order Booking
+     */
+    function actionOrderbooking(){
+    	//阿里原始信息存入ali_json表中
+    	$ali_json= new Alijson();
+    	$ali_json->changeProps(array(
+    		'api_name'=>'booking',
+    		'ali_json'=>file_get_contents ( "php://input" )
+    	));
+    	$ali_json->save();
+        QLog::log('API1'.file_get_contents ( "php://input" ));
+        $info=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('API1.1'.$info['bookingOrderDTO']);
+        $data=json_decode($info['bookingOrderDTO'],true);
+        //判断数据是否存在
+        if(!is_array($data) || count($data)<=0){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '订单数据为空或格式不正确'
+            ));
+        }
+        if(!isset($info['sign']) || $info['sign']==''){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '签名校验失败'
+            ));
+        }
+        if(!isset($data['aliOrderNo'])){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '阿里订单号不存在'
+            ));
+        }
+        //判断ali订单号是否已存在
+        $order=Order::find('ali_order_no=?',$data['aliOrderNo'])->getOne();
+        if(!$order->isNewRecord()){
+            return json_encode(array (
+                'isSuccess' => true,'message' => '' ,'result'=>array('aspOrderNo'=>$order->far_no)
+            ));
+        }
+        $conn = QDB::getConn ();
+        $conn->startTrans ();
+        $now='FAREX'.date('ym');
+        $seq = Helper_Seq::nextVal ( $now );
+        if ($seq < 1) {
+            Helper_Seq::addSeq ( $now );
+            $seq = 1;
+        }
+        $far_no=$now.sprintf("%06d",$seq).'YQ';
+        
+//         if($data['consignee']['name1']==$data['consignee']['name2']){
+//             $data['consignee']['name2']='';
+//         }
+        //判断取件网点
+        $pick_company='';
+        if(isset($data['needPickUp']) && $data['needPickUp']){
+            $package_pre_weight = 0;
+            $package_act_weight = 0;
+            foreach ($data['packages'] as $packageinfo){
+                $package_pre_weight += $packageinfo['quantity']*$packageinfo['length']*$packageinfo['width']*$packageinfo['height']/5000;
+                $package_act_weight += $packageinfo['quantity']*$packageinfo['weight'];
+            }
+            $tmp_weight = $package_pre_weight>$package_act_weight?$package_pre_weight:$package_act_weight;
+            $zip=Zipcode::find('zip_code_low<=? and zip_code_high>=?',$data['consignor']['postalCode'],$data['consignor']['postalCode'])->getOne();
+            if(!$zip->isNewRecord()){
+                //义乌和杭州 先根据取件邮编匹配之后再进行不超过3KG的订单分配到平台的判断，其余包裹，按邮编进行分配到各网点。
+                $pick_company_tmp=$zip->pick_company;//临时存储取件地区
+                $pick_company_array=array('杭分','义乌分','青岛仓');
+                if(in_array($pick_company_tmp,$pick_company_array)){
+                    $pick_company=$zip->pick_company;
+                }else {
+                    if($tmp_weight >= 3){
+                        $pick_company=$zip->pick_company;
+                    }else{
+                        $pick_company="平台";
+                    }
+                }
+                if($data['serviceCode']=='EUUS-FY'){
+                	$pick_company="平台";
+                }
+                if($data['serviceCode']=='US-FY' && $zip->pick_company<>'青岛仓'){
+                    $pick_company="平台";
+                }
+            }
+        }
+        //数据过滤
+        //地址1、地址2、城市、省州、邮编 这四个信息里：如果非英文符号，自动转换成相应的英文符号。中文全角“。”更新成"." ; “，”更新成","
+        $data['consignee']['mobile'] = self::convertStrType($data['consignee']['mobile']);
+        $data['consignee']['street1'] = self::convertStrType($data['consignee']['street1']);
+        $data['consignee']['street2'] = self::convertStrType(@$data['consignee']['street2']);
+        $data['consignee']['city'] = self::convertStrType($data['consignee']['city']);
+        $data['consignee']['stateRegionCode'] = self::convertStrType($data['consignee']['stateRegionCode']);
+        $data['consignee']['postalCode'] = self::convertStrType($data['consignee']['postalCode']);
+        //收件人电话只保留纯数字：电话里有中英文中杠“—”“-”或者下划线时，或者空格时，自动去掉
+        $data['consignee']['mobile'] = preg_replace('/[^\d]/','',$data['consignee']['mobile']);
+        //收件人、收件人公司 这两个信息里，不能有英文空格之外的标点符号，有直接用空格替代
+        $data['consignee']['name1'] = preg_replace('/([\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F])/',' ', $data['consignee']['name1']);
+        $data['consignee']['name2'] = preg_replace('/([\x21-\x2f\x3a-\x40\x5b-\x60\x7B-\x7F])/',' ', $data['consignee']['name2']);
+        //收件人、收件人公司、地址1、地址2、城市、省州、邮编 这六个信息里：如果有连续两个空格时，只保留一个空格；如果是中文空格时，自动转换成英文空格
+        $data['consignee']['name1'] = preg_replace('/[　\s]+/u',' ',$data['consignee']['name1']);
+        $data['consignee']['name2'] = preg_replace('/[　\s]+/u',' ',$data['consignee']['name2']);
+        $data['consignee']['street1'] = preg_replace('/[　\s]+/',' ',$data['consignee']['street1']);
+        $data['consignee']['street2'] = preg_replace('/[　\s]+/',' ',$data['consignee']['street2']);
+        $data['consignee']['city'] = preg_replace('/[　\s]+/',' ',$data['consignee']['city']);
+        $data['consignee']['stateRegionCode'] = preg_replace('/[　\s]+/',' ',$data['consignee']['stateRegionCode']);
+        $data['consignee']['postalCode'] = preg_replace('/[　\s]+/',' ',$data['consignee']['postalCode']);
+        //将数据存入数据库
+//         $comment = '';
+//         $sender_company = Contact::find('sender_company like ?','%'.$data['consignor']['name1'].'%')->getOne();
+//         if($sender_company->isNewRecord()){
+//            if(isset($data['consignor']['name2'])&&!empty($data['consignor']['name2'])){
+//               $sendercompany = Contact::find('sender_company like ?','%'.$data['consignor']['name2'].'%')->getOne();
+//               if(!$sendercompany->isNewRecord()){
+//                  $comment = $sendercompany->comment;
+//               }
+//            }
+//         }else{
+//            $comment = $sender_company->comment;
+//         }
+        $order->ali_order_no=$data['aliOrderNo'];
+        $order->reference_no= preg_replace('/\s+/', '', @$data['referenceNo']);
+        $order->far_no=$far_no;
+        $order->service_code=$data['serviceCode'];
+        $order->sender_mobile=$data['consignor']['mobile'];
+        $order->sender_telephone=@$data['consignor']['telephone'];
+        $order->sender_email=@$data['consignor']['email'];
+        $order->sender_name1=$data['consignor']['name1'];
+        $order->sender_name2=@$data['consignor']['name2'];
+        $order->sender_street1=$data['consignor']['street1'];
+        $order->sender_street2=@$data['consignor']['street2'];
+        $order->sender_country_code=$data['consignor']['countryCode'];
+        $order->sender_city=$data['consignor']['city'];
+        $order->sender_postal_code=$data['consignor']['postalCode'];
+        $order->sender_state_region_code=$data['consignor']['stateRegionCode'];
+//         $order->sender_comment=$comment;
+        $order->consignee_mobile=$data['consignee']['mobile'];
+        $order->consignee_telephone=@$data['consignee']['telephone'];
+        $order->consignee_email=@$data['consignee']['email'];
+        $order->consignee_name1=$data['consignee']['name1'];
+        $order->consignee_name2=@$data['consignee']['name2'];
+        $order->consignee_street1=$data['consignee']['street1'];
+        $order->consignee_street2=@$data['consignee']['street2'];
+        $order->consignee_country_code=$data['consignee']['countryCode'];
+        $order->consignee_city=$data['consignee']['city'];
+        $order->consignee_postal_code=$data['consignee']['postalCode'];
+        $order->consignee_state_region_code=$data['consignee']['stateRegionCode'];
+        $order->declaration_type=$data['customsDeclaration']['declarationType'];
+        $order->total_amount=$data['customsDeclaration']['totalAmount'];
+        $order->currency_code=$data['customsDeclaration']['currencyCode'];
+        $order->need_insurance=$data['needInsurance'];
+        $order->tax_payer_id=@$data['taxpayerId'];
+        $order->remarks=@$data['remarks'];
+        $order->order_status='1';
+        $order->need_pick_up=$data['needPickUp'];
+        $order->warehouse_code=$data['warehouse']['code'];
+        $order->warehouse_name=$data['warehouse']['name'];
+        $order->pick_company=$pick_company;
+        $order->customer_id=1;
+        $order->save();
+        $ali_json->ali_sign=$info['sign'];
+        $ali_json->order_id=$order->order_id;
+        $ali_json->ali_order_no=$order->ali_order_no;
+        $ali_json->save();
+        //查询判断是否疑似偏远
+        $product=Product::find("product_name=?",$order->service_code)->getOne();
+        $productppr=Productppr::find('product_id=? and effective_time <= ? and invalid_time >= ?',$product->product_id,time(),time())
+        ->getOne();
+        $trim = array(' ','-');
+        if(!$productppr->isNewRecord()){
+            $remote_city=Remote::find('remote_manage_id = ? and country_code_two=? and (remote_city=? or remote_city=?) and ifnull(remote_city,"") != ""',$productppr->remote_manage_id,$order->consignee_country_code,$order->consignee_city,strtolower(str_replace($trim,'',$order->consignee_city)))
+            ->getOne();
+            if($remote_city->isNewRecord()){//城市不同，省州完全相同
+                $remote_state = Remote::find("remote_manage_id = ? and country_code_two=? and (remote_city=? or remote_city=?) and ifnull(remote_city,'') != '' ",$productppr->remote_manage_id,$order->consignee_country_code,$order->consignee_state_region_code,strtolower(str_replace($trim,'',$order->consignee_state_region_code)))->getOne();
+                if(!$remote_state->isNewRecord()){
+                   $order->suspected_remote='1';
+                   $order->save();
+                }else{
+                    $remote_like = Remote::find("remote_manage_id = ? and country_code_two=? and (remote_city like ? or remote_city like ? or remote_city like ? or remote_city like ?) and ifnull(remote_city,'') != ''",$productppr->remote_manage_id,$order->consignee_country_code,'%'.$order->consignee_city.'%','%'.strtolower(str_replace($trim,'',$order->consignee_city)).'%','%'.$order->consignee_state_region_code.'%','%'.strtolower(str_replace($trim,'',$order->consignee_state_region_code)).'%')->getOne();
+                    if(!$remote_like->isNewRecord()){//订单中的城市、省州在偏远城市信息中出现
+                       $order->suspected_remote='1';
+                       $order->save();
+                    } 
+                    $remote=Remote::find("country_code_two = ? and remote_manage_id= ? and ifnull(remote_city,'') != ''",$order->consignee_country_code,$productppr->remote_manage_id)->getAll();
+                    foreach ($remote as $v){//偏远城市信息在订单中的城市、省州、地址中出现
+                        $is_far=Order::find("consignee_state_region_code like ? or consignee_city like ? or consignee_street1 like ? or consignee_street2 like ? ",'%'.$v->remote_city.'%','%'.$v->remote_city.'%','%'.$v->remote_city.'%','%'.$v->remote_city.'%')
+                        ->where('order_id= ? ',$order->order_id)->getOne();
+                        if(!$is_far->isNewRecord()){
+                            $order->suspected_remote='1';
+                            $order->save();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        $black=blacklist::find('product_id=?',$product->product_id)->asArray()->getAll();
+        if(count($black)>0){
+            foreach ($black as $b){
+                $reason='';
+                $i=0;
+                $bb=array_filter($b);
+                $co=count($bb)-4;
+                if($b['consignee_country_code'] && (strpos($order->consignee_country_code, $b['consignee_country_code']) !==false || strpos($b['consignee_country_code'], $order->consignee_country_code) !==false)){
+                    $reason.='国家:'.$b['consignee_country_code'].',';
+                    $i++;
+                }
+                if($b['consignee_postal_code'] && (strpos($order->consignee_postal_code, $b['consignee_postal_code']) !==false || strpos($b['consignee_postal_code'], $order->consignee_postal_code) !==false)){
+                    $reason.='邮编:'.$b['consignee_postal_code'].',';
+                    $i++;
+                }
+                if($b['consignee_city'] && trim($order->consignee_city) && (strpos($order->consignee_city, $b['consignee_city']) !==false || strpos($b['consignee_city'], $order->consignee_city) !==false)){
+                    $reason.='城市:'.$b['consignee_city'].',';
+                    $i++;
+                }
+                if($b['consignee_state_region_code'] && trim($order->consignee_state_region_code) && (strpos($order->consignee_state_region_code, $b['consignee_state_region_code']) !==false || strpos($b['consignee_state_region_code'], $order->consignee_state_region_code) !==false)){
+                    $reason.='州:'.$b['consignee_state_region_code'].',';
+                    $i++;
+                }
+                if($b['product_name']){
+                    $j=0;
+                    foreach ($data['products'] as $op){
+                        if($op['productName'] && (strpos($op['productName'], $b['product_name']) !== false || strpos($b['product_name'], $op['productName']) !== false)){
+                            $reason.='品名:'.$b['product_name'].',';$j++;
+                        }
+                        if($op['productNameEn'] && (strpos($op['productNameEn'], $b['product_name']) !== false || strpos($b['product_name'], $op['productNameEn']) !== false)){
+                            $reason.='品名:'.$b['product_name'].',';$j++;
+                        }
+                    }
+                    if($j>0){
+                        $i++;
+                    }
+                }
+                if($b['sender_name1'] && trim($order->sender_name1) && (strpos($order->sender_name1, $b['sender_name1']) !==false || strpos($b['sender_name1'], $order->sender_name1) !==false)){
+                    $reason.='发件人:'.$b['sender_name1'].',';
+                    $i++;
+                }
+                if($b['sender_name2'] && trim($order->sender_name2) && (strpos($order->sender_name2, $b['sender_name2']) !==false || strpos($b['sender_name2'], $order->sender_name2) !==false)){
+                    $reason.='发件公司:'.$b['sender_name2'].',';
+                    $i++;
+                }
+                if($b['sender_name1'] && trim($order->sender_name2) && (strpos($order->sender_name2, $b['sender_name1']) !==false || strpos($b['sender_name1'], $order->sender_name2) !==false)){
+                    $reason.='发件人:'.$b['sender_name1'].',';
+                    $i++;
+                }
+                if($b['sender_name2'] && trim($order->sender_name1) && (strpos($order->sender_name1, $b['sender_name2']) !==false || strpos($b['sender_name2'], $order->sender_name1) !==false)){
+                    $reason.='发件公司:'.$b['sender_name2'].',';
+                    $i++;
+                }
+                if($b['sender_street1'] && trim($order->sender_street1) && (strpos($order->sender_street1, $b['sender_street1']) !==false || strpos($b['sender_street1'], $order->sender_street1) !==false)){
+                    $reason.='发件地址:'.$b['sender_street1'].',';
+                    $i++;
+                }
+                if($b['sender_street1'] && trim($order->sender_street2) && (strpos($order->sender_street2, $b['sender_street1']) !==false || strpos($b['sender_street1'], $order->sender_street2) !==false)){
+                    $reason.='发件地址:'.$b['sender_street1'].',';
+                    $i++;
+                }
+                if($i==$co){
+                    $reason=trim($reason,',');
+                    $order->black_flag='1';
+                    $order->black_reason=$reason;
+                    $order->save();
+                    break;
+                }
+            }
+        }
+        $consignee_postal_code=trim($order->consignee_postal_code);
+        if($consignee_postal_code && in_array($order->service_code, array('EUUS-FY','Express_Standard_Global','US-FY','WIG-FY'))){
+            $zipcode=array('123','1234','12345','123456','1234567','12345678','123456789');
+            $count=substr_count($consignee_postal_code,substr($consignee_postal_code, 0,1));
+            if(strlen($consignee_postal_code)=='1' || in_array($consignee_postal_code, $zipcode) || $count==strlen($consignee_postal_code)){
+                $order->zip_flag='1';
+                $order->save();
+            }
+        }
+        //拆分阿里单号
+        if(strlen($order->reference_no)){
+        	$references=explode(",", $order->reference_no);
+        	foreach ($references as $r){
+        		$alireference=new Alireference();
+        		$alireference->order_id=$order->order_id;
+        		$alireference->reference_no=$r;
+        		$alireference->save();
+        	}
+        }
+        //存入product信息
+        $flag=false;//判断阿里推送订单是否为测试订单
+        foreach ($data['products'] as $order_product){
+            $product=new Orderproduct();
+            $product->changeProps(array(
+                'order_id'=>$order->id(),
+                'product_name'=>$order_product['productName'],
+                'product_name_en'=>$order_product['productNameEn'],
+                'product_quantity'=>$order_product['productQuantity'],
+                'product_unit'=>$order_product['productUnit'],
+                'hs_code'=>$order_product['hsCode'],
+                'declaration_price'=>$order_product['declarationPrice'],
+                'has_battery'=>$order_product['hasBattery'],
+            	'product_name_far'=>$order_product['productName'],
+            	'product_name_en_far'=>$order_product['productNameEn'],
+            	'hs_code_far'=>$order_product['hsCode']
+            ));
+            $product->save();
+            if($order_product['productName']=='系统测试订单'){
+                $flag=true;
+            }
+        }
+        if($flag){//是测试订单
+            $order->ali_testing_order='1';
+            $order->save();
+        }
+        $ratio=5000;
+        $total_weight=0;
+        $weight_income_ali=0;
+        //查询product获取计泡系数
+        $product=Product::find('product_name=?',$data['serviceCode'])->getOne();
+        if(!$product->isNewRecord()){
+            $ratio=$product->ratio;
+        }
+        //存入package信息
+        foreach ($data['packages'] as $order_package){
+            $package=new Orderpackage();
+            $package->changeProps(array(
+                'order_id'=>$order->id(),
+                'package_type'=>$order_package['packageType'],
+                'quantity'=>$order_package['quantity'],
+                'unit'=>$order_package['unit'],
+                'length'=>$order_package['length'],
+                'width'=>$order_package['width'],
+                'height'=>$order_package['height'],
+                'weight'=>$order_package['weight'],
+                'weight_unit'=>$order_package['weightUnit'],
+            ));
+            $package->save();
+            $total_weight+=$order_package['weight']*$order_package['quantity'];
+            $weight_income_ali+=(($order_package['length']*$order_package['width']*$order_package['height'])/$ratio)*$order_package['quantity']>$order_package['weight']*$order_package['quantity']?
+            (($order_package['length']*$order_package['width']*$order_package['height'])/$ratio)*$order_package['quantity']:$order_package['weight']*$order_package['quantity'];
+        }
+        //存入阿里计费重量和阿里实重
+        $order->weight_actual_ali=$total_weight;
+        $order->weight_income_ali=$weight_income_ali;
+        //上海仓
+        if($data['warehouse']['code']=='ASP_FAR_SH_PD'){
+        	$order->department_id=7;
+        	//义乌仓
+        }elseif($data['warehouse']['code']=='ASP_FAR—YW'){
+        	$order->department_id=8;
+        }elseif ($data['warehouse']['code']=='ASP_FY_YW'){
+            $order->department_id=8;
+            //广州仓
+        }elseif ($data['warehouse']['code']=='ASP_FAR_GZ'){
+        	$order->department_id=22;
+        	//杭州仓
+        }elseif ($data['warehouse']['code']=='ASP_FAR_HZ'){
+        	$order->department_id=6;
+        	//青岛仓
+        }elseif ($data['warehouse']['code']=='ASP_FY_QD'){
+        	$order->department_id=23;
+        	//深圳仓
+        }elseif ($data['warehouse']['code']=='ASP_FY_SZLH'){
+        	$order->department_id=24;
+        }
+        $order->save();
+        $conn->completeTrans ();
+        //返回泛远单号
+        return json_encode(array (
+            'isSuccess' => true,'message' => '' ,'result'=>array('aspOrderNo'=>$far_no)
+        ));
+    }
+    /**
+     * Order Cancel
+     */
+    function actionOrdercancel(){
+    	//阿里原始信息存入ali_json表中
+    	$ali_json= new Alijson();
+    	$ali_json->changeProps(array(
+    		'api_name'=>'cancel',
+    		'ali_json'=>file_get_contents ( "php://input" )
+    	));
+    	$ali_json->save();
+        QLog::log('API2'.file_get_contents ( "php://input" ));
+        $info=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('API2.1'.$info['cancelOrderDTO']);
+        $data=json_decode($info['cancelOrderDTO'],true);
+        //判断数据是否存在
+        if(!is_array($data) || count($data)<=0){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '数据为空或格式不正确'
+            ));
+        }
+        if(!isset($info['sign']) || $info['sign']==''){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '签名校验失败'
+            ));
+        }
+        $order=Order::find('ali_order_no=?',$data['aliOrderNo'])->getOne();
+        if($order->isNewRecord()){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '订单不存在'
+            ));
+        }
+        $ali_json->ali_sign=$info['sign'];
+        $ali_json->order_id=$order->order_id;
+        $ali_json->ali_order_no=$order->ali_order_no;
+        $ali_json->save();
+        $order->reason_code=$data['reasonCode'];
+        $order->reason_name=$data['reasonName'];
+        $order->reason_remark=$data['remark'];
+        $order->order_status="2";
+        $order->save();
+        //删除ali_reference表里的快递号信息
+        Alireference::find('order_id=?',$order->order_id)->getAll()->destroy();
+        //删除所有相关费用
+        Fee::find('order_id=?',$order->order_id)->getAll()->destroy();
+        //返回结果
+        return json_encode(array (
+            'isSuccess' => true,'message' => ''
+        ));
+    }
+    /**
+     * Order Return
+     */
+    function actionOrderreturn(){
+    	//阿里原始信息存入ali_json表中
+    	$ali_json= new Alijson();
+    	$ali_json->changeProps(array(
+    		'api_name'=>'return',
+    		'ali_json'=>file_get_contents ( "php://input" )
+    	));
+    	$ali_json->save();
+        QLog::log('API3'.file_get_contents ( "php://input" ));
+        $info=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('API3.1'.$info['returnDTO']);
+        $data=json_decode($info['returnDTO'],true);
+        //判断数据是否存在
+        if(!is_array($data) || count($data)<=0){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '数据为空或格式不正确'
+            ));
+        }
+        if(!isset($info['sign']) || $info['sign']==''){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '签名校验失败'
+            ));
+        }
+        $order=Order::find('ali_order_no=?',$data['aliOrderNo'])->getOne();
+        if($order->isNewRecord()){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '订单不存在'
+            ));
+        }
+        $ali_json->ali_sign=$info['sign'];
+        $ali_json->order_id=$order->order_id;
+        $ali_json->ali_order_no=$order->ali_order_no;
+        $ali_json->save();
+        $order->reason_code=$data['reasonCode'];
+        $order->reason_name=$data['reasonName'];
+        $order->reason_remark=$data['remark'];
+        $order->return_type=$data['returnType'];
+        $order->order_status='11';
+        //判断returnType
+        if($data['returnType']=='WAREHOUSE_RETURN'){
+            $order->return_mobile=$data['contact']['mobile'];
+            $order->return_telephone=$data['contact']['telephone'];
+            $order->return_email=$data['contact']['email'];
+            $order->return_name1=$data['contact']['name1'];
+            $order->return_name2=$data['contact']['name2'];
+            $order->return_street1=$data['contact']['street1'];
+            $order->return_street2=$data['contact']['street2'];
+            $order->return_country_code=$data['contact']['countryCode'];
+            $order->return_city=$data['contact']['city'];
+            $order->return_postal_code=$data['contact']['postalCode'];
+            $order->return_state_region_code=$data['contact']['stateRegionCode'];
+    
+        }
+        $order->save();
+        //收入
+        $shou='删除收入';
+        //成本
+        $fu='成本';
+        foreach ($order->fees as $fee){
+        	if($fee->fee_type=='1'){
+        		$shou.=$fee->fee_item_code.'*'.$fee->quantity.';';
+        	}else{
+        		$fu.=$fee->fee_item_code.'*'.$fee->quantity.';';
+        	}
+        }
+        //没有核查的费用都删除
+        if(!$order->warehouse_confirm_time){
+	        if(strlen($shou)>8){
+	        	$log=new OrderLog();
+	        	$log->order_id=$order->order_id;
+	        	$log->comment=$fu=='成本'?$shou:$shou.$fu;
+	        	$log->save();
+	        }
+	        //删除所有相关费用
+	        Fee::find('order_id=?',$order->order_id)->getAll()->destroy();
+        }
+        //写入一条退件记录
+//         $now='RETURN'.date('Ym');
+//         $seq = Helper_Seq::nextVal ( $now );
+//         if ($seq < 1) {
+//             Helper_Seq::addSeq ( $now );
+//             $seq = 1;
+//         }
+//         $seq=str_pad($seq,4,"0",STR_PAD_LEFT);
+//         $return_parcel_no='R'.date('Ym').$seq;
+//         $order_return= new Orderreturn();
+//         $order_return->changeProps(array(
+//             'ali_order_no'=>$order->ali_order_no,
+//             'return_no'=>$return_parcel_no,
+//             'return_status'=>'1',
+//             'return_operator'=>'阿里',
+//             'consignee_name'=>$data['returnType']=='WAREHOUSE_RETURN'?$data['contact']['name1']:'',
+//             'consignee_phone'=>$data['returnType']=='WAREHOUSE_RETURN'?$data['contact']['mobile']:'',
+//             'consignee_address'=>$data['returnType']=='WAREHOUSE_RETURN'?$data['contact']['street1']:'',
+//             'express_no'=>'',
+//             'express_company'=>'',
+//         ));
+//         $order_return->save();
+        //返回结果
+        return json_encode(array (
+            'isSuccess' => true,'message' => ''
+        ));
+    }
+    /**
+     * Order notifyPaid
+     */
+    function actionOrdernotifyPaid(){
+    	//阿里原始信息存入ali_json表中
+    	$ali_json= new Alijson();
+    	$ali_json->changeProps(array(
+    		'api_name'=>'notifyPaid',
+    		'ali_json'=>file_get_contents ( "php://input" )
+    	));
+    	$ali_json->save();
+        QLog::log('API4'.file_get_contents ( "php://input" ));
+        $info=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('API4.1'.$info['notifyPaidDTO']);
+        $data=json_decode($info['notifyPaidDTO'],true);
+        //判断数据是否存在
+        if(!is_array($data) || count($data)<=0){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '数据为空或格式不正确'
+            ));
+        }
+        if(!isset($info['sign']) || $info['sign']==''){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '签名校验失败'
+            ));
+        }
+        $order=Order::find('ali_order_no=?',$data['aliOrderNo'])->getOne();
+        if($order->isNewRecord()){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '订单不存在'
+            ));
+        }
+        $ali_json->ali_sign=$info['sign'];
+        $ali_json->order_id=$order->order_id;
+        $ali_json->ali_order_no=$order->ali_order_no;
+        $ali_json->save();
+        if(!$order->payment_time){
+            if($order->order_status=='12'){//如果是已扣件状态，将status_copy状态更改为4，status状态不变
+                $order->order_status_copy='4';
+                $order->payment_time=time();
+                $order->save();
+            }else{
+                $order->order_status='4';
+                $order->payment_time=time();
+                $order->save();
+            }
+            //将入库包裹信息添加到出库包裹表中
+            $farout=Faroutpackage::find('order_id=?',$order->order_id)->getOne();
+            if($farout->isNewRecord()){
+                $farpackages=Farpackage::find('order_id=?',$order->order_id)->getAll();
+                foreach ($farpackages as $farpackage){
+                    $faroutpackage=new Faroutpackage(array(
+                        'order_id'=>$order->order_id,
+                        'far_id'=>$farpackage->far_package_id,
+                        'quantity_out'=>$farpackage->quantity,
+                        'length_out'=>$farpackage->length,
+                        'width_out'=>$farpackage->width,
+                        'height_out'=>$farpackage->height,
+                        'weight_out'=>$order->service_code=='ePacket-FY'?$farpackage->weight-0.003:$farpackage->weight,
+                    ));
+                    $faroutpackage->save();
+                }
+            }
+        }
+        //返回结果
+        return json_encode(array (
+            'isSuccess' => true,'message' => ''
+        ));
+    }
+    /**
+     * Order verifyPickupAddress
+     */
+    function actionOrderverifyPickupAddress(){
+    	//阿里原始信息存入ali_json表中
+    	$ali_json= new Alijson();
+    	$ali_json->changeProps(array(
+    		'api_name'=>'verifyPickupAddress',
+    		'ali_json'=>file_get_contents ( "php://input" )
+    	));
+    	$ali_json->save();
+        QLog::log('API5'.file_get_contents ( "php://input" ));
+        $info=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('API5.1'.$info['pickupAddressDTO']);
+        $data=json_decode($info['pickupAddressDTO'],true);
+        //判断数据是否存在
+        if(!is_array($data) || count($data)<=0){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '数据为空或格式不正确'
+            ));
+        }
+        if(!isset($info['sign']) || $info['sign']==''){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '签名校验失败'
+            ));
+        }
+        $ali_json->ali_sign=$info['sign'];
+        $ali_json->save();
+        //判断zip_code位数是否为6位
+        if(strlen($data['zip'])!='6'){
+            return json_encode(array (
+                'isSuccess' => true,'message' => '邮编不在取件范围内','result'=>array('canPickUp'=>false)
+            ));
+        }
+        //查询数据中邮编是否在数据库区间
+        if(isset($data['warehouseCode']) && isset($data['serviceCode'])){
+        	$zip_code=Zipcode::find('zip_code_low<=? and zip_code_high>=? and warehouse=? and service_code=?',$data['zip'],$data['zip'],$data['warehouseCode'],$data['serviceCode'])->getOne();
+        }else{
+        	$zip_code=Zipcode::find('zip_code_low<=? and zip_code_high>=?',$data['zip'],$data['zip'])->getOne();
+        }
+        
+        if($zip_code->isNewRecord()){//不可揽收
+            return json_encode(array (
+                'isSuccess' => true,'message' => '邮编不在取件范围内','result'=>array('canPickUp'=>false)
+            ));
+        }else{//可揽收
+            //返回结果
+            return json_encode(array (
+                'isSuccess' => true,'message' => '','result'=>array('canPickUp'=>true)
+            ));
+        }
+    }
+    
+    /**
+     * notifyFormException：备案单证异常通知
+     */
+    function actionNotifyFormException(){
+    	//阿里原始信息存入ali_json表中
+    	$ali_json= new Alijson();
+    	$ali_json->changeProps(array(
+    		'api_name'=>'notifyFormException',
+    		'ali_json'=>file_get_contents ( "php://input" )
+    	));
+    	$ali_json->save();
+    	QLog::log('API6'.file_get_contents ( "php://input" ));
+    	$info=json_decode(file_get_contents ( "php://input" ),true);
+    	QLog::log('API6.1'.$info['notifyFormExceptionDTO']);
+    	$data=json_decode($info['notifyFormExceptionDTO'],true);
+    	//判断数据是否存在
+    	if(!is_array($data) || count($data)<=0){
+    		return json_encode(array (
+    			'isSuccess' => false,'message' => '数据为空或格式不正确'
+    		));
+    	}
+    	if(!isset($info['sign']) || $info['sign']==''){
+    		return json_encode(array (
+    			'isSuccess' => false,'message' => '签名校验失败'
+    		));
+    	}
+    	$order=Order::find('ali_order_no=?',$data['aliOrderNo'])->getOne();
+    	if($order->isNewRecord()){
+    		return json_encode(array (
+    			'isSuccess' => false,'message' => '订单不存在'
+    		));
+    	}
+    	$ali_json->ali_sign=$info['sign'];
+    	$ali_json->order_id=$order->order_id;
+    	$ali_json->ali_order_no=$order->ali_order_no;
+    	$ali_json->save();
+    	//保存备案单证异常通知信息
+    	$order->ali_form_exception_info=$data['exceptionMessage'];
+    	$order->save();
+    	//返回结果
+    	return json_encode(array (
+    		'isSuccess' => true,'message' => ''
+    	));
+    }
+    /**
+     * 用于添加测试订单
+     */
+    function actionAddOrder(){
+    	$data=json_decode(file_get_contents ( "php://input" ),true);
+    	//判断数据是否存在
+    	if(!is_array($data) || count($data)<=0){
+    		return json_encode(array (
+    			'isSuccess' => false,'message' => '订单数据为空或格式不正确'
+    		));
+    	}
+    	if(!isset($data['aliOrderNo'])){
+    		return json_encode(array (
+    			'isSuccess' => false,'message' => '阿里订单号不存在'
+    		));
+    	}
+    	//判断ali订单号是否已存在
+    	$order=Order::find('ali_order_no=?',$data['aliOrderNo'])->getOne();
+    	if(!$order->isNewRecord()){
+    		return json_encode(array (
+    			'isSuccess' => false,'message' => '订单已存在'
+    		));
+    	}
+    	$conn = QDB::getConn ();
+    	$conn->startTrans ();
+    	$now='FAREX'.date('ym');
+    	$seq = Helper_Seq::nextVal ( $now );
+    	if ($seq < 1) {
+    		Helper_Seq::addSeq ( $now );
+    		$seq = 1;
+    	}
+    	$seq=str_pad($seq,6,"0",STR_PAD_LEFT);
+    	$far_no=$now.$seq.'YQ';
+    	if($data['consignee']['name1']==$data['consignee']['name2']){
+    		$data['consignee']['name2']='';
+    	}
+    	//将数据存入数据库
+    	$order->ali_order_no=$data['aliOrderNo'];
+    	$order->reference_no=$data['referenceNo'];
+    	$order->far_no=$far_no;
+    	$order->service_code=$data['serviceCode'];
+    	$order->sender_mobile=$data['consignor']['mobile'];
+    	$order->sender_telephone=$data['consignor']['telephone'];
+    	$order->sender_email=$data['consignor']['email'];
+    	$order->sender_name1=$data['consignor']['name1'];
+    	$order->sender_name2=$data['consignor']['name2'];
+    	$order->sender_street1=$data['consignor']['street1'];
+    	$order->sender_street2=$data['consignor']['street2'];
+    	$order->sender_country_code=$data['consignor']['countryCode'];
+    	$order->sender_city=$data['consignor']['city'];
+    	$order->sender_postal_code=$data['consignor']['postalCode'];
+    	$order->sender_state_region_code=$data['consignor']['stateRegionCode'];
+    	$order->consignee_mobile=$data['consignee']['mobile'];
+    	$order->consignee_telephone=$data['consignee']['telephone'];
+    	$order->consignee_email=$data['consignee']['email'];
+    	$order->consignee_name1=$data['consignee']['name1'];
+    	$order->consignee_name2=$data['consignee']['name2'];
+    	$order->consignee_street1=$data['consignee']['street1'];
+    	$order->consignee_street2=$data['consignee']['street2'];
+    	$order->consignee_country_code=$data['consignee']['countryCode'];
+    	$order->consignee_city=$data['consignee']['city'];
+    	$order->consignee_postal_code=$data['consignee']['postalCode'];
+    	$order->consignee_state_region_code=$data['consignee']['stateRegionCode'];
+    	$order->declaration_type=$data['customsDeclaration']['declarationType'];
+    	$order->total_amount=$data['customsDeclaration']['totalAmount'];
+    	$order->currency_code=$data['customsDeclaration']['currencyCode'];
+    	$order->need_insurance=$data['needInsurance'];
+    	$order->tax_payer_id=$data['taxpayerId'];
+    	$order->remarks=$data['remarks'];
+    	$order->order_status='1';
+    	$order->need_pick_up=$data['needPickUp'];
+    	$order->warehouse_code=$data['warehouse']['code'];
+    	$order->warehouse_name=$data['warehouse']['name'];
+    	$order->save();
+    	//存入product信息
+    	$flag=false;//判断阿里推送订单是否为测试订单
+    	foreach ($data['products'] as $order_product){
+    		$product=new Orderproduct();
+    		$product->changeProps(array(
+    			'order_id'=>$order->id(),
+    			'product_name'=>$order_product['productName'],
+    			'product_name_en'=>$order_product['productNameEn'],
+    			'product_quantity'=>$order_product['productQuantity'],
+    			'product_unit'=>$order_product['productUnit'],
+    			'hs_code'=>$order_product['hsCode'],
+    			'declaration_price'=>$order_product['declarationPrice'],
+    			'has_battery'=>$order_product['hasBattery'],
+    		));
+    		$product->save();
+    		if($order_product['productName']=='系统测试订单'){
+    			$flag=true;
+    		}
+    	}
+    	if($flag){//是测试订单
+    		$order->ali_testing_order='1';
+    		$order->save();
+    	}
+    	$ratio=5000;
+    	$total_weight=0;
+    	$weight_income_ali=0;
+    	//查询product获取计泡系数
+    	$product=Product::find('product_name=?',$data['serviceCode'])->getOne();
+    	if(!$product->isNewRecord()){
+    		$ratio=$product->ratio;
+    	}
+    	//存入package信息
+    	foreach ($data['packages'] as $order_package){
+    		$package=new Orderpackage();
+    		$package->changeProps(array(
+    			'order_id'=>$order->id(),
+    			'package_type'=>$order_package['packageType'],
+    			'quantity'=>$order_package['quantity'],
+    			'unit'=>$order_package['unit'],
+    			'length'=>$order_package['length'],
+    			'width'=>$order_package['width'],
+    			'height'=>$order_package['height'],
+    			'weight'=>$order_package['weight'],
+    			'weight_unit'=>$order_package['weightUnit'],
+    		));
+    		$package->save();
+    		$total_weight+=$order_package['weight']*$order_package['quantity'];
+    		$weight_income_ali+=(($order_package['length']*$order_package['width']*$order_package['height'])/$ratio)*$order_package['quantity']>$order_package['weight']*$order_package['quantity']?
+    		(($order_package['length']*$order_package['width']*$order_package['height'])/$ratio)*$order_package['quantity']:$order_package['weight']*$order_package['quantity'];
+    	}
+    	//存入阿里计费重量和阿里实重
+    	$order->weight_actual_ali=$total_weight;
+    	$order->weight_income_ali=$weight_income_ali;
+    	$order->save();
+    	$conn->completeTrans ();
+    	//返回泛远单号
+    	return json_encode(array (
+    		'isSuccess' => true,'message' => '' ,'result'=>array('aspOrderNo'=>$far_no)
+    	));
+    }
+    
+    /*
+     * 接受DWS数据
+     */
+    function actiondwsdata(){
+        $data=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('dws数据:'.json_encode($data));
+        //判断数据是否存在
+    	if(!is_array($data) || count($data)<=0){
+    		return json_encode(array (
+    			'isSuccess' => false,'message' => '订单数据为空或格式不正确'
+    		));
+    	}
+    	if(!isset($data['barcode']) || empty($data['barcode'])){
+    		return json_encode(array (
+    			'isSuccess' => false,'message' => '单号不存在'
+    		));
+    	}
+    	if(strpos($data['barcode'],'-')){
+    	    $barcode=explode('-', $data['barcode']);
+    	    $barcode=$barcode[0];
+    	}else {
+    	    $barcode=$data['barcode'];
+    	}
+        $order=Order::find();
+    	$count1 = Order::find ( 'ali_order_no = ?', $barcode )->getCount ();
+    	if($count1==1){
+    	    $order=$order->where('ali_order_no = ?', $barcode)->getOne();
+    	}else{
+    	    $alireference=Alireference::find('reference_no=?', $barcode)->getOne();
+    	    if($alireference->isNewRecord()){
+    	        $order=$order->where( '1!=1' )->getOne();
+    	    }else{
+    	        $count2=Alireference::find('reference_no=?', $barcode)->getCount ();
+    	        if($count2 > 1){
+    	            return json_encode(array (
+    	                'isSuccess' => false,'message' => '请拆包'
+    	            ));
+    	        }elseif ($count2==1){
+    	            $count3=Alireference::find('order_id=?', $alireference->order_id)->getCount ();
+    	            if($count3 > 1){
+    	                return json_encode(array (
+    	                    'isSuccess' => false,'message' => '请合并包裹'
+    	                ));
+    	            }
+    	            $order=$order->where( 'reference_no = ? and order_status !="2"', $barcode )->getOne();
+    	        }
+    	    }
+    	}
+    	if ($order->isNewRecord ()) {
+    	    return json_encode(array (
+    	        'isSuccess' => false,'message' => '单号错误，或包裹数据不存在'
+    	    ));
+    	}
+    	$err_status = array (
+    	    2 => '已取消',
+    	    3 => '已退货',
+    	    4 => '已付款',
+    	    5 => '已入库',
+    	    6 => '已打印',
+    	    7 => '已出库',
+    	    8 => '已提取',
+    	    9 => '已签收',
+    	    10 => '已查验',
+    	    11 => '待退货',
+    	    12 => '扣件',
+    	    13 => '已结束'
+    	);
+    	if (array_key_exists ( $order->order_status, $err_status )) {
+    	    $order->dwsremarks='订单状态为【' . $err_status [$order->order_status] . '】';
+    	    $order->save();
+    	    return json_encode(array (
+    	        'isSuccess' => false,'message' => '订单状态为【' . $err_status [$order->order_status] . '】'
+    	    ));
+    	}
+    	$product = Product::find('product_name=?',$order->service_code)->getOne();
+    	//检查应收燃油
+    	if($product->check_fuel=='1'){
+    	    $productfuel = Productfuel::find ( "product_id = ?", $product->product_id )
+    	    ->where("effective_date <= ? and fail_date >= ?",time(),time())->getOne ();
+    	    if($productfuel->isNewRecord()){
+    	        $order->dwsremarks='没有设置燃油';
+    	        $order->save();
+    	        return json_encode(array (
+    	            'isSuccess' => false,'message' => '没有设置燃油'
+    	        ));
+    	    }
+    	}
+    	//检查无服务邮编
+    	if($product->check_zip=='1'){
+    	    $noservice_zip = Noserivcezipcode::find("zip_code = ? and service_code = ?",$order->consignee_postal_code,$order->service_code)->getOne();
+    	    if(!$noservice_zip->isNewRecord()){
+    	        $order->dwsremarks='邮编无服务';
+    	        $order->save();
+    	        return json_encode(array (
+    	            'isSuccess' => false,'message' => '邮编无服务'
+    	        ));
+    	    }
+    	    $noservice_city = Noserivcezipcode::find("city = ? and service_code = ?",$order->consignee_city,$order->service_code)->getOne();
+    	    if(!$noservice_city->isNewRecord()){
+    	        $order->dwsremarks='城市无服务';
+    	        $order->save();
+    	        return json_encode(array (
+    	            'isSuccess' => false,'message' => '城市无服务'
+    	        ));
+    	    }
+    	    $noservice_city = Noserivcezipcode::find("country_code = ? and service_code = ?",$order->consignee_country_code,$order->service_code)->getOne();
+    	    if(!$noservice_city->isNewRecord()){
+    	        $order->dwsremarks='国家无服务';
+    	        $order->save();
+    	        return json_encode(array (
+    	            'isSuccess' => false,'message' => '国家无服务'
+    	        ));
+    	    }
+    	}
+    	$verify_weight=$data['weight'];
+        $verify_length=$data['length'];
+        $verify_width=$data['width'];
+        $verify_height=$data['height'];
+        	//定义长宽高数组
+        $verify_array=array($verify_length,$verify_width,$verify_height);
+        sort($verify_array);
+        //获取最大边长度
+        $verify_max=$verify_array[2];
+        if($order->service_code=='EMS-FY'){
+            //A1.最长边≤1.05米，A2.最长边+2*（宽+高）≤2.5米，A3.除AU之外的其它国家，包裹计费重量不超过30KG  A4.AU不超过20KG
+    	    if($verify_max > 105){
+    	        $order->dwsremarks='最长边超过105厘米';
+    	        $order->save();
+    	        return json_encode(array (
+    	            'isSuccess' => false,'message' => '最长边超过105厘米'
+    	        ));
+    	    }else{
+    	        if(($verify_array[0]+$verify_array[1])*2+$verify_array[2]> 250){
+    	            $order->dwsremarks='最长边+2*（宽+高）超过250厘米';
+    	            $order->save();
+    	            return json_encode(array (
+    	                'isSuccess' => false,'message' => '最长边+2*（宽+高）超过250厘米'
+    	            ));
+    	        }else{
+    	            if($order->consignee_country_code=="AU"){
+    	                if($verify_weight > 20){
+    	                    $order->dwsremarks='单件实际重量超过20kg';
+    	                    $order->save();
+    	                    return json_encode(array (
+    	                        'isSuccess' => false,'message' => '单件实际重量超过20kg'
+    	                    ));
+    	                }
+    	            }else{
+    	                if($verify_weight > 30){
+    	                    $order->dwsremarks='单件实际重量超过30kg';
+    	                    $order->save();
+    	                    return json_encode(array (
+    	                        'isSuccess' => false,'message' => '单件实际重量超过30kg'
+    	                    ));
+    	                }
+    	            }
+    	        }
+    	    }
+    	}else {
+            //当单件实际重量超过68kg,或者最长边超过243厘米，或者最长边+2*（宽+高）超过298厘米时，预报播报：不提供服务。
+    	    //判断单件实际重量是否超过68KG
+    	    if($verify_weight > 68){
+    	        $order->dwsremarks='单件实际重量超过68kg';
+    	        $order->save();
+    	        return json_encode(array (
+                    'isSuccess' => false,'message' => '单件实际重量超过68kg'
+                ));
+    	    }else{
+    	        if($verify_max > 243){
+    	            $order->dwsremarks='最长边超过243厘米';
+    	            $order->save();
+    	            return json_encode(array (
+                        'isSuccess' => false,'message' => '最长边超过243厘米'
+                    ));
+    	        }else{
+    	            if(($verify_array[0]+$verify_array[1])*2+$verify_array[2]> 298){
+    	                $order->dwsremarks='最长边+2*（宽+高）超过298厘米';
+    	                $order->save();
+    	                return json_encode(array (
+    	                    'isSuccess' => false,'message' => '最长边+2*（宽+高）超过298厘米'
+    	                ));
+    	            }
+    	        }
+    	    }
+    	}
+    	Farpackage::meta()->destroyWhere('barcode = ?',$data['barcode']);
+    	$quantity_far=Farpackage::find('order_id = ?',$order->order_id)->getSum('quantity');
+    	$quantity_order=Orderpackage::find('order_id = ?',$order->order_id)->getSum('quantity');
+    	//保存dws数据
+    	if($quantity_far < $quantity_order){
+    	    $package=new Farpackage();
+    		$package->changeProps(array(
+    			'order_id'=>$order->order_id,
+    			'quantity'=>'1',
+    		    'barcode'=>$data['barcode'],
+    			'length'=>$data['length'],
+    			'width'=>$data['width'],
+    			'height'=>$data['height'],
+    			'weight'=>$data['weight']
+    		));
+    		$package->save();
+    	}else {
+    	    $order->dwsremarks='包裹总数超出预报包裹总数';
+    	    $order->save();
+    	    return json_encode(array (
+    	        'isSuccess' => false,'message' => '包裹总数超出预报包裹总数'
+    	    ));
+    	}
+    	//计算重量、费用
+    	if($quantity_far+1 == $quantity_order){
+    	    $is_jipao = 0;
+			$total_weight_income_in=0;//计费重
+			$total_weight_actual_in = 0; // 实重总重
+			$farpackage=Farpackage::find('order_id = ?',$order->order_id)->asArray()->getAll();
+			foreach ($farpackage as $f){
+			    $jipao=0;
+			    $length=$f['length'];
+			    $width=$f['width'];
+			    $height=$f['height'];
+			    $weight=$f['weight'];
+			    $quantity=$f['quantity'];
+			    $max=max($length,$width,$height);
+			    if($max<60 && $order->service_code=="EMS-FY"){
+			        $jipao=0;
+			    }else{
+			        // 计泡 : 长 x 宽 x 高 / 计泡系数
+			       $jipao =round(($length* $width* $height) / $order->service_product->ratio*100)/100;
+			    }
+			    if ($jipao > $weight) {
+			        $is_jipao = 1;
+			        $total_weight_income_in +=($jipao >20 && $order->service_code=='Express_Standard_Global') ? ceil($jipao)* $quantity: ceil($jipao/0.5)*0.5* $quantity;
+			    }else {
+			        $total_weight_income_in +=($weight>20 && $order->service_code=='Express_Standard_Global') ? ceil($weight) * $quantity:ceil($weight/0.5)*0.5*$quantity;
+			    }
+			    $total_weight_actual_in += $weight * $quantity;
+			}
+			$order->volumn_chargeable = $is_jipao;
+			$order->weight_income_in = ($total_weight_income_in>20 && $order->service_code=='Express_Standard_Global') ? ceil($total_weight_income_in):$total_weight_income_in;
+			$order->weight_actual_in = $total_weight_actual_in;
+			$order->save ();
+			$fee_item_code = Helper_Array::toHashmap ( FeeItem::find ()->setColumns ( 'item_code,sub_code,item_name' )
+			    ->asArray ()
+			    ->getAll (), 'item_code' );
+			$quote = new Helper_Quote ();
+			$receivable = $quote->receivable ( $order, $order->weight_income_in);
+			if(!count($receivable)){
+			    $order->dwsremarks='无法计算价格';
+			    $order->save();
+			    return json_encode(array (
+			        'isSuccess' => false,'message' => '无法计算价格'
+			    ));
+			}
+			Fee::meta ()->deleteWhere ( 'fee_type=1 and order_id=?', $order->order_id );
+			QLog::log ( print_r ( $receivable, true ) );
+			foreach ( $receivable as $key => $value ) {
+			    if ($value ['fee']) {
+			        $fee = new Fee ( array (
+			            'order_id' => $order->order_id,
+			            'fee_type' => 1,
+			            'fee_item_code' => $fee_item_code [$key] ['sub_code'],
+			            'fee_item_name' => $fee_item_code [$key] ['item_name'],
+			            'quantity' => $value ['quantity'],
+			            'amount' => $value ['fee']
+			        ) );
+			        $fee->save ();
+			    }
+			}
+			$order->order_status = '5'; // 5 入库
+			if($order->service_code=="EMS-FY" || $order->service_code=="WIG-FY" || $order->service_code=="EUUS-FY" || $order->service_code=="US-FY"){
+			    $order->add_data_status='1';
+			}
+			$order->far_warehouse_in_time=time();
+			$order->save ();
+    	}
+    	return json_encode(array (
+    		'isSuccess' => true,'message' => '' ,'result'=>array('barcode'=>$data['barcode'])
+    	));
+    }
+}

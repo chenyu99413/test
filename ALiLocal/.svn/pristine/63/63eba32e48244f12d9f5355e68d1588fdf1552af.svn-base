@@ -1,0 +1,64 @@
+<?php
+/**
+ */
+class Controller_wxAliPickupDevice extends Controller_Abstract {
+	function actionIndex() {
+		return $this->_redirect(Helper_WX::loginStep1('http://www.far800.com/wxalipickupdevice/auth'));
+	}
+	function actionAuth(){
+		$r=Helper_WX::loginStep2(request('code'));
+		if (empty($r['openid'])) {
+			exit('请先同意授权');
+		}
+		$m=PickUpMember::find('wechat_id =?',$r['openid'])->getOne();
+		if ($m->status ==1) {
+			return $this->_redirect(url('/pkscan',array('wechat_id'=>$m->id)));
+		}
+		$m->changeProps(array(
+			'wechat_id'=>$r['openid'],
+			'wechat_no'=>$r['nickname'],
+			'img_url'=>$r['headimgurl'],
+			'gender'=>$r['sex']
+		));
+		$m->save();
+		return $this->_redirect(url('/profile',array('openid'=>$m->wechat_id)));
+	}
+	function actionProfile(){
+		$m=PickUpMember::find('wechat_id =?',request('openid'))->getOne();
+		if ($m->isNewRecord()) {
+			exit('error');
+		}
+		if (request_is_post()) {
+			$m->name=request('name');
+			$m->save();
+		}
+		$this->_view['m']=$m;
+	}
+	function actionPKscan() {
+		if (request_is_post()) {
+			//保存数据，更新取件时间、单号。。。
+			$scan_codes = json_decode(request('scan_codes'),true);
+			$reference_no = '';
+			foreach ($scan_codes as $scan_code){
+				if(substr($scan_code, 0, 3) <> 'ALS'){
+					$reference_no = $scan_code;
+				}
+			}
+			foreach ($scan_codes as $scan_code){
+				if(substr($scan_code, 0, 3) <> 'ALS'){
+					continue;
+				}
+				$order = Order::find('ali_order_no = ?',$scan_code)->getOne();
+				if(!$order -> isNewRecord()){
+					$order->pick_up_time = time();
+					$order->wechat_id = request('wechat_id');
+					$order->reference_no = $reference_no;
+					$order->order_status = 15;
+					$order->save();
+				}
+			}
+			//显示成功页面
+			$this->_viewname='pkscan1';
+		}
+	}
+}

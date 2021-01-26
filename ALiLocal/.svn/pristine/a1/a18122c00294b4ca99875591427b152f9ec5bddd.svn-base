@@ -1,0 +1,144 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+    <?php //主体部分 ?>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'问题件列表' => url ( 'order/issue' ),'问题件处理' => '' 
+	) 
+) )?>
+<?php $issue_type=array("1"=>"取件异常件","2"=>"库内异常件","3"=>"渠道异常件")?>
+<form method="post" style="margin: 0" enctype="multipart/form-data" onsubmit="return check();">
+	<div class="FarSearch">
+		<table style="width: 100%">
+           <tbody>
+               <tr>
+                   <th>问题件编号</th><td><?php echo $abnormal_parcel->abnormal_parcel_no?></td>
+                   <th>阿里单号</th><td><?php echo $abnormal_parcel->ali_order_no?></td>
+                   <th>末端运单号</th><td><?php echo $abnormal_parcel->order->tracking_no?></td>
+                   <th></th>
+                   <td>
+                       <?php if($abnormal_parcel->parcel_flag=='1'):?>
+                        <button type="submit" name="parcel_flag" class="btn btn-small btn-info" value="1">
+    						<i class="icon-close"></i>
+    						关闭
+    					</button>
+    					<?php endif;?>
+                   </td>
+               </tr>
+                <tr>
+                   <th>发起人</th><td><?php echo $abnormal_parcel->abnormal_parcel_operator?></td>
+                   <th>发起时间</th><td><?php echo Helper_Util::strDate('Y-m-d H:i', $abnormal_parcel->create_time)?></td>
+                  <th>问题类型</th>
+                   <td>
+                   		<?php
+						echo Q::control ( "dropdownlist", "issue_type", array (
+							"name" => "issue_type",
+							"items" => array (
+								"1"=>"取件异常件","2"=>"库内异常件","3"=>"渠道异常件" 
+							),"value" => $abnormal_parcel->issue_type 
+						) )?>
+                   </td>
+                   <th></th>
+                   <td>
+                        <?php if($abnormal_parcel->parcel_flag=='1'):?>
+                            <button type="submit" name="parcel_flag" class="btn btn-small btn-info" value="3">
+        						<i class="icon-close"></i>
+        						关闭并解扣
+        					</button>
+        				<?php else :?>
+        					<button type="submit" name="parcel_flag" class="btn btn-small btn-info" value="2">
+        						开启
+        					</button>
+    					<?php endif;?>
+                   </td>
+               </tr>
+               <tr>
+               <th>跟进</th>
+               	<td colspan="3" style="border-left: 2px #eee">
+					<textarea style="width: 700px" rows="4" name="follow_up_content" id="follow_up_content"></textarea>
+               </td>
+               <td colspan="4" class="span3" valign="top">
+                   <a href="javascript:void(0)" style="margin-left:5px;" class="btn btn-mini btn-info" onclick="$('#file').click()">上传附件</a>
+                   <table class="FarTable">
+                       <thead><tr><th>附件</th></tr></thead>
+                       <tbody>
+                           <?php foreach ($abnormal_parcel->file as $temp):?>
+                           <tr>
+                               <td><a href="<?php echo $_BASE_DIR.strstr($temp->file_path,'public/upload/files')?>" download="<?php echo $temp->file_name?>"><?php echo $temp->file_name?></a>&nbsp;&nbsp;&nbsp;<a class="btn btn-mini btn-danger" href="javascript:void(0)" data="<?php echo $temp->abnormal_parcel_file_id?>" onclick="removeline(this)"><i class="icon-remove"></i></a></td>
+                           </tr>
+                           <?php endforeach;?>
+                       </tbody>
+                   </table>
+               </td>
+               </tr>
+           </tbody>
+        </table>
+        <div class="FarTool text-center">
+        	<button class="btn btn-small btn-success" id="search">
+                                        保存
+       		</button>
+       	</div>
+     </div>
+     <input type="hidden" name="abnormal_parcel_id" value="<?php echo $abnormal_parcel->abnormal_parcel_id ?>" />
+ </form>
+ <form enctype="multipart/form-data" method="post" action="<?php echo url('/saveissuefile')?>" style="display:none" id="file_form">
+    <input type="file" name="file" id="file">
+    <input type="hidden" name="abnormal_parcel_id" value="<?php echo $abnormal_parcel->abnormal_parcel_id ?>" />
+ </form>
+ 	 <h6>跟进历史</h6>
+ 	 <table class="FarTable">
+            <thead>
+              <tr>
+              	  <th>序号</th>
+                  <th>跟进人</th>
+                  <th>时间</th>
+                  <th>内容</th>
+              </tr>
+           </thead>
+           <tbody>
+           	<?php if (isset($abnormal_parcel)): $i=0;?>
+           		<?php foreach ($abnormal_parcel->history as $value):?>
+           		<?php $i++?>
+               <tr>
+               	   <td style="width:30px;"><?php echo $i;?></td>
+                   <td style="width:70px;"><?php echo $value->follow_up_operator?></td>
+                   <td align="center" style="width:130px;"><?php echo Helper_Util::strDate('Y-m-d H:i', $value->create_time)?></td>
+                   <td><?php echo $value->follow_up_content?></td>
+               </tr>
+               	<?php endforeach;?>
+             <?php endif;?>
+           </tbody>
+        </table> 
+<script type="text/javascript">
+function check(){
+	if($('#follow_up_content').val()==''){
+		alert("跟进内容必填");
+		return false;
+	}
+}
+$(function(){
+	$("#file").change(function(){
+		$("#file_form").submit();
+	})
+})
+function removeline(obj){
+	$(obj).parent().parent().remove();
+	$.ajax({
+		url:'<?php echo url('/delissuefile')?>',
+		type:'post',
+		data:{abnormal_parcel_file_id:$(obj).attr('data')},
+		success:function(){
+
+		}
+	});
+}
+</script>
+<?PHP $this->_endblock();?>
+

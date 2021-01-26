@@ -1,0 +1,1 @@
+ALTER TABLE `tb_total_orderout` CHANGE `ali_order_no` `ali_order_no` varchar(50) DEFAULT NULL COMMENT '阿里订单号，必填';

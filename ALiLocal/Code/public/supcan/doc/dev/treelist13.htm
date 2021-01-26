@@ -1,0 +1,33 @@
+<HTML>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=gb2312">
+<link rel="stylesheet" href="temp1.css" type="text/css">
+</head>
+<body bgcolor=#ffffff vlink=#0000ff>
+<br>
+<p class="sz1">13.自定义菜单</p><hr color=#2266ee size=1>
+　　“自定义菜单”是指向鼠标右键弹出菜单增加菜单项，通过"MenuBeforePopup"事件、调用AddMenu( )函数、以及"MenuClicked"事件，实现了菜单的自定义，整个过程是动态的。<br>
+　　详细的过程是：当鼠标右键菜单即将要弹出时，Treelist会触发页面的OnEvent(id, "MenuBeforePopup", ...)事件，在这个事件的js中，你可以通过调用AddMenu( )函数向Treelist动态增加菜单项；如果用户选中了你定义的菜单项，Treelist会触发OnEvent(id, "MenuClicked", ...)事件，从而达到了自定义菜单功能的目的.<br>
+　　在demo中有详细的演示页，相信您一看就明白。<br>
+　　AddMenu( 参数 )函数中的参数可以是XML串、非XML的文字串，或URL，其规则举例如下：<br>
+<pre class='xml'>
+&lt;items&gt;
+&lt;item id="3103" text="热销" icon="buttons.zip#303.ico"&gt;
+&lt;item id="KB3104" text="滞销产品" icon="buttons.zip#304.ico"&gt;
+ &lt;item id="31041" text="库存1" icon="buttons.zip#304.ico" detail="浮动的详细说明，可选"/&gt;
+ &lt;item id="31042DM" text="库存2" enable="false" detail="浮动的详细说明，可选"/&gt;
+&lt;/item&gt;
+&lt;/items&gt;</pre>
+　　如果采用非XML的普通串，其举例如下：<br>
+<pre class='cpp'>
+//多个菜单项之间以回车符分隔
+var s = "id=40N01; text=男帽; icon=buttons.zip#301.ico; detail=夏季时装\r\n";
+s += "id=4002; text=时髦头巾; icon=buttons.zip#302.ico; detail=优惠直销"</pre>
+　　规则1：如果是XML串，元素名须为<font color=red>item</font>;<br>
+　　规则2：如果是XML串，item允许有下级item，表示菜单项的子菜单：<br>
+　　规则3：属性有<font color=red>id</font>、<font color=red>text</font>、<font color=red>icon</font>、<font color=red>enable</font>、<font color=red>checked</font>、<font color=red>detail</font>;<br>
+　　规则4：id可以是任意串， <b><font color=red>如果是纯数字串， 则必须 &gt;=3000 </font></b>, 切记.<br>
+
+<br><br><br>
+<script type='text/javascript' src='nstd.js'></script>
+</body></html>

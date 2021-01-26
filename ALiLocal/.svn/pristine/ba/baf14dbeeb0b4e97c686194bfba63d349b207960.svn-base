@@ -1,0 +1,128 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+    <?php //主体部分 ?>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+					 <th>
+					出库时间
+				    </th>
+					<td>
+					<input type="text" data-options = "showSeconds:false" class="easyui-datetimebox" name="start_date"
+							value="<?php echo request('start_date')?>" style="width: 133px;">
+					</td>
+					<th>到</th>
+					<td>
+					<input type="text" data-options = "showSeconds:false" class="easyui-datetimebox" name="end_date"
+						value="<?php echo request('end_date')?>" style="width: 133px;">
+					</td>
+					<th>仓库</th>
+					<td>
+						<?php
+						echo Q::control ( 'dropdownbox', 'department_id', array (
+							'items' => array (
+								'6' => '杭州仓',
+								'7' => '上海仓',
+							    '8' => '义乌仓',
+								'22' => '广州仓',
+							    '23' => '青岛仓',
+								'24' => '深圳仓'
+							),
+							'empty'=>true,
+							'value' => request ( 'department_id' ) 
+						) )?>
+					</td>
+					<th>产品</th>
+                  	<td><?php
+                        echo Q::control ( 'dropdownbox', 'service_code', array (
+                        'items'=>Helper_Array::toHashmap(Order::find("ali_testing_order !='1'")->setColumns('service_code')->asArray()->getall(),'service_code','service_code'),
+                        'value' => request('service_code','US-FY'),
+                        ) )?>
+                   	</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <button type="submit" name="export" class="btn btn-small btn-info" value="export">
+						 <i class="icon-download"></i>
+							导出
+					   </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th>No</th>
+				<th>Order Number</th>
+				<th>TrackingNumber</th>
+				<th>Name</th>
+				<th>Address1</th>
+				<th>Address2</th>
+				<th>Address3</th>
+				<th>City</th>
+				<th>State</th>
+				<th>Zip</th>
+				<th>SKU</th>
+				<th>Description</th>
+				<th>Qty</th>
+				<th>UnitPrice (USD)</th>
+				<th>数据预警</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php if(isset($order)):?>
+		<?php $i=1; foreach ($order as $temp):?>
+		<?php $errormessage=''; $address=Order::splitAddress($temp['consignee_street1'].' '.$temp['consignee_street2']);
+	    if(count($address)>3){
+	       $errormessage.='收件人地址超长';
+	    }
+	    if(strlen($temp['consignee_postal_code'])<>'5' && strlen($temp['consignee_postal_code'])<>'9'){
+	        $errormessage.=empty($errormessage)?'收件人邮编错误':',收件人邮编错误';
+	    }
+	    if(!strpos(trim($temp['consignee_name1']), ' ')){
+	        $errormessage.=empty($errormessage)?'收件人姓名格式不正确':',收件人姓名格式不正确';
+	    }
+	    $state='';
+	    $states=Uscaprovince::find('province_name=?',strtolower(str_replace(' ','',$temp['consignee_state_region_code'])))->getOne();
+	    if($states->isNewRecord()){
+	        $errormessage.=empty($errormessage)?'收件人州错误':',收件人州错误';
+	    }else{
+	        $state=$states->province_code_two;
+	    }
+	    ?>
+			<tr>
+				<td><?php echo $i ?></td>
+				<td><?php echo $temp['ali_order_no']?></td>
+				<td><?php echo $temp['tracking_no']?></td>
+				<td><?php echo $temp['consignee_name1']?></td>
+				<td><?php echo isset($address[0])?$address[0]:''?></td>
+				<td><?php echo isset($address[1])?$address[1]:''?></td>
+				<td><?php echo isset($address[2])?$address[2]:''?></td>
+				<td><?php echo $temp['consignee_city']?></td>
+				<td><?php echo $state?></td>
+				<td><?php echo $temp['consignee_postal_code']?></td>
+				<td><?php echo date('Ymd').sprintf("%06d",$i++)?></td>
+				<td><?php echo substr($temp['product_name_en_far'], 0,35)?></td>
+				<td><?php echo $temp['product_quantity']?></td>
+				<td><?php echo sprintf('%.2f',$temp['declaration_price'])?></td>
+				<td><?php echo $errormessage?></td>
+			</tr>
+		<?php endforeach;?>
+		<?php endif;?>
+		</tbody>
+	</table>
+</form>    
+<?PHP $this->_endblock();?>
+

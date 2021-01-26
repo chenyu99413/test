@@ -1,0 +1,14 @@
+[{"url":"staff\/index","param":null,"name":"工作台","children":null}
+,{"url":"#","param":null,"name":"业务管理","children":
+	[{"url":"order\/search","param":null,"name":"订单查询","children":null}
+]}
+,{"url":"#","param":null,"name":"部门管理","children":
+	[{"url":"department\/search","param":null,"name":"部门查询","children":null}
+]}
+,{"url":"#","param":null,"name":"员工管理","children":
+	[{"url":"staff\/search","param":null,"name":"员工查询","children":null}
+]}
+,{"url":"#","param":null,"name":"角色管理","children":
+	[{"url":"role\/search","param":null,"name":"角色查询","children":null}
+]}
+]

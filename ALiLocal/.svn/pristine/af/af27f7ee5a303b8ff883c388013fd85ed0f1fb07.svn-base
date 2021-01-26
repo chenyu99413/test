@@ -1,0 +1,375 @@
+<?php
+class Helper_ReturnLabel_Dhl{
+	/**
+	 * @todo   DHL账号渠道
+	 * @author stt
+	 * @since  2020-09-09
+	 * @link   #82496
+	 */
+	static function dhl($order,$channel_id){
+		set_time_limit(0);
+		$outs=Returnoutpackage::find('return_order_id = ?',$order->return_order_id)->getAll();
+		$state='';
+		//判断收件国家是否是US
+		if($order->consignee_country_code=='US'){
+			//将收件人州转为二字码
+			$states=Uscaprovince::find('province_name=? or province_code_two=?',strtolower(str_replace(' ','',$order->consignee_state_region_code)),strtoupper(str_replace(' ','',$order->consignee_state_region_code)))->getOne();
+			if($states->isNewRecord()){
+				$view['errormessage']=$order->consignee_country_code.'中不存在'.$order->consignee_state_region_code.'州/省';
+				return $view;
+			}else{
+				$state=$states->province_code_two;
+			}
+			$server = '02002';
+		}else {
+			$server = '02001';
+		}
+		//判断地址2是否纯数字
+		if(is_numeric($order->consignee_street2)){
+			//纯数字就拼接在一起
+			$address_str = $order->consignee_street1.$order->consignee_street2;
+			//超过120个字符
+			//1
+			//1
+			if(strlen($address_str) > 120){
+				$view['errormessage']='收件人地址超长，地址的总字符不超过120';
+				return $view;
+			}else{
+				$address[] = $address_str;
+			}
+		}else{
+			$address=Helper_Common::splitAddressdhl($order->consignee_street1.' '.$order->consignee_street2);
+			if(count($address)>3){
+				$view['errormessage']='收件人地址超长，地址1+地址2的总字符不超过120';
+				return $view;
+			}
+		}
+		
+		$pieces=array();
+		$commodities=array();
+		$i = 1;$j = 1;
+		$weight = 0;
+		foreach ($outs as $out){
+			$weight += $out->weight_out;
+			$pieces[]=array(
+				'Piece'=>array(
+					'Number'=>$i,
+					'Weight'=>$out->weight,
+					'Length'=>$out->length,
+					'Width'=>$out->width,
+					'Height'=>$out->height,
+				)
+			);
+			$i++;
+		}
+		//渠道
+		$channel = ReturnChannel::find('channel_id = ?',$channel_id)->getOne();
+		//针对欧洲六国：德国（DE）,西班牙（ES）、奥地利（AT），葡萄牙（PT）,罗马尼亚（RO），尼日利亚（NG）的香港DHL打单，
+		//当整票出库计费重大于等于4KG，且实重小于等于3.5KG时，整票实重按照4KG推送。
+		//整票实重按照4KG推送。
+		$weightarr = Helper_Quote::getweightarr($order,2,$channel);
+		$country = array('DE','ES','AT','PT','RO','NG');
+		if(in_array($order->consignee_country_code, $country) && $weightarr['total_cost_weight'] >= 4 && $weightarr['total_real_weight'] <= 3.5){
+			$count_out = 4/count($outs);
+			foreach ($pieces as $k => $v){
+				$pieces[$k]['Piece']['Weight'] = $count_out;
+			}
+		}
+		$goods = ReturnOrderproduct::find('return_order_id = ?',$order->return_order_id)->getAll();
+		$amount = 0;
+		$description = '';
+		$descriptioncn = '';
+		$dealer = 0;
+		foreach ($goods as $good){
+			$commodities[]=array(
+				'Commodity'=>array(
+					'Number'=>$j,
+					'Code'=>$good->hs_code_far,
+					'Name'=>$good->product_name_en_far,
+					'NameCn'=>$good->product_name_far,
+					'Qty'=>$good->product_quantity,
+					'Price'=>$good->declaration_price,
+					'TaxRate'=>'0',
+					'Currency'=>$order->currency_code,
+					'Note'=>''
+				)
+			);
+			//验证是否电信牌
+			if(strstr($good->product_name_far,'手机')){
+				$dealer = 1;
+			}
+			$amount += $good->product_quantity;
+			$description = $good->product_name_en_far.' '.$good->product_quantity.'PCS';
+			$descriptioncn = $good->product_name_far.' '.$good->product_quantity.'PCS';
+			$j++;
+		}
+		$sender_name='MR LI HUI';
+		$sender_company='FAR';
+		$sender_phone='31746198';
+		$sender_province='';
+		$sender_city='TSING YI';
+		$sender_area='';
+		$sender_address='GUANG SHENG XIANG XIA SHI WE IF RTO,PLS RTN TO HKG FOR SHPR INST';
+		$sender_zip_code='';
+		$sender_email='';
+		$sender_country_code='HK';
+		if($channel->sender_id){
+			$sender_id = explode(',', $channel->sender_id);
+			$sender_id = $sender_id[rand(0, count($sender_id)-1)];
+			$sender=Sender::find('sender_id = ?',$sender_id)->getOne();
+			if(!$sender->isNewRecord()){
+				$sender_name=$sender->sender_name;
+				$sender_company=$sender->sender_company;
+				$sender_phone=$sender->sender_phone;
+				$sender_province=$sender->sender_province;
+				$sender_city=$sender->sender_city;
+				$sender_area=$sender->sender_area;
+				$sender_address=$sender->sender_address;
+				$sender_zip_code=$sender->sender_zip_code;
+				$sender_email=$sender->sender_email;
+				$sender_country_code=$sender->sender_country;
+				
+			}
+		}
+		$senderaddress=Helper_Common::splitAddressdhl($sender_address);
+		$consignor = array(
+			'PersonName'=>$sender_name,
+			'CompanyName'=>$sender_company,
+			'Address1'=>@$senderaddress[0],
+			'Address2'=>@$senderaddress[1],
+			'Address3'=>@$senderaddress[2],
+			'CityName'=>$sender_city,
+			'PostalCode'=>'',
+			'CountryCode'=>$sender_country_code,
+			'PhoneNumber'=>$sender_phone,
+			'FaxNumber'=>'',
+			'EMail'=>'',
+		);
+		$consignee_name1=$order->consignee_name1;
+		if(!preg_match("/\s/", $consignee_name1)){
+			$consignee_name1=$consignee_name1.' '.$consignee_name1;
+		}
+		//公司必填
+		$consignee_name2=$order->consignee_name2;
+		if(!preg_match("/\s/", $consignee_name2)){
+			$consignee_name2=$consignee_name2.' '.$consignee_name2;
+		}
+		//是否电池 0：否，1：是，默认为 0
+		$is_battery = '0';
+		//电池标号 当为电池件是，为必录项，可供录入的选项：967\ 967>2
+		$battery_label = '';
+		$battery_description = '';
+		if ($order->has_battery==1){
+			$is_battery = '1';
+			if ($order->has_battery_num==2){
+				$battery_label = '967>2';
+				$battery_description = 'Lithium ion batteries in compliance with section II of PI967 – “Content”';
+			}elseif($order->has_battery_num==1){
+				$battery_label = '967';
+				$battery_description = 'LiBa section II of PI967, 4 cells/2 batt or less – “Content”';
+			}else{
+				$view['errormessage']='订单内含带电产品,请补充电池数量!';
+				return $view;
+			}
+		}
+		//做报错提示
+		//收件人手机号与电话不一致
+		if ($order->consignee_telephone != $order->consignee_mobile){
+			$view['errormessage']='收件人手机号与电话不一致!';
+			return $view;
+		}
+		$res=array(
+			'ShipmentRequest'=>array(
+				'ReferenceId'=>$order->ali_order_no,
+				'Server'=>$server,
+				'Amount'=>$amount,
+				'UnitPrice'=>sprintf('%.2f',$order->total_amount/$amount),
+				'TotalPrice'=>$order->total_amount,
+				'Currency'=>$order->currency_code,
+				'Description'=>$description,
+				'DescriptionCn'=>$descriptioncn,
+				'IsBattery'=>$is_battery,
+				'BatteryLabel'=>$battery_label,
+				'BatteryDescription'=>$battery_description,
+				'PackageType'=>'02',
+				'LabelImageFormat'=>'PDF',
+				'IsPaperLessTradeSupport'=>'1',
+				'IsUploadHKRedioDealerLicenceFile'=>$dealer,
+				'HideAccount'=>'0',
+				'RequestArchiveDoc'=>'1',
+				'NumberOfArchiveDoc'=>'1',
+				'Consignee'=>array(
+					'PersonName'=>$consignee_name1,
+					'CompanyName'=>$consignee_name2,
+					'Address1'=>@$address[0],
+					'Address2'=>@$address[1],
+					'Address3'=>@$address[2],
+					'CityName'=>$order->consignee_city,
+					'PostalCode'=>$order->consignee_postal_code,
+					'CountryCode'=>$order->consignee_country_code,
+					'PhoneNumber'=>$order->consignee_mobile,
+					'FaxNumber'=>'',
+					'EMail'=>'',
+				),
+				'Consignor'=> $consignor,
+				'Pieces'=>$pieces,
+				'Commodities'=>$commodities
+			),
+		);
+		//转成json保存到日志表
+		$res_json = json_encode($res);
+		$res = Helper_xml::simpleArr2xml($res,null);
+		QLog::log('dhl订单数据：'.$res);
+		$log=new OrderLog(array(
+			'order_id'=>$order->order_id,
+			'staff_id'=>MyApp::currentUser('staff_id'),
+			'staff_name'=>MyApp::currentUser('staff_name'),
+			'comment'=>'dhl订单报文：'.$res_json
+		));
+		$log->save();
+		Helper_Curl::$connecttimeout='120';
+		Helper_Curl::$timeout='120';
+		
+		$res=base64_encode($res);
+		$datetime=date('YmdHis');
+		$arr = http_build_query(array(
+			//     	     'id'=>'02010324',
+			'id'=>'02010531',
+			'method'=>'order.predict',
+			'returnStyle'=>'json',
+			'datetime'=>$datetime,
+			'content'=>$res,
+			// 	    	'verify'=>md5('02010324'.$datetime.$res.'112233')
+			'verify'=>md5('02010531'.$datetime.$res.'fwI(R6T^r1g6mC8r')
+		));
+		$url='http://api.httx56.com:8056';
+		// 	    $url='http://sys.httx56.com:8056';
+		//     	$url='http://119.29.6.201:8068';
+		$return=Helper_Curl::post($url, $arr);
+		QLog::log('dhl下单回执：'.$return);
+		$return=json_decode($return,true);
+		if($return['State']=='1'){
+			//重发
+			$order->new_tracking_no = $return['Data']['AirwayBillNumber'];
+			//保存
+			$order->save();
+			//删除原单号
+			ReturnSubcode::find('order_id=?',$order->return_order_id)->getAll()->destroy();
+			//退件表数据保存
+			$child_subcode=$return['Data']['Pieces'];
+			foreach ($child_subcode as $tr){
+				$order_subcode=new ReturnSubcode();
+				$order_subcode->changeProps(array(
+					'order_id'=>$order->return_order_id,
+					'sub_code'=>$tr['LicensePlate'],
+					'weight'=>$tr['Weight'],
+					'length'=>$tr['Length'],
+					'width'=>$tr['Width'],
+					'height'=>$tr['Height'],
+				));
+				$order_subcode->save();
+			}
+			
+			
+			$dir=Q::ini('upload_tmp_dir');
+			@Helper_Filesys::mkdirs($dir);
+			$target=$dir.DS.$return['Data']['AirwayBillNumber'].'.pdf';
+			file_put_contents($target,base64_decode($return['Data']['LabelImage']));
+			//dhl_pdf_type
+			QLog::log('dhl_pdf_type1'.Helper_PDF::pdfCount($target));
+			QLog::log('dhl_pdf_type2'.$order->package_total_num);
+			
+			if(Helper_PDF::pdfCount($target) == $order->package_total_num){
+				$order->dhl_pdf_type = 1;
+			}else{
+				$order->dhl_pdf_type = 0;
+			}
+			$order->save();
+			
+			$view['errormessage']='';
+			$view['account']='DHL';
+			$uploadoss = new Helper_AlipicsOss();
+			//上传到oss
+			$miandan_data = $uploadoss->uploadAlifiles($return['Data']['AirwayBillNumber'].'.pdf');
+			if ($uploadoss->doesExist($return['Data']['AirwayBillNumber'].'.pdf')){
+				//上传成功，删除
+				@unlink($dir.DS.$return['Data']['AirwayBillNumber'].'.pdf');
+			}
+			$invoice=array();
+			$total_value=0;
+			foreach ($order->product as $v){
+				$invoice['items'][]=array(
+					'desc'=>$v->product_name_en_far.' HS Code:'.$v->hs_code_far.' '.$v->material_use,
+					'quantity'=>$v->product_quantity,
+					'price'=>$v->declaration_price,
+					'itotal'=>round($v->product_quantity*$v->declaration_price,2),
+				);
+				$total_value+=round($v->product_quantity*$v->declaration_price,2);
+			}
+			//生成的条码图片
+			$barcode=$dir.DS.$order->tracking_no.'.barcode.png';
+			//--
+			$logo=$dir.DS.'logo.jpg';
+			$source=trim(file_get_contents('http://kuaijian.far800.com/public/barcode/html/image.php?filetype=PNG&dpi=90&scale=1&rotation=0&font_family=0&font_size=8&thickness=55&start=A&code=BCGcode128&text='.$order->tracking_no));
+			file_put_contents($barcode, $source);
+			
+			//$jsonFile=$dir.DS.$order->tracking_no.'.json';
+			$warhouse_info ['name'] = $sender_name;
+			$warhouse_info ['company'] = $sender_company;
+			$warhouse_info ['address'] = $sender_address;
+			$warhouse_info ['city'] = $sender_city;
+			$warhouse_info ['state'] = $sender_province;
+			$warhouse_info ['postcode'] = $sender_zip_code;
+			$warhouse_info ['phone'] = $sender_phone;
+			
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+			//11111111111111
+		}else {
+			$view['errormessage']=$return['Msg'];
+		}
+		return $view;
+	}
+}

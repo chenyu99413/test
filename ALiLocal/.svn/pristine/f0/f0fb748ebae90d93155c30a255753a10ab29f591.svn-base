@@ -1,0 +1,73 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    支付验证
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<script type="text/javascript" src="<?php echo $_BASE_DIR;?>public/js/jquery.sound.js"></script>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<div class="FarSearch" >
+	<table>
+		<tbody>
+			<tr>
+				<th>阿里订单号</th>
+				<td>
+					<input name="ali_order_no" type="text" id="ali_order_no" style="width: 200px" value=""><span id="explain" style="margin-left:10px;"></span>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+    
+<?PHP $this->_endblock();?>
+<script type="text/javascript">
+	$(function(){
+		document.getElementById("ali_order_no").focus();
+		//扫描阿里单号
+		$('#ali_order_no').on('keyup', function (e) {
+			if (e.keyCode == 13) {
+				$("#explain").html('')
+				$.ajax({
+					url:'<?php echo url('order/paymentverify')?>',
+					type:'POST',
+					dataType:'json',
+					data:{ali_order_no:$("#ali_order_no").val()},
+					success:function(data){
+						if(data.status=='true'){
+							if(data.directionmsg=='true'){
+								$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yizhifukeyouhua.mp3');//已支付
+								$("#explain").html('优化重量：'+data.data.weight_label+' 渠道：'+data.data.channel_name).css('color','green');
+							}else{
+								$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yizhifu.mp3');//已支付
+								$("#explain").html('已支付').css('color','green');
+							}
+						}else if(data.status=='waitreturn'){
+							$("#explain").html('待退货，请处理').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/daituihuoqingchuli.mp3');//待退货
+						}else if(data.status=='false'){
+							$("#explain").html('未支付').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/weizhifu.mp3');//未支付
+						}else if(data.status=='false1'){
+							$("#explain").html('新单号：'+data.related_ali_order_no).css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/huandanchongfa.mp3');//未支付
+						}else if(data.status=='chaoqi'){
+							$("#explain").html('已超期').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yichaoqi.mp3');//已超7天
+						}else if(data.status=='notexist'){
+							$("#explain").html('单号不存在').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/danhaobucunzai.mp3');//单号不存在
+						}else if(data.status=='abnormal'){
+							$("#explain").html('异常').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yichang.mp3');//其他状态
+						}else{
+							$("#explain").html('无法验证，请联系技术人员').css('color','red');
+						}
+						$("#ali_order_no").select();
+					}
+				})
+			}
+		});
+	})
+</script>
+

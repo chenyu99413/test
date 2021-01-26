@@ -1,0 +1,40 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>部门列表<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<div class="FarTool">
+		<a class="btn btn-success btn-small" href="<?php echo url('department/edit')?>">
+			<i class="icon-plus"></i>
+			新建
+		</a>
+	</div>
+	<table class="FarTable" style="width:60%">
+		<thead>
+			<tr>
+				<th width="200">部门</th>
+				<th width=160>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		    <?php foreach($departments as $department):?>
+			<tr>
+				<td>
+					<a
+						href="<?php echo url("department/edit",array("department_id"=>$department->department_id))?>">
+						<?php echo $department->department_name;?>
+					</a>
+				</td>
+				<td>
+					<a class="btn btn-mini"
+						href="<?php echo url("department/edit",array("department_id"=>$department->department_id))?>">
+						<i class="icon-edit"></i>
+						编辑
+					</a>
+				</td>
+			</tr>
+			<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+
+<?PHP $this->_endblock();?>

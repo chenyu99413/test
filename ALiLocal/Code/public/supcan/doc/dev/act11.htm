@@ -1,0 +1,119 @@
+<HTML>
+<head><title>11.OnReady 事件深入分析</title>
+<meta http-equiv="content-type" content="text/html; charset=gb2312">
+<link rel="stylesheet" href="temp1.css" type="text/css">
+</head>
+<body bgcolor=#ffffff vlink=#0000ff>
+<br>
+<p class='sz1'>11.OnReady 事件深入分析</p><hr color=#2266ee size=1>
+<p class='sz3'>11.1 基本原理</p>
+　　当硕正控件被页面成功创建后，将触发 OnReady 事件，用程序的角度看，相当于硕正控件反向调用了页面的 OnReady 函数。控件通过调用 OnReady 通知页面：我已经被创建了，您可以在该事件中书写初始语句，比如打开报表模板、加载数据等等。<br>
+　　在不同的浏览器下，控件的创建时机是不一样的，在 IE 浏览器下，控件的创建时机是：控件首次出现在可视区域时。举个例子，假如您的页面很长，控件隐藏在页面的下方，需要拖拽右侧滚动条才能让控件显示：<br>
+<center><img src='act2.jpg'/></center>
+　　控件一开始是不被创建的，直到您拖拽滚动条，让控件出现在浏览器窗口的可视区域的一瞬间，它才被创建、并触发 OnReady 事件的！<br>
+<br>
+<img src='glass.bmp' class="imgleft"><p class="glass">仅 IE 浏览器是这样的，Chrome、Firefox 浏览器不存在这个问题，不管控件是不是在可视区域，都将被快速创建.</p>
+<br>
+<img src='glass.bmp' class="imgleft"><p class="glass">硕正控件必须被创建、触发过 OnReady 事件后，才是可用的.</p>
+　　如果页面中只有一个控件， 这个过程就是这样，比较简单，在此就不再讨论；如果页面中有多个控件， 情况将会很复杂，下文将专门讨论这种情形。<br>
+<br>
+<hr>
+<br>
+<p class='sz3'>11.2 多个控件 (常规处理)</p>
+　　例如下面的html片段，就表示包含了2个紧挨着的控件，其 id 分别为 AF1、AF2: <br>
+<pre class='xml'>
+&lt;div style="position:relative;width:96%;height:400px"&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;script&gt;insertReport('AF1', '')&lt;/script&gt;
+&lt;/div&gt;
+&lt;div style="position:relative;width:96%;height:400px"&gt;
+&nbsp;&nbsp;&nbsp;&nbsp;&lt;script&gt;insertReport('AF2', '')&lt;/script&gt;
+&lt;/div&gt;</pre>
+　　AF1、AF2将先后被页面创建，并将分别触发 OnReady 事件, 也就是说页面中的 OnReady(id) 函数将一共被执行 2 遍。<br>
+<img src='glass.bmp' class="imgleft"><p class="glass">注意: 控件未必是按照从上到下的次序创建的，也就是说你无法预测 OnReady( id ) 函数中 id 参数是先出现 AF1 还是 AF2！</p>
+<br>
+<br>
+　　您的 OnReady 函数中，应该增加 id 的条件判断语句，按类似如下的格式书写:<br>
+<pre class='cpp'>
+function OnReady(id)
+{
+ if(id == 'AF1')
+  AF1.func("build", "../xml/report1.xml");
+ else if(id == 'AF2')
+  AF2.func("build", "../xmlres/genrpt.aspx?n=133");
+}</pre>
+　　如下写法是错误的，有严重的逻辑问题，初学者很容易犯这个错误:<br>
+<pre class='cpp'>
+function OnReady(id)
+{
+  AF1.func("build", "../xml/report1.xml");
+  AF2.func("build", "../xmlres/genrpt.aspx?n=133");
+}</pre>
+<br>
+<hr>
+<br>
+<p class='sz3'>11.3 多个控件 (用于 Firefox 30.0)</p>
+　　我们发现，在Firefox 30.0版中，控件需要全部被创建后，才能执行初始语句，这样一来，上述的常规书写方法将需要调整:  我们增加了一个计数器变量，当计数器变量的值等于控件总数时，才一起做初始工作：<br>
+<pre class='cpp'>
+var supcanCount=0;
+function OnReady(id)
+{
+  supcanCount++;
+  if(supcanCount != 2) return;  //当前页面有2个控件
+ 
+  //控件已全部创建, 可以执行初始了
+  AF1.func("build", "../xml/report1.xml");
+  AF2.func("build", "../xmlres/genrpt.aspx?n=133");
+}</pre>
+　　你会发现，这种办法也能通用于其它浏览器，比如 IE. <br>
+　　但是，在 IE 浏览器下如果页面很长，超出了浏览器的高度，AF1 或者 AF2 一开始是隐藏在下方区域的，那就有问题了：supcanCount不会等于 2 的，除非你拖拽右侧滚动条，让隐藏的控件显示出来!<br>
+　　为此，需要进一步调整程序，让其最终兼容IE、Firefox、Chrome:<br>
+<pre class='cpp'>
+var countForFirefox = 0;
+function OnReady(id)
+{
+ if($isFirefox) {   //该变量在 dynaload.js 中，可以直接使用
+  countForFirefox++;
+  if(countForFirefox != 2) return;
+  id = '';   //赋 id 为空串，使得下面的语句能全部执行
+ }
+ 
+ if(id == 'AF1' || id == '') AF1.func("build", "../xml/report1.xml");
+ if(id == 'AF2' || id == '') AF2.func("build", "../xmlres/genrpt.aspx?n=133");
+}</pre>
+　　至此，这段 js 大致没问题了，在我们的在线演示页面中，凡是有多个控件的，基本都是按照这个范例去实现的。<br>
+<br>
+<hr>
+<br>
+<p class='sz3'>11.4 多个控件 (用于极端条件的 Firefox 30.0)</p>
+　　在Firefox 30.0版中，如果您的页面文件很大、引用的 js 小文件很多、网速很慢，上述方法也不一定管用，控件的初始动作必须是在页面的 onLoad( ) 事件触发之后才能执行! <br>
+　　下面是个参考程序：<br>
+<pre class='cpp'>
+var countForFirefox = 0;
+function OnReady(id)
+{
+ cooper(id);
+}
+function onLoadPage( )
+{
+ if($isFirefox) cooper('');
+}
+ 
+function cooper( id )
+{
+ if($isFirefox) {
+  countForFirefox++;
+  if(countForFirefox != 3) return;  //注意: 比控件数目多了1，是因为要考虑 onLoad 因素
+ }
+ if(id == 'AF1' || $isFirefox) AF1.func("build", "../xml/report1.xml");
+ if(id == 'AF2' || $isFirefox) AF2.func("build", "../xmlres/genrpt.aspx?n=133");
+}
+
+...
+&lt;body onLoad='onLoadPage( )' .... (略)
+...</pre>
+　　该例程处理已经考虑兼容其它浏览器了。<br>
+
+
+<br><br><br>
+<script type='text/javascript' src='nstd.js'></script>
+</body></html>

@@ -1,0 +1,1 @@
+ALTER TABLE `tb_pallet` ADD COLUMN `channel_name`  varchar(10) NULL COMMENT '渠道名称：义乌OGP和嘉兴' AFTER `operator`;

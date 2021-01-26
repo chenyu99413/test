@@ -1,0 +1,42 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>角色列表<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="post">
+	<div class="FarTool">
+		<a class="btn btn-success" href="<?php echo url('role/edit')?>">
+			<i class="icon-plus"></i>
+			新建角色
+		</a>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th width="30">
+					<input type="checkbox">
+				</th>
+				<th width="80">角色</th>
+				<th>用户</th>
+				<th width=160>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php foreach($roles as $value):?>
+			<tr>
+				<td>
+					<input type="checkbox">
+				</td>
+				<td><?php echo $value["role_name"]?></td>
+				<td><?php echo $value["staff_names"]?></td>
+				<td>
+					<a class="btn btn-mini"
+						href="<?php echo url('role/edit',array("role_id"=>$value["role_id"]))?>">
+						<i class="icon-edit"></i>
+						编辑
+					</a>
+				</td>
+			</tr>
+			<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+<?PHP $this->_endblock();?>

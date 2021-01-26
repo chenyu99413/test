@@ -1,0 +1,48 @@
+<HTML>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=gb2312">
+<link rel="stylesheet" href="temp1.css" type="text/css">
+</head>
+<body bgcolor=#ffffff vlink=#0000ff>
+
+<div id="TagFonts"/><br>
+<b>Fonts</b>　　<img src='document.bmp' title='请参见演示页: 1.体验Freeform'>
+<table width=100% border=1 align="center">
+<tr bgcolor=#e4e4e4><td colspan=4>含义:用到的字体资源；数量:0 - 1</td></tr>
+<tr bgcolor=#f1f1f1><td>属性名称</td><td>含义</td><td>可用值</td><td>默认值</td></tr>
+<tr><td>ref</td><td>引用外部XML描述文件,<br>字体内容将来自该文件, 实现类似页面CSS的统一置换功能</td><td>外部XML文件的URL，可以是相对URL</td><td>(无)</td></tr>
+</table>
+
+<div id="TagFont"/><br>
+<b>Font</b>
+<table width=100% border=1 align="center">
+<tr bgcolor=#e4e4e4><td colspan=4>含义:字体资源；数量:0 - n</td></tr>
+<tr bgcolor=#f1f1f1><td>属性名称</td><td>含义</td><td>可用值</td><td>默认值</td></tr>
+
+<tr><td>faceName 或 Face, Name</td><td rowspan=14>对应Windows SDK中的LOGFONT结构中的同名属性.<br><br>
+注1: Height(或size)是字体的尺寸，单位是字体的逻辑单位，通常采用小于0的数字，如果大于0，则高度不包含文字的内部行距(internal-leading)。常用的尺寸是-8, -9, -10, -11, -12, -14, -16, -18, -20, -22, -24, -26, -28, -36, -48, -72;<br>
+注2: weight=400/700 对应 非粗体/粗体；<br>
+注3: Bold=false/true 对应 非粗体/粗体</td><td>串</td><td rowspan=14>系统默认字体</td></tr>
+<tr><td>charSet</td><td>整数</td></tr>
+<tr><td>height 或 FontSize, Size</td><td>整数</td></tr>
+<tr><td>weight 或 Bold</td><td>整数</td></tr>
+<tr><td>width</td><td>整数</td></tr>
+<tr><td>pitchAndFamily</td><td>整数</td></tr>
+<tr><td>quality</td><td>整数</td></tr>
+<tr><td>italic</td><td>整数</td></tr>
+<tr><td>underline</td><td>整数</td></tr>
+<tr><td>outPrecision</td><td>整数</td></tr>
+<tr><td>strikeOut</td><td>整数</td></tr>
+<tr><td>clipPrecision</td><td>整数</td></tr>
+<tr><td>escapement</td><td>整数</td></tr>
+<tr><td>orientation</td><td>整数</td></tr>
+<tr><td>isAntiAlias</td><td>是否抗锯齿平滑显示</td><td>true/false</td><td>false</td></tr>
+<tr><td>ShadowAlpha</td><td>阴影的透明度</td><td>0 至 255</td><td>0</td></tr>
+<tr><td>ShadowBlur</td><td>阴影的模糊度</td><td>0 至 100</td><td>0</td></tr>
+<tr><td>ShadowX</td><td>阴影的横向偏移</td><td>-120 至 120</td><td>0</td></tr>
+<tr><td>ShadowY</td><td>阴影的纵向偏移</td><td>-120 至 120</td><td>0</td></tr>
+</table>
+
+<br><br><br>
+<script type='text/javascript' src='nstd.js'></script>
+</body></html>

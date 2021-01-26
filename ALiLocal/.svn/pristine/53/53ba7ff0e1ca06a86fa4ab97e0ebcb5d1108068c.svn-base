@@ -1,0 +1,248 @@
+<?php
+/**
+ * 后台服务控制器
+ *
+ */
+class Controller_Cron extends Controller_Abstract{
+    /**
+     * notifyBizEvent
+     */
+    function actionnotifyBizEvent(){
+        $url_sign='https://gw.open.1688.com/openapi/param2/1/ali.intl.onetouch/logistics.order.notifyBizEvent/563333';
+        $events=Event::find("ifnull(send_flag,'')!='1' and order_id>'82' and confirm_flag = '1' and ifnull(reason,'')=''  and event_time<=?",time())->order('order_id,event_time')->getAll();
+        foreach ($events as $event){
+            $ali=new Helper_ALI();
+            $event_request_data=$ali->notifyBizEvent($event);
+            $sign=$ali->sign($url_sign, json_encode($event_request_data),'notifyBizEvent');
+            //组合完整url
+            QLog::log($url_sign.'?notifyBizEventDTO='.json_encode($event_request_data).'&_aop_signature='.$sign);
+            $url=$url_sign.'?notifyBizEventDTO='.urlencode(json_encode($event_request_data)).'&_aop_signature='.$sign;
+            QLog::log($url);
+            //通过curl get 方式发送至阿里
+            $response=Helper_Curl::get1($url);
+            QLog::log('event_response'.$response);
+            $response=json_decode($response,true);
+            if($response['success']==true){
+                $event->send_flag='1';
+                $event->save();
+            }
+        }
+        exit();
+    }
+    /**
+     * notifyTrace
+     */
+    function actionnotifyTrace(){
+        $url_sign='https://gw.open.1688.com/openapi/param2/1/ali.intl.onetouch/logistics.order.notifyTrace/563333';
+        $tracking=Tracking::find("ifnull(send_flag,'')!='1' and order_id>'82' and confirm_flag = '1' and trace_time<=?",time())->getAll();
+        foreach ($tracking as $temp){
+            $ali=new Helper_ALI();
+            $trace_request_data=$ali->notifyTrace($temp);
+            $sign=$ali->sign($url_sign, json_encode($trace_request_data),'notifyTrace');
+            //组合完整url
+            $url=$url_sign.'?notifyTraceDTO='.urlencode(json_encode($trace_request_data)).'&_aop_signature='.$sign;
+            //通过curl get 方式发送至阿里
+            $response=Helper_Curl::get1($url);
+            QLog::log('trace_request'.json_encode($trace_request_data));
+            QLog::log('trace_response'.$response);
+            $response=json_decode($response,true);
+            if($response['success']==true){
+                $temp->send_flag='1';
+                $temp->save();
+            }
+        }
+        exit();
+    }
+    /**
+     * 推送订单到快件系统中
+     */
+    function actionPushorder(){
+    	//交货验证之后，状态是待发送
+        $orders=Order::find("order_status= '7' and add_data_status='1'")->getAll();
+        foreach ($orders as $order){
+            //查询far_package表中包裹数量
+            $package_count=Farpackage::find('order_id=?',$order->order_id)->sum('quantity','sum_quantity')->getAll();
+            //查询账号
+            $account=UPSAccount::find('account=?',$order->account)->asArray()->getOne();
+            //判断订单为高价还是低价，根据结果决定使用哪个经营单位编码
+            if($order->declaration_type=='DL' || $order->total_amount > 700 || $order->weight_actual_in > 70){//高价
+                $business_code=$order->business_code;
+            }else{
+                $business_code=$account['business_code'];
+            }
+            //查询子单号
+            $sub_code=Helper_Array::getCols(Subcode::find('order_id=?',$order->order_id)->asArray()->getAll(), 'sub_code');
+            //获取invoice信息
+            $invoice=array();
+            $product_count=count($order->product);
+            //中文品名，默认选择第一个
+            $commodity_name="";
+            foreach ($order->product as $key=> $temp){
+            	if($key=='0'){
+            		$commodity_name=$temp->product_name;
+            	}
+                $invoice[]=array(
+                    'product_name_en_far'=>$temp->product_name_en_far,
+                    'product_name_far'=>$temp->product_name_far,
+                    'hs_code_far'=>$temp->hs_code_far,
+                    'weight'=>(floor($order->weight_actual_out/$product_count*100))/100,
+                    'declaration_price'=>$temp->declaration_price,
+                	'currency_code'=>$order->currency_code,
+                    'product_quantity1_far'=>$temp->product_quantity1_far,
+                    'product_unit1_far'=>$temp->product_unit1_far,
+                    'product_quantity2_far'=>$temp->product_quantity2_far,
+                    'product_unit2_far'=>$temp->product_unit2_far,
+                );
+            }
+            $vat='';
+            if($order->tax_payer_id){
+                $vat=' VAT:'.$order->tax_payer_id;
+            }
+            $account_sync=Accountsync::find('account=?',$order->account)->getOne();
+            //组合数据
+            $data=array(
+                'tracking_no'=>$order->tracking_no,
+                'declaration_type'=>$order->declaration_type,
+                'total_amount'=>$order->total_amount,
+                'weight_actual_in'=>$order->weight_actual_in,
+                'weight_cost_out'=>$order->weight_cost_out,
+                'weight_income_in'=>$order->weight_income_in,
+                'weight_actual_out'=>$order->weight_actual_out,
+                'packing_type'=>$order->packing_type,
+                'item_count'=>$package_count['sum_quantity'],
+                'consignee_country_code'=>$order->consignee_country_code,
+                'account'=>$order->account,
+                'sender_cn'=>$account['sender_cn'],
+                'aname'=>$account['aname'],
+                'address'=>$account['address'],
+                'address_cn'=>$account['address_cn'],
+                'name'=>$account['name'],
+                'phone'=>$account['phone'],
+                'city'=>$account['city'],
+                'city_cn'=>$account['city_cn'],
+                'business_code'=>$business_code,
+                'consignee_cn'=>$order->consignee_cn,
+                'consignee_name'=>$order->consignee_name1.' '.$order->consignee_name2,
+                'consignee_address_cn'=>$order->consignee_address_cn,
+                'consignee_address'=>$order->consignee_street1.' '.$order->consignee_street2.$vat,
+                'consignee_mobile'=>$order->consignee_mobile,
+                'consignee_city'=>$order->consignee_city,
+                'consignee_postal_code'=>$order->consignee_postal_code,
+                'credit_code'=>$account['credit_code'],
+                'channel_id'=>$account_sync->channel_id,
+            	'channel_name'=>$account_sync->channel_name,
+            	'product_id'=>$account_sync->product_id,
+            	'product_name'=>$account_sync->product_name,
+                'commission_code'=>$order->commission_code,
+            	'commodity_name'=>$commodity_name,
+                'sort'=>$order->sort,
+                'subcodes'=>$sub_code,
+                'invoice'=>$invoice
+            );
+            QLog::log($order->tracking_no.json_encode($data));
+            //发送数据
+            $response=Helper_Curl::post('http://kuaijian.far800.com/index.php?controller=cron&action=getwaybill', json_encode($data));
+            if($response=='成功'){//推送信息成功
+                $order->order_status='8';
+                $order->error_message='';
+                $order->save();
+            }else{//失败
+                $order->error_message=$response;
+                $order->add_data_status='';
+                $order->save();
+            }
+        }
+    }
+    /**
+     * 跟踪渠道末端轨迹
+     */
+    function actionRoute(){
+    		$sleep=Q::cache('RouteSleep',array('life_time'=>3600));
+    		if (!$sleep){
+    			self::log('sleep');
+    		}
+    		self::log('begin');
+    		$select=Order::find('order_status in (?)',array(Order::STATUS_OUT,Order::STATUS_PRESEND,Order::STATUS_SENT))
+    			->order('update_time')
+    			->setColumns('order_id,tracking_no,channel_id')
+    			->all()
+    			->getQueryHandle();
+    		while ($row=$select->fetchRow()){
+    			self::log($row['order_id']);
+    			$order=Order::find('order_id =?',$row['order_id'])->getOne();
+    			
+    			if (!empty($row['tracking_no']) && !empty($row['channel_id'])){
+    				self::log($row['tracking_no']);
+    				
+    				$channel =Channel::find('channel_id =?',$row['channel_id'])->getOne();
+    				$trackings=Tracking::find('order_id =?',$row['order_id'])->getAll();
+    				$lastTime=0;
+    				// 求最晚时间并转换为utc+8
+    				if (count($trackings)) foreach ($trackings as $tr){
+    					if ($tr->trace_time + (8-$tr->timezone )*3600 > $lastTime ){
+    						$lastTime =$tr->trace_time + (8-$tr->timezone )*3600;
+    					}
+    				}
+    				
+    				$network_code=$channel->network_code;
+    				if ($network_code =='UPS'){
+    					$json=Helper_Curl::get('http://m.far800.com/?action=tracking&num='.$row['tracking_no'].'&lang=en');
+    					$routes=json_decode($json,TRUE);
+    					if (!empty($routes['data']) && count($routes['data'])){
+    						// 将轨迹按照时间升序排序
+    						$routes['data']=array_reverse($routes['data']);
+    						foreach ($routes['data'] as $d){
+    							// 保存
+    							$r=Route::checkAndSave(array(
+    								'tracking_no'=>$row['tracking_no'],
+    								'time'=>strtotime($d['time']),
+    								'location'=>$d['location'],
+    								'description'=>$d['context'],
+    							));
+    							if (!is_null($r)){
+    								self::log('save');
+    								$r->generateTrace($lastTime,$order);
+    							}
+    						}
+    					}
+    				}
+    			}
+    		}
+    		Q::writeCache('RouteSleep',true,array('life_time'=>3600));
+    		exit;
+    }
+    static function log($str){
+    		QLog::log($str);
+    		echo date('Ymd H:i').']'.$str."\n";
+    }
+    
+    /**
+     * 推送数据到新的出库表格里
+     */
+    function actionsyncpackage(){
+    	set_time_limit(0);
+    	$farpackages=Farpackage::find()->getAll();
+    	foreach ($farpackages as $f){
+    		$order=Order::find('order_id=? and order_status=5',$f->order_id)->getOne();
+    		if(!$order->isNewRecord()){
+    			continue;
+    		}
+    		$faroutpackge=new Faroutpackage();
+    		$faroutpackge->order_id=$f->order_id;
+    		$faroutpackge->quantity_out=$f->quantity;
+    		if($f->weight_out>0){
+    			$faroutpackge->length_out=$f->length_out;
+    			$faroutpackge->width_out=$f->width_out;
+    			$faroutpackge->height_out=$f->height_out;
+    			$faroutpackge->weight_out=$f->weight_out;
+    		}else{
+    			$faroutpackge->length_out=$f->length;
+    			$faroutpackge->width_out=$f->width;
+    			$faroutpackge->height_out=$f->height;
+    			$faroutpackge->weight_out=$f->weight;
+    		}
+    		$faroutpackge->save();
+    	}
+    	exit;
+    }
+}

@@ -1,0 +1,250 @@
+<?php
+/**
+ * 报价助手
+ *
+ * @author D23
+ *
+ */
+class Helper_Quote {
+    /**
+     * 计算应收
+     * @return string
+     */
+    function receivable($order,$weight,$packing_box_quantity='',$packing_pak_quantity='',$special_packing_quantity=''){
+        //根据order获取产品
+        $product=Product::find('product_name=?',$order->service_code)->getOne();
+        //燃油费率
+        //获取网络燃油表
+        $rate=0.15;//暂时固定
+//         $network=Networkfuel::find('network_id=? and effective_date<=? and fail_date>=?',$product->network_id,time(),time())->getOne();
+//         if(!$network->isNewRecord()){
+//             $rate=$network->rate;
+//         }
+        //包装-纸箱费用
+        $packing_box_fee=0;
+        if($packing_box_quantity){
+            $packing_box_fee=$packing_box_quantity*10;
+        }
+        //包装-包裹袋费用
+        $packing_pak_fee=0;
+        if($packing_pak_quantity){
+            $packing_box_fee=$packing_pak_quantity*1;
+        }
+        //异形包装费费用
+        $special_packing_fee=0;
+        if($special_packing_quantity){
+            $special_packing_fee=$special_packing_quantity*50;
+        }
+        //代办服务费一般贸易报关费用
+        $customs_fee=0;
+        if($order->declaration_type=='DL' || $order->total_amount > 700 || $order->weight_actual_in > 70){
+            $customs_fee=250;
+        }
+        //超尺寸/超重附加费
+        $over_size_fee=0;
+        $over_size_quantity=0;
+        foreach ($order->farpackages as $temp){
+            $array=array($temp->length,$temp->width,$temp->height);
+            rsort($array);//逆排序
+            if($array[0]>'121'){
+                //收取超尺寸费用
+                $over_size_fee+=$temp->quantity*53;
+                $over_size_quantity+=$temp->quantity;
+            }else{
+                if($array[1]>'76'){
+                    //收取超尺寸费用
+                    $over_size_fee+=$temp->quantity*53;
+                    $over_size_quantity+=$temp->quantity;
+                }
+            }
+        }
+        //获取产品中偏派-价格-分区
+        $product_p_p_r=Productppr::find('product_id=? and effective_time <=? and invalid_time>=?',$product->product_id,time(),time())->getOne();
+        //偏远地区附加费
+        //查询偏派表
+        $remote_postcode=Remote::find('remote_manage_id = ? and country_code_two=? and start_postal_code<=? and end_postal_code>=?',$product_p_p_r->remote_manage_id,$order->consignee_country_code,$order->consignee_postal_code,$order->consignee_postal_code)->getOne();
+        $remote_city=Remote::find('remote_manage_id = ? and country_code_two=? and remote_city=?',$product_p_p_r->remote_manage_id,$order->consignee_country_code,strtolower(str_replace('-','',str_replace(' ','',$order->consignee_city))))->getOne();
+        if(!$remote_city->isNewRecord()){//偏派城市
+            $remote_fee=$remote_city->first_fee+((($weight-$remote_city->first_weight)/$remote_city->additional_weight)*$remote_city->additional_fee);
+            if($remote_fee<=$remote_city->lowest_fee){
+                $remote_fee=$remote_city->lowest_fee;
+            }
+        }else{
+            if(!$remote_postcode->isNewRecord()){//偏派邮编
+                $remote_fee=$remote_postcode->first_fee+((($weight-$remote_postcode->first_weight)/$remote_postcode->additional_weight)*$remote_postcode->additional_fee);
+                if($remote_fee<=$remote_postcode->lowest_fee){
+                    $remote_fee=$remote_postcode->lowest_fee;
+                }
+            }else{
+                $remote_fee=0;
+            }
+        }
+        //基础运费
+        //获取分区
+        $partition=Partition::find('partition_manage_id=? and country_code_two=?',$product_p_p_r->partition_manage_id,$order->consignee_country_code)->getOne();
+        //获取价格
+        $price=Price::find('price_manage_id=? and partition_code=? and boxing_type=? and end_weight>=?',$product_p_p_r->price_manage_id,$partition->partition_code,$order->packing_type,$weight)->getOne();
+        if($price->isNewRecord()){
+        	$data=array();
+        	return $data;
+        }
+        //计算运费
+        $tracking_fee = 0;
+        if(!$price->isNewRecord()){
+            $tracking_fee=((($weight-$price->first_weight)/$price->additional_weight)*$price->additional_fee)+$price->first_fee;
+        }
+        //燃油附加费
+        $rate_fee=($tracking_fee+$over_size_fee+$remote_fee)*$rate;
+        //组合返回各项费用
+        $data=array(
+            'EX0001'=>array('fee'=>$tracking_fee,'quantity'=>'1'),
+            'EX0002'=>array('fee'=>$packing_pak_fee,'quantity'=>$packing_pak_quantity),
+            'EX0003'=>array('fee'=>$packing_box_fee,'quantity'=>$packing_box_quantity),
+            'EX0034'=>array('fee'=>$special_packing_fee,'quantity'=>$special_packing_quantity),
+            'EX0012'=>array('fee'=>$customs_fee,'quantity'=>1),
+            'EX0020'=>array('fee'=>$remote_fee,'quantity'=>'1'),
+            'EX0035'=>array('fee'=>$over_size_fee,'quantity'=>$over_size_quantity),
+            'EX0019'=>array('fee'=>$rate_fee,'quantity'=>'1'),
+        );
+        return $data;
+    }
+    /**
+     * 计算应付
+     * @return string
+     */
+    function payment($order,$channelcostppr,$network_id,$special_packing_fee_count=''){
+        $total_weight=$order->weight_actual_out;
+        //判断订单是否计算泡重
+        if($order->volumn_chargeable=='1'){//计算泡重
+            //获取渠道成本中计泡系数
+            $channel=ChannelCost::find('channel_cost_id=?',$channelcostppr->channel_cost_id)->getOne();
+            $ratio=$channel->ratio;
+            $weight_cost_out=0;
+            foreach ($order->farpackages as $farpackage){
+                $weight_cost_out+=sprintf("%.2f",($farpackage->length_out*$farpackage->width_out*$farpackage->height_out/$ratio)*$farpackage->quantity)>$farpackage->weight_out*$farpackage->quantity?sprintf("%.2f",($farpackage->length_out*$farpackage->width_out*$farpackage->height_out/$ratio)*$farpackage->quantity):$farpackage->weight_out*$farpackage->quantity;
+            }
+            if($weight_cost_out>=$total_weight){
+                $total_weight=$weight_cost_out;
+            }
+        }
+        //异型包装费,如果页面填写异形包装费用数量，否则计算费用为0
+        if($special_packing_fee_count==''){
+            $special_packing_fee=0;
+        }else{
+            $special_packing_fee=$special_packing_fee_count*40;
+        }
+        //偏远地区附加费
+        $remote_city=Remote::find('remote_manage_id = ? and country_code_two=? and remote_city=?',$channelcostppr->remote_manage_id,$order->consignee_country_code,strtolower(str_replace('-','',str_replace(' ','',$order->consignee_city))))->getOne();
+        if(!$remote_city->isNewRecord()){//偏派城市
+            $remote_fee=$remote_city->first_fee+((($total_weight-$remote_city->first_weight)/$remote_city->additional_weight)*$remote_city->additional_fee);
+            if($remote_fee<=$remote_city->lowest_fee){
+                $remote_fee=$remote_city->lowest_fee;
+            }
+        }else{
+        	$remote_postcode=Remote::find('remote_manage_id = ? and country_code_two=? and start_postal_code<=? and end_postal_code>=?',$channelcostppr->remote_manage_id,$order->consignee_country_code,$order->consignee_postal_code,$order->consignee_postal_code)->getOne();
+            if(!$remote_postcode->isNewRecord()){//偏派邮编
+                $remote_fee=$remote_postcode->first_fee+((($total_weight-$remote_postcode->first_weight)/$remote_postcode->additional_weight)*$remote_postcode->additional_fee);
+                if($remote_fee<=$remote_postcode->lowest_fee){
+                    $remote_fee=$remote_postcode->lowest_fee;
+                }
+            }else{
+                $remote_fee=0;
+            }
+        }
+        //超尺寸/超重附加费
+        $over_size_fee=0;
+        $over_size_quantity='';
+        foreach ($order->farpackages as $temp){
+            if($order->volumn_chargeable=='1'){//根据泡重长宽高判断
+                $array=array($temp->length_out,$temp->width_out,$temp->height_out);
+                rsort($array);//逆排序
+                if($array[0]>'121'){
+                    //收取超尺寸费用
+                    $over_size_fee+=$temp->quantity*40;
+                    $over_size_quantity+=$temp->quantity;
+                }else{
+                    if($array[1]>'76'){
+                        //收取超尺寸费用
+                        $over_size_fee+=$temp->quantity*40;
+                        $over_size_quantity+=$temp->quantity;
+                    }
+                }
+            }else{//根据入库长宽高判断
+                $array=array($temp->length,$temp->width,$temp->height);
+                rsort($array);//逆排序
+                if($array[0]>'121'){
+                    //收取超尺寸费用
+                    $over_size_fee+=$temp->quantity*40;
+                    $over_size_quantity+=$temp->quantity;
+                }else{
+                    if($array[1]>'76'){
+                        //收取超尺寸费用
+                        $over_size_fee+=$temp->quantity*40;
+                        $over_size_quantity+=$temp->quantity;
+                    }
+                }
+            }
+        }
+        //基础运费
+        $tracking_fee=0;
+        //获取分区
+        $partition=Partition::find('partition_manage_id=? and country_code_two=?',$channelcostppr->partition_manage_id,$order->consignee_country_code)->getOne();
+        //包装类型
+        $packing='BOX';
+        if($order->packing_type=='DOC'){
+        	$packing="DOC";
+        }
+        //获取价格
+        $price=Price::find('price_manage_id=? and partition_code=? and boxing_type=? and end_weight>=?',$channelcostppr->price_manage_id,$partition->partition_code,$packing,$total_weight)->getOne();
+        //计算运费
+        if(!$price->isNewRecord()){
+            $tracking_fee=((($total_weight-$price->first_weight)/$price->additional_weight)*$price->additional_fee)+$price->first_fee;
+        }
+        //燃油费率
+        //获取网络燃油表
+        $rate=0;
+        $network=Networkfuel::find('network_id=? and effective_date<=? and fail_date>=?',$network_id,time(),time())->getOne();
+        if(!$network->isNewRecord()){
+            $rate=$network->rate;
+        }
+        $rate_fee=($tracking_fee+$over_size_fee+$remote_fee+$special_packing_fee)*$rate;
+        //组合返回各项费用
+        $data=array();
+        $data['public_price']=$tracking_fee;//基础运费
+        $data['price_info']=array(
+            'fee_item'=>array(
+                'EX0001'=>array('quantity'=>'1','fee'=>$tracking_fee),//基础运费
+                'EX0034'=>array('quantity'=>$special_packing_fee_count,'fee'=>$special_packing_fee),//异形包装费
+                'EX0020'=>array('quantity'=>'1','fee'=>$remote_fee),//偏派费
+                'EX0035'=>array('quantity'=>$over_size_quantity,'fee'=>$over_size_fee),//超尺寸附加费
+                'EX0019'=>array('quantity'=>'1','fee'=>$rate_fee),
+            ),
+            'rate'=>$rate,//燃油费率
+            'account'=>$price->account,//账号,实际是产品代码，product_code
+            'total_weight'=>$total_weight//计费重
+        );
+        return $data;
+    }
+    /**
+     * 判断偏远
+     */
+    static function Checkremote($order){
+        //根据order获取产品
+        $product=Product::find('product_name=?',$order->service_code)->getOne();
+        //获取产品中偏派-价格-分区
+        $product_p_p_r=Productppr::find('product_id=? and effective_time <=? and invalid_time>=?',$product->product_id,time(),time())->getOne();
+        //查询偏派表
+        $remote_postcode=Remote::find('remote_manage_id = ? and country_code_two=? and start_postal_code<=? and end_postal_code>=?',$product_p_p_r->remote_manage_id,$order->consignee_country_code,$order->consignee_postal_code,$order->consignee_postal_code)->getOne();
+        $remote_city=Remote::find('remote_manage_id = ? and country_code_two=? and remote_city=?',$product_p_p_r->remote_manage_id,$order->consignee_country_code,strtolower(str_replace('-','',str_replace(' ','',$order->consignee_city))))->getOne();
+        if(!$remote_city->isNewRecord()){//偏派城市
+            return true;
+        }else{
+            if(!$remote_postcode->isNewRecord()){//偏派邮编
+                return true;
+            }else{
+                return false;
+            }
+        }
+    }
+}
+class QuoteException extends QException{}

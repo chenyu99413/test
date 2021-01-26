@@ -1,0 +1,57 @@
+<?php
+use Box\Spout\Writer\WriterFactory;
+use Box\Spout\Common\Type;
+use Box\Spout\Reader\ReaderFactory;
+use Box\Spout\Writer\Exception\WriterException;
+use Box\Spout\Reader\Internal\XLSX\Worksheet;
+
+define('XLSX_EOL', "\n");
+class Helper_ExcelX {
+	static function array2xlsx($arr,$filename,$widths=null){
+		if (is_array($widths)){
+			\Box\Spout\Writer\Internal\XLSX\Worksheet::$_WIDTHS=$widths;
+		}
+		//https://github.com/box/spout
+		$writer=WriterFactory::create(Type::XLSX);
+		$writer->setTempFolder(INDEX_DIR.DS.'_tmp');
+		$writer->openToBrowser($filename.'.xlsx');
+		foreach ($arr as $row){
+			$writer->addRow($row);
+		}
+		$writer->close();
+	}
+	/**
+	 * 读取xlsx文件
+	 * @param string $filename
+	 * @return \Box\Spout\Reader\ReaderInterface
+	 */
+	static function readXlsx($filename){
+		$reader = ReaderFactory::create(Type::XLSX);
+		$reader->open($filename);
+		/*
+			foreach ($reader->getSheetIterator() as $sheet) {
+			foreach ($sheet->getRowIterator() as $row) {
+			// do stuff with the row
+			}
+			}
+	
+			$reader->close();
+		*/
+		return $reader;
+	}
+	/**
+	 * 保存excel文件到服务器上
+	 * @param unknown $arr
+	 * @param unknown $filename
+	 */
+	static function savexlsx($arr,$filename){
+		header("Content-type:text/html;charset=utf-8");
+		$writer=WriterFactory::create(Type::XLSX);
+		$writer->setTempFolder(INDEX_DIR.DS.'_tmp');
+		$writer->openToFile(INDEX_DIR.DS.'_tmp'.DS.'upload'.DS.$filename);
+		foreach ($arr as $row){
+			$writer->addRow($row);
+		}
+		$writer->close();
+	}
+}

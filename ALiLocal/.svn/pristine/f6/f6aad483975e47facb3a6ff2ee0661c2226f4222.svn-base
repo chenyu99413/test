@@ -1,0 +1,115 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+  单票核查
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<script type="text/javascript" src="<?php echo $_BASE_DIR;?>public/js/jquery.sound.js"></script>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<div class="FarSearch" >
+	<table>
+		<tr>
+			<th>阿里订单号</th>
+			<td>
+				<input name="ali_order_no" type="text" id="ali_order_no"  style="width: 200px" value=""><span id="explain" style="margin-left:10px;"></span>
+			</td>
+		</tr>
+	</table>
+</div>
+<div id="dialog_hold" class="easyui-dialog" title="扣件" data-options="closed:true, modal:true" style="width: 350px; height: 200px;">
+		<table style="margin-top: 5px; margin-bottom: 5px; width: 100%;">
+			<tbody>
+				<tr>
+					<th style="text-align: right;">原因</th>
+					<td style="padding: 1px 10px 2px;">
+						<textarea style="width: 80%; height: 100px;"  name="reason" id="reason"></textarea>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2" style="text-align: center;">
+						<button class="btn btn-info" type="submit" onclick="savehold()">
+							<i class="icon-ok"></i>
+							保存
+						</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+<?PHP $this->_endblock();?>
+<script type="text/javascript">
+	$(function(){
+		document.getElementById("ali_order_no").focus();
+		//扫描阿里单号
+		$('#ali_order_no').on('keydown', function (e) {
+			if (e.keyCode == 13) {
+				$("#explain").html('');
+				$(".product_block").remove();
+				$.ajax({
+					url:'<?php echo url('warehouse/confirmone')?>',
+					type:'POST',
+					dataType:'json',
+					data:{ali_order_no:$("#ali_order_no").val()},
+					success:function(data){
+						if(data.message=='confirmed'){
+							$("#explain").html('失败，已核查').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yihecha.mp3');//已核查
+						}else if(data.message=='issued'){
+							$("#explain").html('失败，已扣件').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yikoujian.mp3');//已扣件
+						}else if(data.message=='notsamewarehouse'){
+							$("#explain").html('失败，不是本仓包裹').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/bushibencangbaoguo.mp3');//不是本仓包裹
+						}else if(data.message=='error'){
+							$("#explain").html('失败').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yichang.mp3');//异常
+						}else if(data.message=='notexists'){
+							$("#explain").html('单号不存在').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/danhaobucuzai.mp3');//异常
+						}else{
+							  var tr='<div class="product_block"><span>目的国：</span><span style="font-weight:700">'+data.destination+'</span><table class="FarTable" style="width:500px;"><thead><tr><th>中文品名</th><th>英文文品名</th><th>商品数量</th><th>申报单价</th></tr></thead><tbody id="product_body">';
+							 　$.each(data.product, function(i, item){  
+								 tr+="<tr><td>"+item.product_name+"</td><td>"+item.product_name_en+"</td><td>"+item.product_quantity+"</td><td>"+item.declaration_price+"</td></tr>";     
+							　　}); 
+								tr+='</tbody></table><div><a class="btn btn-small btn-success" href="javascript:void(0);" style="margin-right:5px;" onclick=" save()" id="confirm">核查成功</a>  <a class="btn btn-small btn-danger" href="javascript:void(0);" style="margin-right:5px;" onclick="cancel()" id="cancel">取消</a><a class="btn btn-small btn-warning" href="javascript:void(0);" onclick="hold()" id="hold">扣件</a></div></div>';
+							  $(".FarSearch").after(tr);
+							  $("#confirm").focus();
+						}
+					}
+				})
+			}
+		});
+	})
+	function save(){
+		$.ajax({
+			url:'<?php echo url('warehouse/saveconfirmone')?>',
+			type:'POST',
+			dataType:'json',
+			data:{ali_order_no:$("#ali_order_no").val()},
+			success:function(data){
+				$(".product_block").remove();
+				$("#ali_order_no").select();
+				$("#explain").html('成功').css('color','green');
+				$.sound.play('<?php echo $_BASE_DIR;?>public/sound/chenggong.mp3');//异常
+			}
+		})
+	}
+	function savehold(){
+		$.ajax({
+			url:'<?php echo url('warehouse/savehold')?>',
+			type:'POST',
+			dataType:'json',
+			data:{ali_order_no:$("#ali_order_no").val(),reason:$("#reason").val()},
+			success:function(data){
+				window.location.href = '<?php echo url('/confirmone')?>';
+			}
+		})
+	}
+	function cancel(){
+		window.location.href = '<?php echo url('/confirmone')?>';
+	}
+	function hold(){
+		$("#dialog_hold").dialog("open");
+	}
+</script>

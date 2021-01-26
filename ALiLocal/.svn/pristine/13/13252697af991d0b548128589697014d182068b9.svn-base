@@ -1,0 +1,58 @@
+<div style="overflow: scroll; height: 370px;" id="scroll-fee-list-talbe">
+	<table class="FarTable" style="margin: 0; width: 1500px; table-layout: fixed;"
+		id="fee-list-talbe">
+		<thead>
+			<tr>
+				<th style="width: 50px;">No.</th>
+				<th style="width: 90px;">订单日期</th>
+				<th style="width: 150px;">阿里单号</th>
+				<th style="width: 160px;">泛远单号</th>
+				<th style="width: 150px;">跟踪单号</th>
+				<th style="width: 150px;">客户</th>
+				<th style="width: 150px;">产品</th>
+				<th style="width: 90px;">出库日期</th>
+				<th style="width: 180px;">费用代码</th>
+				<th style="width: 150px;">费用名称</th>
+				<th style="width: 50px;">数量</th>
+				<th style="width: 50px;">单价</th>
+				<th style="width: 80px;">金额</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php $page_amount = 0;?>
+		<?php foreach ($fees as $key => $fee):?>
+		<?php $page_amount += $fee['amount'];?>
+		<tr>
+				<td style="text-align: center;"><?php echo $key+1?></td>
+				<td style="text-align: center;"><?php echo Helper_Util::strDate('Y-m-d', $fee['create_time']) ?></td>
+				<td style="text-align: center;">
+					<a
+						href="<?php echo url('order/detail',array('order_id'=>$fee['order_id']))?>">
+						<?php echo $fee['ali_order_no']?>
+					</a>
+				</td>
+				<td style="text-align: center;"><?php echo $fee['far_no']?></td>
+				<td style="text-align: center;"><?php echo $fee['tracking_no']?></td>
+				<td ><?php echo @$customer[$fee['customer_id']]?@$customer[$fee['customer_id']]:'无'?></td>
+				<td ><?php echo @$product[$fee['service_code']]?@$product[$fee['service_code']]:'无'?></td>
+				<td style="text-align: center;"><?php echo Helper_Util::strDate('Y-m-d', $fee['warehouse_out_time']) ?></td>
+				<td ><?php echo @$fee_item[$fee['fee_item_code']]['sub_code']?></td>
+				<td ><?php echo @$fee_item[$fee['fee_item_code']]['item_name']?></td>
+				<td style="text-align: right;"><?php echo $fee['quantity']?$fee['quantity']:1?></td>
+				<td style="text-align: right;"><?php echo sprintf('%.2f',$fee['amount']/($fee['quantity']?$fee['quantity']:1))?></td>
+				<td style="text-align: right;"><?php echo $fee['amount']?></td>
+			</tr>
+		<?php endforeach;?>
+	</tbody>
+	</table>
+</div>
+本页总计：<?php echo $page_amount;?>
+<div style="height: 5px;"></div>
+<?php $this->_control ( "pagination", "my-pagination", array ( "pagination" => $pagination, "nofloat" => "false" ) );?>
+<script type="text/javascript">
+$('#fee-list-talbe').floatThead({
+    scrollContainer: function($table){
+        return $table.closest('#scroll-fee-list-talbe');
+    }
+});
+</script>

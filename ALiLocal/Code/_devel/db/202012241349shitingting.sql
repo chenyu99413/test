@@ -1,0 +1,3 @@
+ALTER TABLE `tb_order` CHANGE `is_signunusual` `is_signunusual` tinyint(2) DEFAULT '0' COMMENT '0:默认 1:签收异常 2:已确认 3:已成功推送派送失败事件';
+ALTER TABLE `tb_tracking` CHANGE `confirm_flag` `confirm_flag` varchar(1) DEFAULT '0' COMMENT '1代表事件信息确认了，不能够编辑，并且可以发给阿里,0代表未确认,2代表已忽略,3代表已成功推送派送失败事件，不再推送轨迹';
+ALTER TABLE `tb_event` CHANGE `confirm_flag` `confirm_flag` varchar(1) DEFAULT '0' COMMENT '1代表轨迹信息确认了，不能够编辑，并且可以发给阿里,0代表未确认,3代表不再推送';

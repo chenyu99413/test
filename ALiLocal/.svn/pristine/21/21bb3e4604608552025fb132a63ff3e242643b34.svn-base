@@ -1,0 +1,1 @@
+ALTER TABLE `tb_sender` CHANGE `sender_name` `sender_name` VARCHAR(35) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '发件人姓名';

@@ -1,0 +1,77 @@
+<?php
+/**
+ * @todo 时区管理
+ * @author 吴开龙
+ * @since 2020-6-23 09:14:07
+ * @param 
+ * @return json
+ * @link #80454
+ */
+class Controller_CodeTimeZone extends Controller_Abstract {
+	function actionSearch() {
+	}
+	function actionList() {
+		$page = intval ( request ( 'page', 1 ) );
+		$page_size = intval ( request ( 'page_size', 30 ) );
+		$pagination = null;
+	
+		$select = CityTimezone::find ();
+	
+		if (request ( 'code_word_two' )) {
+			$code_word_two = request ( 'code_word_two' );
+			$select->where ( 'code_word_two = ?', $code_word_two );
+		}
+		if (request ( 'city' )) {
+			$city = request ( 'city' );
+			$select->where ( 'city = ?', $city );
+		}
+	
+		$timezone = $select->limitPage ( $page, $page_size )
+		->fetchPagination ( $pagination )
+		->getAll ();
+	
+		$this->_view ['timezones'] = $timezone;
+		$this->_view ['pagination'] = $pagination;
+	}
+	function actionEditModal() {
+		$timezone = CityTimezone::find ( 'id = ?', request ( 'id' ) )->getOne ();
+		$this->_view ['timezone'] = $timezone;
+	}
+	function actionEditSave() {
+		if (! request_is_ajax ()) {
+			return $this->_redirectAjax ( false );
+		}
+		// 数据重复检查
+// 		foreach ( array (
+// 			'code' => '代码',
+// 			'name' => '名称',
+// 		    'start_date' => '汇率设置时间'
+// 		) as $key => $value ) {
+// 			if (request ( $key )) {
+// 				$select = CodeCurrency::find ( $key . ' = ?', request ( $key ) );
+// 				if (request ( 'currency_id' )) {
+// 					$select->where ( 'id <> ?', request ( 'currency_id' ) );
+// 				}
+// 				if (! $select->getOne ()
+// 					->isNewRecord ()) {
+// 						return $this->_redirectAjax ( false, $value . '已存在' );
+// 					}
+// 			}
+// 		}
+		// 保存数据
+		$timezone = new CityTimezone();
+		if (request ( 'id' )) {
+			$timezone = CityTimezone::find ( 'id = ?', request ( 'id' ) )->getOne ();
+			if ($timezone->isNewRecord ()) {
+				return $this->_redirectAjax ( false, '数据错误' );
+			}
+		}
+		$timezone->code_word_two = request ( 'code_word_two' );
+		$timezone->city = request ( 'city' );
+		$timezone->timezone = request ( 'timezone' );
+		$timezone->save ();
+		return $this->_redirectAjax ( true, '保存成功' );
+	}
+}
+
+?>

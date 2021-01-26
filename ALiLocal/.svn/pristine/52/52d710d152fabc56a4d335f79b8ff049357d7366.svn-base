@@ -1,0 +1,925 @@
+<?php
+class Controller_Common extends Controller_Abstract {
+	/**
+	 * 初始化
+	 */
+	function actionIndex() {
+	}
+	/**
+	 * 修复应付应收
+	 */
+	function actionFixBalance() {
+		$wbs = Waybill::find ()->getAll ();
+		foreach ( $wbs as $wb ) {
+			$wbbs = Waybillbalance::find ( 'waybill_id =?', $wb->waybill_id )->getAll ();
+			if (count ( $wbbs ) == 0) {
+				continue;
+			}
+			$i = $o = $t = 0;
+			foreach ( $wbbs as $b ) {
+				if ($b ['balance_type'] == 'I') {
+					$i += $b ['should_balance'];
+				} elseif ($b ['balance_type'] == 'O') {
+					$o += $b ['should_balance'];
+				} elseif ($b ['balance_type'] == 'T') {
+					$t += $b ['should_balance'];
+				}
+			}
+			$wb->receivable_amount = $i;
+			$wb->payment_amount = $o;
+			$wb->other_amount = $t;
+			$wb->profit = $i - $o - $t;
+			$wb->save ();
+		}
+		exit ();
+	}
+	/**
+	 * 部门树结构
+	 */
+	function actionDepartmenttree() {
+		//默认选中
+		$checkeds = array ();
+		if (request ( "checked" ) != null) {
+			$checkeds = explode ( ",", request ( "checked" ) );
+		}
+		
+		//检索一级部门
+		$departments = Department::find ()->where ( "super_department is null or super_department = ''" )->getAll ();
+		$array = array ();
+		foreach ( $departments as $department ) {
+			//检索子部门
+			$children = Department::find ()->where ( "super_department = ?", $department->department_id )->getAll ();
+			
+			//判断是否有子部门
+			if ($children->count () > 0) {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"state" => request ( "state" ) != null && request ( "state" ) ? "" : "open",
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => "",
+					
+					//递归子部门
+					"children" => $this->createTree ( $children, $checkeds ) 
+				);
+			} else {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => "" 
+				);
+			}
+		}
+		echo (json_encode ( $array ));
+		exit ();
+	}
+	
+	/**
+	 * 部门树结构
+	 */
+	function actionDepartmenttree2() {
+		$department_ids = RelevantDepartment::departmentids ();
+		//默认选中
+		$checkeds = array ();
+		if (request ( "checked" ) != null) {
+			$checkeds = explode ( ",", request ( "checked" ) );
+		}
+		
+		//检索一级部门
+		$departments = Department::find ( "(super_department is null or super_department = '' or super_department not in (?)) and department_id in (?)", $department_ids, $department_ids )->getAll ();
+		$array = array ();
+		if (request ( "empty" )) {
+			$array [] = array (
+				"id" => "",
+				"text" => "" 
+			);
+		}
+		foreach ( $departments as $department ) {
+			//检索子部门
+			$children = Department::find ()->where ( "super_department = ? and department_id in (?)", $department->department_id, $department_ids )->getAll ();
+			
+			//判断是否有子部门
+			if ($children->count () > 0) {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"state" => request ( "state" ) != null && request ( "state" ) ? "" : "open",
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => "",
+					
+					//递归子部门
+					"children" => $this->createTree2 ( $children, $checkeds ) 
+				);
+			} else {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => "" 
+				);
+			}
+		}
+		echo (json_encode ( $array ));
+		exit ();
+	}
+	
+	/**
+	 * 部门树结构
+	 */
+	function actionDepartmenttree3() {
+		$department_ids = OverdueDepartment::departmentids ();
+		//默认选中
+		$checkeds = array ();
+		if (request ( "checked" ) != null) {
+			$checkeds = explode ( ",", request ( "checked" ) );
+		}
+	
+		//检索一级部门
+		$departments = Department::find ( "(super_department is null or super_department = '' or super_department not in (?)) and department_id in (?)", $department_ids, $department_ids )->getAll ();
+		$array = array ();
+		if (request ( "empty" )) {
+			$array [] = array (
+				"id" => "",
+				"text" => ""
+			);
+		}
+		foreach ( $departments as $department ) {
+			//检索子部门
+			$children = Department::find ()->where ( "super_department = ? and department_id in (?)", $department->department_id, $department_ids )->getAll ();
+				
+			//判断是否有子部门
+			if ($children->count () > 0) {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"state" => request ( "state" ) != null && request ( "state" ) ? "" : "open",
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => "",
+						
+					//递归子部门
+					"children" => $this->createTree3 ( $children, $checkeds )
+				);
+			} else {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => ""
+				);
+			}
+		}
+		echo (json_encode ( $array ));
+		exit ();
+	}
+	
+	/**
+	 * 创建树
+	 *
+	 * @param unknown $nodes        	
+	 */
+	function createTree($nodes, $checkeds) {
+		$array = array ();
+		foreach ( $nodes as $department ) {
+			//获取子部门
+			$children = Department::find ()->where ( "super_department = ?", $department->department_id )->getAll ();
+			
+			//判断是否有子部门
+			if ($children->count () > 0) {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"state" => request ( "state" ) != null && request ( "state" ) ? "" : "open",
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => "",
+					
+					//递归子部门
+					"children" => $this->createTree ( $children, $checkeds ) 
+				);
+			} else {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => "" 
+				);
+			}
+		}
+		return $array;
+	}
+	
+	/**
+	 * 创建树
+	 *
+	 * @param unknown $nodes        	
+	 */
+	function createTree2($nodes, $checkeds) {
+		$array = array ();
+		foreach ( $nodes as $department ) {
+			//获取子部门
+			$children = Department::find ()->where ( "super_department = ? and department_id in (?)", $department->department_id, RelevantDepartment::departmentids () )->getAll ();
+			
+			//判断是否有子部门
+			if ($children->count () > 0) {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"state" => request ( "state" ) != null && request ( "state" ) ? "" : "open",
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => "",
+					
+					//递归子部门
+					"children" => $this->createTree2 ( $children, $checkeds ) 
+				);
+			} else {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => "" 
+				);
+			}
+		}
+		return $array;
+	}
+	/**
+	 * 创建树
+	 *
+	 * @param unknown $nodes
+	 */
+	function createTree3($nodes, $checkeds) {
+		$array = array ();
+		foreach ( $nodes as $department ) {
+			//获取子部门
+			$children = Department::find ()->where ( "super_department = ? and department_id in (?)", $department->department_id,OverdueDepartment::departmentids () )->getAll ();
+				
+			//判断是否有子部门
+			if ($children->count () > 0) {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"state" => request ( "state" ) != null && request ( "state" ) ? "" : "open",
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => "",
+						
+					//递归子部门
+					"children" => $this->createTree3 ( $children, $checkeds )
+				);
+			} else {
+				$array [] = array (
+					"id" => $department->department_id,
+					"text" => $department->abbreviation,
+					"checked" => in_array ( $department->department_id, $checkeds ) ? "checked" : "",
+					"attributes" => ""
+				);
+			}
+		}
+		return $array;
+	}
+	/**
+	 * 获取国家
+	 */
+	function actionCountrygrid() {
+		//检索联想
+		$qq = request ( "q" ) ? explode ( ",", request ( "q" ) ) : array ();
+		
+		if (request ( "id" ) != null) {
+			$sql = "SELECT tb_partition.partition_code, tb_country.* FROM tb_partition ";
+			$sql .= "INNER JOIN tb_country ON (tb_country.code_word_two = tb_partition.code_word_two ) ";
+			$sql .= "WHERE product_id = '" . request ( "id" ) . "' ";
+			if (! empty ( $qq )) {
+				$sql .= " and ( ";
+				for($i = 0; $i < count ( $qq ); $i ++) {
+					$q = "%" . $qq [$i] . "%";
+					if ($i == 0) {
+						$sql .= "tb_country.code_word_two like '" . $q . "' or tb_country.code_word_three like '" . $q . "' or tb_country.chinese_name like '" . $q . "' or tb_country.english_name like '" . $q . "' ";
+					} else {
+						$sql .= "or tb_country.code_word_two like '" . $q . "' or tb_country.code_word_three like '" . $q . "' or tb_country.chinese_name like '" . $q . "' or tb_country.english_name like '" . $q . "' ";
+					}
+				}
+				$sql .= " ) ";
+			}
+			$sql .= "ORDER BY tb_country.code_word_two";
+			$country = QDB::getConn ()->execute ( $sql )->fetchAll ();
+			echo (json_encode ( array (
+				"total" => count ( $country ),
+				"rows" => $country 
+			) ));
+			exit ();
+		} else {
+			$sql = "";
+			for($i = 0; $i < count ( $qq ); $i ++) {
+				$q = "%" . $qq [$i] . "%";
+				if ($i == 0) {
+					$sql .= "tb_country.code_word_two like '" . $q . "' or tb_country.code_word_three like '" . $q . "' or tb_country.chinese_name like '" . $q . "' or tb_country.english_name like '" . $q . "' ";
+				} else {
+					$sql .= "or tb_country.code_word_two like '" . $q . "' or tb_country.code_word_three like '" . $q . "' or tb_country.chinese_name like '" . $q . "' or tb_country.english_name like '" . $q . "' ";
+				}
+			}
+			$country = Country::find ( $sql )->order ( "code_word_two" )->asArray ()->getAll ();
+			echo (json_encode ( array (
+				"total" => count ( $country ),
+				"rows" => $country 
+			) ));
+			exit ();
+		}
+	}
+	
+	/**
+	 * 获取客户（合作）
+	 */
+	function actionCustomsgrid() {
+		$select = Customs::find ();
+		
+		if (request ( "id" ) != null) {
+			$select->where ( "department_id = ?", request ( "id" ) );
+		} else {
+			$select->where ( "department_id in (?)", RelevantDepartment::departmentids () );
+		}
+		
+		//检索联想
+		$q = isset ( $_POST ["q"] ) ? "%" . $_POST ["q"] . "%" : "";
+		if ($q) {
+			$select->where ( " status !='1' and (customs_code like ? or customs_abbreviation like ? or customs_full_name like ? or customs_pinyin like ?)",$q, $q, $q ,$q);
+		}
+		$customs = $select->asArray ()
+			->setColumns('customs_id,customs_code,customs_full_name,status,customs_abbreviation,customs_code,receiver,receive_address,salesperson,source,account_period')
+			->limitPage ( 1 )->getAll ();
+		if (is_numeric(request('q'))){
+			$idCustoms=Customs::find('customs_id=? and status !="1"',request('q'))
+				->setColumns('customs_id,customs_code,customs_full_name,status,customs_abbreviation,customs_code,receiver,receive_address,salesperson,source,account_period')
+				->asArray()
+				->getOne();
+			if (count($idCustoms)){
+				array_unshift($customs, $idCustoms);
+			}
+		}
+		// 保留原始值
+		if (request('customs_id') && request('customs_abbreviation')){
+			$finded=false;
+			foreach ($customs as &$row){
+				if ($row['customs_id']==request('customs_id')){
+					$row['customs_abbreviation']=request('customs_abbreviation');
+					$finded=true;
+				}
+			}
+			if (!$finded){
+				$customs[]=array(
+					'customs_id'=>request('customs_id'),
+					'customs_abbreviation'=>request('customs_abbreviation')
+				);
+			}
+		}
+		echo (json_encode ( array (
+			"total" => count ( $customs ),
+			"rows" => $customs 
+		) ));
+		exit ();
+	}
+	/**
+	 * 获取全部客户
+	 */
+	function actionCustomsgridAll() {
+		$select = Customs::find ();
+	
+		if (request ( "id" ) != null) {
+			$select->where ( "department_id = ?", request ( "id" ) );
+		} else {
+			$select->where ( "department_id in (?)", RelevantDepartment::departmentids () );
+		}
+	
+		//检索联想
+		$q = isset ( $_POST ["q"] ) ? "%" . $_POST ["q"] . "%" : "";
+		if ($q) {
+			$select->where ( "(customs_code like ? or customs_abbreviation like ? or customs_full_name like ? or customs_pinyin like ? or company_name_en like ?)",$q, $q, $q ,$q,$q);
+		}
+		$customs = $select->asArray ()
+		->setColumns('customs_id,customs_code,customs_full_name,company_name_en,status,customs_abbreviation,customs_code,receiver,receive_address,salesperson,source,account_period')
+		->limitPage ( 1 )->getAll ();
+		if (is_numeric(request('q'))){
+			$idCustoms=Customs::find('customs_id=?',request('q'))
+			->setColumns('customs_id,customs_code,customs_full_name,company_name_en,status,customs_abbreviation,customs_code,receiver,receive_address,salesperson,source,account_period')
+			->asArray()
+			->getOne();
+			if (count($idCustoms)){
+				array_unshift($customs, $idCustoms);
+			}
+		}
+		// 保留原始值
+		if (request('customs_id') && request('customs_abbreviation')){
+			$finded=false;
+			foreach ($customs as &$row){
+				if ($row['customs_id']==request('customs_id')){
+					$row['customs_abbreviation']=request('customs_abbreviation');
+					$finded=true;
+				}
+			}
+			if (!$finded){
+				$customs[]=array(
+					'customs_id'=>request('customs_id'),
+					'customs_abbreviation'=>request('customs_abbreviation')
+				);
+			}
+		}
+		echo (json_encode ( array (
+			"total" => count ( $customs ),
+			"rows" => $customs
+		) ));
+		exit ();
+	}
+	
+	/**
+	 * 检查国家二字码是否存在
+	 *
+	 * @return boolean
+	 */
+	function actionCheckcountryexist() {
+		$countrys = explode ( ",", request ( "code" ) );
+		foreach ( $countrys as $value ) {
+			$country = Country::find ( "code_word_two = ?", $value )->getOne ();
+			if ($country->isNewRecord ()) {
+				echo "false";
+				exit ();
+			}
+		}
+		echo "true";
+		exit ();
+	}
+	
+	/**
+	 * 检查客户是否存在
+	 *
+	 * @return boolean
+	 */
+	function actionCheckcustomsexist() {
+		$countrys = explode ( ",", request ( "code" ) );
+		foreach ( $countrys as $value ) {
+			$select = Customs::find ();
+			if (strlen ( request ( "old" ) ) > 0 && request ( "old" ) == $value) {
+				echo "true";
+				exit ();
+			}
+			$customs = $select->where ( "customs_abbreviation = ?", $value )->getOne ();
+			if ($customs->isNewRecord ()) {
+				echo "false";
+				exit ();
+			}
+		}
+		echo "true";
+		exit ();
+	}
+	
+	/**
+	 * 检索商品编码
+	 */
+	function actionCommoditygrid() {
+		//检索联想
+		$q = post ( "q", "" );
+		$select = Commodity::find ( "commodity_name like ?", "%" . $q . "%" )->limitPage ( 1 )->getAll ();
+		//创建JSON
+		$rows = $select->toArray ();
+		echo (json_encode ( array (
+			"total" => $select->count (),
+			"rows" => $rows 
+		) ));
+		exit ();
+	}
+	
+	/**
+	 * 获取部门区域
+	 */
+	function actionDepartmentarealist() {
+		//默认选中
+		$selected = array ();
+		if (request ( "selected" ) != null) {
+			$selected = explode ( ",", request ( "selected" ) );
+		}
+		
+		//根据部门ID检索区域
+		$select = Area::find ();
+		if (request ( "ids" ) != null) {
+			$ids = explode ( ",", request ( "ids" ) );
+			$select = $select->where ( "department_id in (?)", $ids );
+		}
+		
+		$return = array ();
+		foreach ( $select->getAll () as $area ) {
+			$return [] = array (
+				"id" => $area->area_id,
+				"text" => $area->receive_address,
+				"selected" => in_array ( $area->area_id, $selected ) ? true : false 
+			);
+		}
+		echo (empty ( $return ) ? "[]" : json_encode ( $return ));
+		exit ();
+	}
+	
+	/**
+	 * 获取部门相关人员
+	 */
+	function actionDepartmentrelevant() {
+		//类型
+		$type = request ( "type" ) == null ? "'1'" : request ( "type" );
+		
+		//默认选中
+		$selected = array ();
+		if (request ( "selected" ) != null) {
+			$selected = explode ( ",", request ( "selected" ) );
+		}
+		
+		//根据部门ID检索取件员
+		$select = User::find ();
+		if (request ( "ids" ) != null) {
+			$ids = explode ( ",", request ( "ids" ) );
+			$select->where ( "department_id in (?) and " . $type . " = '1'", $ids );
+		} else {
+			$select->where ( $type . " = '1'" );
+		}
+		$select->where ( "status != '0' or status is null" );
+		$users = $select->getAll ();
+		
+		$return = array ();
+		foreach ( $users as $user ) {
+			$return [] = array (
+				"id" => $user->user_id,
+				"text" => $user->user_name,
+				"selected" => in_array ( $user->user_id, $selected ) || in_array ( $user->user_name, $selected ) ? true : false 
+			);
+		}
+		echo (empty ( $return ) ? "[]" : json_encode ( $return ));
+		exit ();
+	}
+	
+	/**
+	 * 主账号
+	 */
+	function actionMainaccountlist() {
+		//默认选中
+		$selected = array ();
+		if (request ( "selected" ) != null) {
+			$selected = explode ( ",", request ( "selected" ) );
+		}
+		
+		$return = array ();
+		foreach ( Proxy::find ( "[network.network_code] = 'UPS'" )->getAll () as $proxy ) {
+			$return [] = array (
+				"id" => $proxy->main_account,
+				"text" => $proxy->main_account,
+				"selected" => in_array ( $proxy->main_account, $selected ) ? true : false 
+			);
+		}
+		echo (empty ( $return ) ? "[]" : json_encode ( $return ));
+		exit ();
+	}
+	
+	/**
+	 * 导出
+	 */
+	function actionExport() {
+		$data = request ( "json" );
+		$file_name = (request ( "fileName" ) == null ? time () : request ( "fileName" )) . ".xls";
+		Helper_Excel::array2xls ( json_decode ( $data ), $file_name );
+		exit ();
+	}
+	
+	/**
+	 * 发件人信息
+	 */
+	function actionSender() {
+		$sender = Sender::find ( "sender_account = ?", request ( "account" ) )->getOne ();
+		if (! $sender->channel->isNewRecord () && $sender->channel->disabled == "0") {
+			echo ("[]");
+		} else {
+			echo (json_encode ( $sender->toArray () ));
+		}
+		exit ();
+	}
+	
+	/**
+	 * 收件人信息
+	 */
+	function actionConsignee() {
+		$black = Blacklist::find ( "account = ? and enable_flag != '0'", request ( 'account' ) )->getOne ();
+		if (! $black->isNewRecord ()) {
+			echo ("false");
+			exit ();
+		}
+		echo (json_encode ( Consignee::find ( "consignee_account=?", request ( "account" ) )->asArray ()->getOne () ));
+		exit ();
+	}
+	
+	/**
+	 * 产品公开报价
+	 */
+	function actionProductpublicprice() {
+		//产品--价格-偏派-分区
+		$productprp=Productprp::find("product_id= ? and effective_date<=? and fail_date>=? ",request ( "product_id" ),request ( "record_order_date" ),request ( "record_order_date" ))->getOne();
+		if($productprp->isNewRecord()){
+			echo(0);
+		}else{
+			echo (sprintf ( "%.2f", Price::public_price ( $productprp->price_manage_id, request ( "weight" ), request ( "partition" ), request ( "boxing_type" ) ) ));
+		}
+		exit ();
+	}
+	
+	/**
+	 * SHIPID
+	 */
+	function actionShipid() {
+		echo (Helper_Util::upsSHID ( request ( "id" ) ));
+		exit ();
+	}
+	
+	/**
+	 * 燃油附加费率
+	 */
+	function actionBaf() {
+		echo (Baf::rates ( request ( "id" ), request ( "date" ) ));
+		exit ();
+	}
+	
+	/**
+	 * 产品分区表
+	 */
+	function actionProductpartition() {
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		
+		$result = array ();
+		foreach ( $product->partitionmanage->partition as $value ) {
+			$result [] = array (
+				"partition_id" => $value->partition_id,
+				"code_word_two" => $value->code_word_two,
+				"partition_code" => $value->partition_code,
+				"chinese_name" => $value->country->chinese_name,
+				"english_name" => $value->country->english_name,
+				"aging" => $value->aging,
+				"weight_limit" => $value->weight_limit,
+				"length_limit" => $value->length_limit,
+				"volume_limit" => $value->volume_limit 
+			);
+		}
+		echo (json_encode ( $result ));
+		exit ();
+	}
+	
+	/**
+	 * 读取文件
+	 *
+	 * @param Helper_Uploader $uploader        	
+	 */
+	static function readFile($uploader) {
+		$file = $uploader->file ( 'file' );
+		$filename = INDEX_DIR . '/_tmp/upload/' . md5 ( $file->filepath () . time () ) . '.xls';
+		$file->move ( $filename );
+		return $filename;
+	}
+	
+	/**
+	 * 读取文件类型
+	 *
+	 * @param Helper_Uploader $uploader        	
+	 */
+	static function getFileExtName($uploader) {
+		return $uploader->file ( 'file' )->extname ();
+	}
+	
+	/**
+	 * 开票标题
+	 */
+	function actionWaybilltitle() {
+		$select = WayBillTitle::find ();
+		$val = request ( "id" );
+		if (strstr ( request ( "id" ), "CU_" )) {
+			$select->where ( "customs_id = ?", substr ( request ( "id" ), 3 ) );
+		} else if (strstr ( $val, "CH_" )) {
+			$select->where ( "channel_id = ?", substr ( request ( "id" ), 3 ) );
+		} else {
+			$select->where ( "false" );
+		}
+		echo (json_encode ( $select->asArray ()->getAll () ));
+		exit ();
+	}
+	
+	/**
+	 * 检查主运单号
+	 */
+	function actionCheckwaybill() {
+		$select = Subbox::find ();
+		if (strlen ( request ( "old" ) ) > 0) {
+			$select->where ( "sub_waybill_code != ?", request ( "old" ) );
+		}
+		if (strlen ( request ( "value" ) ) <= 0) {
+			echo "true";
+			exit ();
+		}
+		$select->where ( "sub_waybill_code = ?", request ( "value" ) );
+		$waybill = $select->getOne ();
+		if ($waybill->isNewRecord ()) {
+			echo "true";
+		} else {
+			echo "false";
+		}
+		exit ();
+	}
+	
+	/**
+	 * 检查工号
+	 */
+	function actionCheckuser() {
+		$user = User::find ( "user_account != ? and user_account = ?", request ( "old" ), request ( "value" ) )->getOne ();
+		if ($user->isNewRecord ()) {
+			echo "true";
+		} else {
+			echo "false";
+		}
+		exit ();
+	}
+	
+	/**
+	 * 检查渠道
+	 */
+	function actionCheckchannel() {
+		$channel = Channel::find ( "channel_name != ? and channel_name = ?", request ( "old" ), request ( "value" ) )->getOne ();
+		if ($channel->isNewRecord ()) {
+			echo "true";
+		} else {
+			echo "false";
+		}
+		exit ();
+	}
+	
+	/**
+	 * 检查网络
+	 */
+	function actionChecknetwork() {
+		$network = Network::find ( "network_code != ? and network_code = ?", request ( "old" ), request ( "value" ) )->getOne ();
+		if ($network->isNewRecord ()) {
+			echo "true";
+		} else {
+			echo "false";
+		}
+		exit ();
+	}
+	
+	/**
+	 * 检查服务
+	 */
+	function actionCheckservice() {
+		$service = Service::find ( "service_code != ? and service_code = ?", request ( "old" ), request ( "value" ) )->getOne ();
+		if ($service->isNewRecord ()) {
+			echo "true";
+		} else {
+			echo "false";
+		}
+		exit ();
+	}
+	
+	/**
+	 * 检查客户
+	 */
+	function actionCheckcustoms() {
+		$customs = Customs::find ( "customs_code != ? and customs_code = ?", request ( "old" ), request ( "value" ) )->getOne ();
+		if ($customs->isNewRecord ()) {
+			echo "true";
+		} else {
+			echo "false";
+		}
+		exit ();
+	}
+	
+	/**
+	 * 检查产品
+	 */
+	function actionCheckproduct() {
+		$product = Product::find ( "product_name != ? and product_name = ?", request ( "old_name" ), request ( "value_name" ) )->getOne ();
+		if (! $product->isNewRecord ()) {
+			echo "产品名称已存在,无法保存";
+			exit ();
+		}
+		
+		echo "true";
+		exit ();
+	}
+	
+	/**
+	 * 产品国家分区
+	 */
+	function actionCountrypartition() {
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+	    $productprp=Productprp::find("product_id= ? and effective_date<=? and fail_date>=? ",$product->product_id,request("record_order_date"),request("record_order_date"))->getOne();
+		$partition_manage_id=$productprp->partition_manage_id;
+
+		// 获得客户折扣中的分区信息
+		if (request('customs_id') ){ 
+			$cd=CustomsDiscount::find('customs_id =? and product_id =?',request('customs_id') , request('id'))->getOne();
+			if ( $cd->isNewRecord()){
+				$cd=CustomsDiscount::find('network_id =? and service_id =? and customs_id =?',$product->network_id,$product->service_id,request('customs_id'))->getOne();
+				if (!$cd->isNewRecord() && $cd->partition_manage_id){
+					$partition_manage_id=$cd->partition_manage_id;
+				}
+			}
+		}
+		
+		$partition = Partition::find ( "partition_manage_id = ? and code_word_two = ?", $partition_manage_id, request ( "code" ) )->getOne ();
+		
+		if ($partition->isNewRecord ()) {
+			//特例，如果没有任何分区信息
+			$count = Partition::find ( 'partition_manage_id = ?', $partition_manage_id )->getCount ();
+			if ($count == 0) {
+				echo (json_encode ( array (
+					"chinese_name" => Country::find ( 'code_word_two=?', request ( 'code' ) )->getOne ()->chinese_name,
+					"partition_code" => 0,
+					'channel_partition_code'=>0
+				) ));
+				exit ();
+			}
+		}
+		//渠道分区号
+		$channel_partition_code=$partition->partition_code;
+		if ($productprp->partition_manage_id !=$partition_manage_id){
+			$partition2 = Partition::find ( "partition_manage_id = ? and code_word_two = ?", $productprp->partition_manage_id, request ( "code" ) )->getOne ();
+			$channel_partition_code=$partition2->partition_code;
+		}
+		if (request('channel_id')){
+			$cc=ChannelCost::find('product_id =? and channel_id =?',$product->product_id,request('channel_id'))->getOne();
+			$cprp=Channelcostprp::find()->where ( "channelcost_id = ? and product_id=? and channel_id=? and effective_date<=? and fail_date>=?", $cc->channel_cost_id,$cc->product_id,$cc->channel_id,request("record_order_date"),request("record_order_date") )->getOne();
+			if ($cprp->partition_manage_id >0 && $cprp->partition_manage_id !=$productprp->partition_manage_id){
+				$partition2 = Partition::find ( "partition_manage_id = ? and code_word_two = ?", $cprp->partition_manage_id, request ( "code" ) )->getOne ();
+				if (!$partition2->isNewRecord()){
+					$channel_partition_code=$partition2->partition_code;
+				}
+			}
+		}
+		echo (json_encode ( array (
+			"chinese_name" => $partition->country->chinese_name,
+			"partition_code" => $partition->partition_code ,
+			'channel_partition_code'=>$channel_partition_code,
+		) ));
+		exit ();
+	}
+	/**
+	 * 应收应付客户智能搜索
+	 */
+	function actionBalanceclient(){
+	    $select = Customs::find ()->where ( "department_id in (?)", RelevantDepartment::departmentids () )->where("customs_id = ? or payee_flag ='1'",request('customs_id'));
+	    $channel=Channel::find("disabled='1'");
+	    $list=array();
+	    $data=array();
+	    $ch=array();
+	    $info=array();
+	    //检索联想
+	    $q = isset ( $_POST ["q"] ) ? "%" . $_POST ["q"] . "%" : "";
+	    if ($q && !is_numeric(ltrim(ltrim(request('q'),'CH_'),'CU_'))) {
+	        $select->where ( "customs_code like ? or customs_abbreviation like ?",$q, $q);
+	        $channel->where("channel_name like ?",$q);
+	    }
+	    $channel=$channel->asArray()->setColumns('channel_id,channel_name,channel_company_full_name')->getAll ();
+	    foreach ($channel as $temp){
+	        $ch['customs_id']='CH_'.$temp['channel_id'];
+	        $ch['customs_abbreviation']=$temp['channel_name'];
+	        $ch['customs_code']=$temp['channel_name'];
+	        $list[]=$ch;
+	    }
+	    $customs = $select->asArray ()
+	    ->setColumns('customs_id,customs_code,customs_full_name,customs_abbreviation')
+	    ->limitPage ( 1 )->getAll ();
+	    foreach ($customs as $temp){
+	        $info['customs_id']='CU_'.$temp['customs_id'];
+	        $info['customs_code']=$temp['customs_code'];
+	        $info['customs_abbreviation']=$temp['customs_abbreviation'];
+	        $data[]=$info;
+	    }
+	    $customs=array_merge($data,$list);
+// 	    $a=ltrim(ltrim(request('q'),'CH_'),'CN_');
+// 	    if (is_numeric($c)){
+// 	        $idCustoms=Customs::find('customs_id=?',$c)
+// 	        ->setColumns('customs_id,customs_code,customs_full_name,customs_abbreviation')
+// 	        ->asArray()
+// 	        ->getOne();
+// 	        if (count($idCustoms)){
+// 	            array_unshift($customs, $idCustoms);
+// 	        }
+// 	    }
+	    // 保留原始值
+// 	    if (request('customs_id') && request('customs_abbreviation')){
+// 	        $finded=false;
+// 	        foreach ($customs as &$row){
+// 	            if ($row['customs_id']==request('customs_id')){
+// 	                $row['customs_abbreviation']=request('customs_abbreviation');
+// 	                $finded=true;
+// 	            }
+// 	        }
+// 	        if (!$finded){
+// 	            $customs[]=array(
+// 	                'customs_id'=>request('customs_id'),
+// 	                'customs_abbreviation'=>request('customs_abbreviation')
+// 	            );
+// 	        }
+// 	    }
+	    echo (json_encode ( array (
+	        "total" => count ( $customs ),
+	        "rows" => $customs
+	    ) ));
+	    exit ();
+	}
+}

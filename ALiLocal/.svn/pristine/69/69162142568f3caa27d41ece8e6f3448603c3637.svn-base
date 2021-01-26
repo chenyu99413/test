@@ -1,0 +1,10 @@
+<?php
+/**
+ *
+ * @author xuedong
+ *
+ */
+class Controller_Code extends Controller_Abstract {
+	function actionSet() {
+	}
+}

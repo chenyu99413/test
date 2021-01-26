@@ -1,0 +1,233 @@
+<?php
+class Controller_Remote extends Controller_Abstract {
+	/**
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 偏派表一览
+	 */
+	function actionSearch() {
+	}
+	
+	/**
+	 * 偏派表显示
+	 */
+	function actionEdit() {
+		$remoteManage = RemoteManage::find ( "remote_manage_id = ?", request ( "id" ) )->getOne ();
+		
+		if (request_is_post ()) {
+			if (request ( "remoteManage" )) {
+				if (! $this->checkName ( $remoteManage->remote_manage_id, $remoteManage->remote_name )) {
+					return $this->_redirectMessage ( "偏派表", "保存失败,偏派名称已被抢注", url ( "remote/edit", array (
+						"id" => $remoteManage->remote_manage_id,
+						"active_tab" => "0" 
+					) ) );
+				}
+				$remoteManage->changeProps ( request ( "remoteManage" ) );
+				$remoteManage->save ();
+				return $this->_redirectMessage ( "偏派表", "保存成功", url ( "remote/edit", array (
+					"id" => $remoteManage->remote_manage_id,
+					"active_tab" => "0" 
+				) ) );
+			}
+		}
+		
+		$this->_view ["remoteManage"] = $remoteManage;
+		$remotes = Remote::find ( "remote_manage_id = ?", request ( "id" ) );
+		if (request ( "country_code_two" )) {
+			$remotes->where ( "country_code_two = ?", request ( "country_code_two" ) );
+		}
+		$remotes->order ( "country_code_two,start_postal_code" );
+		$remotes->limitPage ( (request_is_post () ? 1 : request ( "page", "1" )), Myapp::getPageSize () );
+		$remotes->fetchPagination ( $this->_view ["pagination"] );
+		$this->_view ["remotes"] = $remotes->getAll ();
+		$this->_view ["tabs"] = $this->createTabs ( $remoteManage );
+	}
+	
+	/**
+	 * 保存
+	 */
+	function actionSave() {
+		$remoteManage = RemoteManage::find ( "remote_manage_id = ?", request ( "id" ) )->getOne ();
+		if ($remoteManage->isNewRecord ()) {
+			exit ();
+		}
+		
+		if (request ( "remote" )) {
+			$p = request ( "remote" );
+			$remote = Remote::find ( "remote_id = ?", $p ["remote_id"] )->getOne ();
+			$remote->remote_manage_id = $remoteManage->remote_manage_id;
+			$remote->changeProps ( $p );
+			$remote->save ();
+			echo ($remote->remote_id);
+		}
+		exit ();
+	}
+	
+	/**
+	 * 删除分区
+	 */
+	function actionDel() {
+		if (request ( "remote_id" )) {
+			$remote = Remote::find ( "remote_id = ?", request ( "remote_id" ) )->getOne ();
+			$remote->destroy ();
+		}
+		exit ();
+	}
+	
+	/**
+	 * 验证名称
+	 */
+	function actionCheckname() {
+		if ($this->checkName ( request ( "id" ), request ( "name" ) )) {
+			echo ("true");
+		} else {
+			echo ("偏派名称已存在");
+		}
+		exit ();
+	}
+	
+	/**
+	 * 偏派表删除
+	 */
+	function actionDelete() {
+		//偏派表
+		$remoteManage = RemoteManage::find ( "remote_manage_id = ?", request ( "id" ) )->getOne ();
+		
+		//判断偏派表是否存在
+		if ($remoteManage->isNewRecord ()) {
+			return $this->_redirectMessage ( '偏派表', '该偏派表不存在，无法删除', url ( 'remote/search' ) );
+		}
+		
+		$remoteManage->destroy ();
+		return $this->_redirectMessage ( '偏派表删除成功', '', url ( 'remote/search' ) );
+	}
+	
+	/**
+	 * 偏派导入
+	 */
+	function actionImport() {
+		set_time_limit ( 0 );
+		ini_set("memory_limit", "2048M");
+		$url = url ( "remote/edit", array (
+			"id" => request ( "id" ),
+			"active_tab" => "1" 
+		) );
+		
+		$remoteManage = RemoteManage::find ( "remote_manage_id = ?", request ( "id" ) )->getOne ();
+		if ($remoteManage->isNewRecord ()) {
+			return $this->_redirectMessage ( "偏派导入", "导入失败,产品ID错误", $url );
+		}
+		
+		//读取数据
+		$uploader = new Helper_Uploader ();
+		if (Controller_Common::getFileExtName ( $uploader ) != "xls") {
+			return $this->_redirectMessage ( "偏派导入", "导入失败,文件类型不正确,请选择 .xls 类型的文件", $url );
+		}
+		$data = Helper_Excel::readFile ( Controller_Common::readFile ( $uploader ) )->toHeaderMap ();
+		
+		//检查内容是否为空或格式是否正确
+		if (empty ( $data ) || ! isset ( $data [0] ["二字码"] ) || ! isset ( $data [0] ["起始邮编"] ) || ! isset ( $data [0] ["结束邮编"] ) || ! isset ( $data [0] ["最低费用"] ) || ! isset ( $data [0] ["首重重量(kg)"] ) || ! isset ( $data [0] ["首重费用"] ) || ! isset ( $data [0] ["续重单位(kg)"] ) || ! isset ( $data [0] ["续重费用"] ) || ! isset ( $data [0] ["封顶费用"] ) || ! isset ( $data [0] ["备注"] )) {
+			return $this->_redirectMessage ( "偏派导入", "导入失败,请检查模板是否正确", $url );
+		}
+		
+		//检查国家是否存在
+		$checked_code_word2 = array ();
+		foreach ( $data as $k => $value ) {
+			//二字码转大写
+			$data [$k] ["二字码"] = strtoupper ( $data [$k] ["二字码"] );
+			$code_word_two = $value ["二字码"];
+			//重复国家检查，减少数据库压力
+			if (isset ( $checked_code_word2 [$code_word_two] )) {
+				continue;
+			}
+			if (strlen ( $value ["二字码"] ) < 1 || Country::find ( "code_word_two = ?", $value ["二字码"] )->getCount () <= 0) {
+				//忽略不存在的国家二字码
+				unset ( $data [$k] );
+				continue;
+			}
+			$checked_code_word2 [$data [$k] ["二字码"]] = true;
+		}
+		
+		//保存
+		Remote::meta ()->deleteWhere ( "remote_manage_id = ?", $remoteManage->remote_manage_id );
+		foreach ( $data as $value ) {
+			$remote = new Remote ( array (
+				"remote_manage_id" => request ( "id" ),
+				"country_code_word_two" => $value ["二字码"],
+				"start_postal_code" => $value ["起始邮编"],
+				"end_postal_code" => $value ["结束邮编"],
+				"lowest" => $value ["最低费用"],
+				"first_weight" => $value ["首重重量(kg)"],
+				"first_fee" => $value ["首重费用"],
+				"additional_unit_weight" => $value ["续重单位(kg)"],
+				"additional_fee" => $value ["续重费用"],
+				"capping" => $value ["封顶费用"],
+				"remark" => $value ["备注"] 
+			) );
+			$remote->save ();
+		}
+		return $this->_redirectMessage ( "偏派导入", "导入成功", $url );
+	}
+	
+	/**
+	 * 产品偏派导出
+	 */
+	function actionExport() {
+		set_time_limit(0);
+		ini_set("memory_limit", "2048M");
+		$remoteManage = RemoteManage::find ( "remote_manage_id = ?", request ( "id" ) )->getOne ();
+		$data = '[["二字码","起始邮编","结束邮编","最低费用","首重重量(kg)","首重费用","续重单位(kg)","续重费用","封顶费用"]';
+		foreach ( Remote::find ( "remote_manage_id = ?", $remoteManage->remote_manage_id )->order ( "country_code_two" )->getAll () as $value ) {
+			$data .= ',["' . $value->country_code_two . '","' . $value->start_postal_code . '","' . $value->end_postal_code . '","' . $value->lowest_fee . '","' . $value->first_weight . '","' . $value->first_fee . '","' . $value->additional_weight . '","' . $value->additional_fee . '","' . $value->highest_fee . '"]';
+		}
+		$data .= ']';
+		$file_name = (request ( "fileName" ) == null ? time () : request ( "fileName" )) . ".xls";
+		Helper_Excel::array2xls ( json_decode ( $data ), $file_name );
+		exit;
+	}
+	
+	/**
+	 * 创建标签
+	 */
+	function createTabs($remoteManage) {
+		if ($remoteManage->isNewRecord ()) {
+			return array (
+				array (
+					"id" => "0",
+					"title" => "基本信息",
+					"href" => "" 
+				) 
+			);
+		} else {
+			return array (
+				array (
+					"id" => "0",
+					"title" => "基本信息",
+					"href" => url ( "remote/edit", array (
+						"id" => request ( "id" ),
+						"active_tab" => "0" 
+					) ) 
+				),
+				array (
+					"id" => "1",
+					"title" => "偏派信息",
+					"href" => url ( "remote/edit", array (
+						"id" => request ( "id" ),
+						"active_tab" => "1" 
+					) ) 
+				) 
+			);
+		}
+	}
+	
+	/**
+	 * 验证名称
+	 */
+	function checkName($id, $name) {
+		$count = RemoteManage::find ( "remote_manage_id != ? AND remote_name = ?", $id, $name )->count ( "remote_name" )->getAll ();
+		return $count ["row_count"] == 0;
+	}
+}

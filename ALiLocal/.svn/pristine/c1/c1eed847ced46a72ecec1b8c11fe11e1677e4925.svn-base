@@ -1,0 +1,102 @@
+<?php
+class Controller_Channelcost extends Controller_Abstract {
+	/**
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 检索
+	 */
+	function actionSearch() {
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		$this->_view ["tabs"] = Controller_Product::createTabs ( $product );
+		$this->_view ["product"] = $product;
+	}
+	
+	/**
+	 * 编辑
+	 */
+	function actionEdit() {
+		//产品
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		//产品渠道
+		$channelcost = ChannelCost::find ( "product_id = ? and [channel.channel_id] = ?", request ( "id" ), request ( "channel_id" ) )->getOne ();
+		//保存
+		if (request_is_post ()) {
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			
+			//渠道成本
+			if (request ( "channelcost" ) != null || strlen ( request ( "channelcost" ) ) > 0) {
+				$channelcost->product_id = $product->product_id;
+				$channelcost->changeProps ( request ( "channelcost" ) );
+				$channelcost->save ();
+			}
+			//渠道折扣-价格-分区-偏派列表
+			if (request ( "Channelcostppr" ) != null || strlen ( request ( "Channelcostppr" ) ) > 0) {
+				Channelcostppr::meta ()->destroyWhere ( "channel_cost_id = ?", $channelcost->channel_cost_id);
+				foreach ( json_decode ( request ( "Channelcostppr" ) ) as $value ) {
+				    $value->effective_time=strtotime($value->effective_time."00:00:00");
+				    $value->invalid_time=strtotime($value->invalid_time."23:59:59");
+					$Channelcostppr = new Channelcostppr ();
+					$Channelcostppr->changeProps ( $value );
+					$Channelcostppr->channel_cost_id=$channelcost->channel_cost_id;
+					$Channelcostppr->save ();
+				}
+			}
+			
+			$conn->completeTrans ();
+			return $this->_redirectMessage ( "渠道成本", "保存成功", url ( "channelcost/edit", array (
+				"id" => $channelcost->product_id,
+				"channel_id" => $channelcost->channel_id
+			) ) );
+		}
+		
+		$this->_view ["tabs"] = Controller_Product::createTabs ( $product );
+		//产品
+		$this->_view ["product"] = $product;
+		//渠道成本
+		$this->_view ["channelcost"] = $channelcost;
+		//渠道列表
+		$select = Channel::find ();
+		$channel_ids = Helper_Array::getCols ( ChannelCost::find ( "product_id = ? and channel_id != ?", request ( "id" ), request ( "channel_id", "" ) )->getAll (), "channel_id" );
+		if (! empty ( $channel_ids )) {
+			$select->where ( "channel_id not in (?)", $channel_ids );
+		}
+		$this->_view ["channel"] = $select->getAll ();
+	}
+	
+	/**
+	 * 删除
+	 */
+	function actionDelete() {
+		//产品
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		//产品渠道
+		$channelcost = ChannelCost::find ( "product_id = ? and [channel.channel_id] = ?", request ( "id" ), request ( "channel_id" ) )->getOne ();
+		if ($channelcost->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品渠道", "产品渠道错误,请重新选择渠道", url ( "channelcost/search", array (
+				"id" => $product->product_id 
+			) ) );
+		}
+		
+		$channelcost->destroy ();
+		
+		return $this->_redirectMessage ( "产品渠道", "删除成功", url ( "channelcost/search", array (
+			"id" => $product->product_id 
+		) ) );
+	}
+}

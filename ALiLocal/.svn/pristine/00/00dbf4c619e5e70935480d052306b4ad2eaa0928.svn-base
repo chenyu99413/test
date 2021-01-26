@@ -1,0 +1,217 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>用户编辑<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<?php
+
+if ($user->user_account != null) {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'系统设置' => '',
+			'用户管理' => url ( 'user/search' ),
+			'用户编辑' => url ( '/edit', array (
+				'id' => $user->user_id 
+			) ) 
+		) 
+	) );
+} else {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'系统设置' => '',
+			'用户管理' => url ( 'user/search' ),
+			'新建用户' => url ( '/edit' ) 
+		) 
+	) );
+}
+?>
+<form method="POST" onsubmit="return Save();">
+	<div class="row-fluid">
+		<div class="span7 FarSearch">
+			<table>
+				<tbody>
+					<tr>
+						<th width=80 class="required-title">工号</th>
+						<td width=120>
+							<input id="text_user_account" type="text" type="text"
+								name="user[user_account]"
+								value="<?php echo $user->user_account;?>"
+								style="ime-mode: disabled" required="required" />
+						</td>
+					</tr>
+					<tr>
+						<th class="required-title">姓名</th>
+						<td>
+							<input type="text" id="user_name" name="user[user_name]" autocomplete="off"
+								value="<?php echo $user->user_name?>" maxlength="10"
+								required="required" />
+						</td>
+					</tr>
+					<tr>
+						<th class="required-title">密码</th>
+						<td>
+							<input type="text" name="user_pwd" autocomplete="off"
+								value="<?php echo $user->user_password?>" required="required" />
+						</td>
+					</tr>
+					<tr>
+						<th>联系电话</th>
+						<td>
+							<input type="text" type="text" name="user[tel]"
+								value="<?php echo $user->tel?>" />
+						</td>
+					</tr>
+					<tr>
+						<td></td>
+						<td>
+							<?php
+							echo Q::control ( "check", "check_receiver", array (
+								"name" => "user[receiver]",
+								"value" => $user->receiver,
+								"text" => "取件员" 
+							) )?>
+						</td>
+					</tr>
+					<tr>
+						<td></td>
+						<td>
+							<?php
+							echo Q::control ( "check", "check_salesperson", array (
+								"name" => "user[salesperson]",
+								"value" => $user->salesperson,
+								"text" => "销售" 
+							) )?>
+						</td>
+					</tr>
+					<tr>
+						<th class="required-title">部门</th>
+						<td>
+							<input id="combotree_department" class="easyui-combotree"
+								name="user[department_id]"
+								value="<?php echo $user->department_id?>"
+								data-options="url:'<?php echo url('common/departmenttree2')?>', method:'get', required:true"
+								style="width: 200px;">
+						</td>
+					</tr>
+					<tr>
+						<th>备注</th>
+						<td>
+							<textarea name="user[remark]" style="width: 300px; height: 100px"><?php echo $user->remark?></textarea>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			<table class="FarTable" style="width:600px;">
+				<thead>
+					<tr>
+						<th width="140px">日期</th><th width="350px">修改记录</th><th width="100px">操作者</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ($user->role_log as $log):?>
+					<tr>
+						<td><?php echo date("Y-m-d H:i:s",$log->log_date)?></td>
+						<td><?php echo $log->log_content ?></td>
+						<td><?php echo $log->operator ?></td>
+					</tr>
+					<?php endforeach;?>
+				</tbody>
+			</table>
+		</div>
+		<div class="span5">
+			业务相关部门
+			<label style="margin-left: 4px;">
+				<input id="check_all" type="checkbox" style="margin-top: -4px;"
+					onclick="CheckAll(this);" />
+				全选
+			</label>
+			<div class="easyui-panel" style="padding: 5px">
+				<ul id="relevant_tree" class="easyui-tree"
+					data-options="url:'<?php echo url('common/departmenttree2',$relevants)?>',method:'get',checkbox:true,cascadeCheck:false"></ul>
+			</div>
+			权限角色
+			<div class="FarTool easyui-panel" style="padding: 5px">
+			<?php foreach($roles as $role):?>
+			    <label style="margin-left: 4px;">
+					<input type="checkbox" name="role[]" style="margin-top: -4px;"
+						value="<?php echo $role['id']?>"
+						<?php echo $role['checked']?"checked='checked'":''?> />
+					<?php echo $role['name']?>
+				</label>
+			<?php endforeach;?>
+			</div>
+		</div>
+	</div>
+	<div class="row text-center">
+		<a class="btn btn-inverse" href="<?php echo url('user/search')?>">
+			<i class="icon-reply"></i>
+			返回
+		</a>
+		<?php if (MyApp::checkVisible("manage-user")):?>
+		<button class="btn btn-primary" type="submit">
+			<i class="icon-save"></i>
+			保存
+		</button>
+		<?php endif;?>
+	</div>
+
+	<input id="relevant_hidden" type="hidden" name="relevant" />
+	<input type="hidden" id="hidden_users_name" value="<?php echo $users_name?>" />
+</form>
+
+<script type="text/javascript">
+	/**
+	 * 全选
+	 */
+	function CheckAll(obj){
+		var check = obj.checked ? "check" : "uncheck";
+		var roots = $("#relevant_tree").tree("getRoots");
+		for(var i=0;i<roots.length;i++){
+			var notes = $("#relevant_tree").tree("getChildren", roots[i]);
+			for(var i=0;i<notes.length;i++){
+				$("#relevant_tree").tree(check,notes[i].target);
+			}
+		}
+	}
+
+	/**
+     * 保存 
+	 */
+	function Save(){
+		//用户名称判断重复
+		var temp=$("#hidden_users_name").val();
+		var users=temp.split(",");
+		for(var i=0;i<users.length;i++){
+		    if( $.trim($("#user_name").val())==users[i]){
+		    	alert("用户名称["+$("#user_name").val()+"]已存在于数据库中，请重新输入");
+	        	$("#user_name").val("");
+	        	 return false;
+		    }
+		}
+		if($("#relevant_tree").tree('getChecked').length == 0){
+			$.messager.alert('Error', '业务相关部门必须选择');
+			return false;
+		}
+
+		var result = false;
+		$.ajax({
+			url:"<?php echo url('common/checkuser')?>"+"&old=<?php echo $user->user_account?>&value="+$("#text_user_account").val(),
+			type:"GET",
+			async : false,
+			success:function(msg){
+				if(msg=="true")
+					result = true;
+			}
+		});
+		if(!result){
+			alert("工号已存在,无法保存");
+			return result;
+		}
+		
+		//相关部门
+		var relevant = "";
+		$($("#relevant_tree").tree("getChecked")).each(function(){
+			relevant += $(this)[0].id+",";
+		});
+		$("#relevant_hidden").val(relevant.substring(0,relevant.length-1));
+	}
+</script>
+<?PHP $this->_endblock();?>

@@ -1,0 +1,1064 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!--By Supcan Report -->
+<Report>
+	<WorkSheet name="weight_table">
+		<Properties>
+			<BackGround bgColor="#FFFFFF"/>
+			<DefaultTD>
+				<TD fontIndex="0" textColor="#000000" transparent="true" leftBorder="1" topBorder="1" leftBorderColor="#C0C0C0" leftBorderStyle="solid" topBorderColor="#C0C0C0" topBorderStyle="solid" decimal="0" align="center" vAlign="middle" isProtected="false" isThousandSeparat="false" datatype="1" isRound="true" isPrint="true"/>
+			</DefaultTD>
+			<Other isShowZero="true" isRefOriPrecision="true" LineDistance="0" isRowHeightAutoExtendAble="true"/>
+		</Properties>
+		<Fonts>
+			<Font faceName="Microsoft YaHei UI" charSet="134" height="-14" weight="400"/>
+			<Font faceName="Microsoft YaHei UI" charSet="134" height="-18" weight="700"/>
+		</Fonts>
+		<Table>
+			<Col width="257"/>
+			<Col width="87"/>
+			<Col width="167"/>
+			<Col width="88"/>
+			<Col width="138"/>
+			<Col width="7"/>
+			<TR height="38" sequence="0">
+				<TD fontIndex="1" decimal="2" isThousandSeparat="true">UPS实际重量与体积重量对比表</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+				<TD topBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="26" sequence="1">
+				<TD decimal="2" align="left" vAlign="bottom" isThousandSeparat="true">S/N            UPS Tracking Number</TD>
+				<TD decimal="2" vAlign="bottom" isThousandSeparat="true">Act Weight</TD>
+				<TD decimal="2" vAlign="bottom" isThousandSeparat="true">Size(L*W*H)</TD>
+				<TD decimal="2" vAlign="bottom" isThousandSeparat="true">Dim Weight</TD>
+				<TD decimal="2" vAlign="bottom" isThousandSeparat="true">Maximum Weight</TD>
+				<TD topBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="2">
+				<TD topBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+				<TD topBorder="0" decimal="2" vAlign="top" isThousandSeparat="true">实际重量</TD>
+				<TD topBorder="0" decimal="2" isThousandSeparat="true">尺码(长X宽X高)</TD>
+				<TD topBorder="0" decimal="2" isThousandSeparat="true">体积重量</TD>
+				<TD topBorder="0" decimal="2" isThousandSeparat="true">选取最大重量</TD>
+				<TD topBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="3">
+				<TD decimal="2" isThousandSeparat="true" formula="=data(&apos;ds1\1&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD decimal="2" isThousandSeparat="true" formula="=data(&apos;ds1\1&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD decimal="2" isThousandSeparat="true" formula="=data(&apos;ds1\1&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD decimal="2" isThousandSeparat="true" formula="=data(&apos;ds1\1&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD decimal="2" isThousandSeparat="true" formula="=data(&apos;ds1\1&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD topBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="20" sequence="4">
+				<TD topBorder="0" decimal="2" isThousandSeparat="true" formula="=data(&apos;ds1\1&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+				<TD topBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="5">
+				<TD formula="=data(&apos;ds1\2&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\2&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\2&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\2&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\2&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="20" sequence="6">
+				<TD topBorder="0" formula="=data(&apos;ds1\2&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="7">
+				<TD formula="=data(&apos;ds1\3&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\3&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\3&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\3&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\3&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="8">
+				<TD topBorder="0" formula="=data(&apos;ds1\3&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="9">
+				<TD formula="=data(&apos;ds1\4&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\4&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\4&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\4&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\4&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="10">
+				<TD topBorder="0" formula="=data(&apos;ds1\4&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="11">
+				<TD formula="=data(&apos;ds1\5&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\5&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\5&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\5&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\5&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="12">
+				<TD topBorder="0" formula="=data(&apos;ds1\5&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="13">
+				<TD formula="=data(&apos;ds1\6&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\6&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\6&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\6&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\6&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="14">
+				<TD topBorder="0" formula="=data(&apos;ds1\6&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="15">
+				<TD formula="=data(&apos;ds1\7&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\7&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\7&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\7&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\7&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="16">
+				<TD topBorder="0" formula="=data(&apos;ds1\7&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="17">
+				<TD formula="=data(&apos;ds1\8&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\8&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\8&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\8&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\8&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="18">
+				<TD topBorder="0" formula="=data(&apos;ds1\8&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="19">
+				<TD formula="=data(&apos;ds1\9&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\9&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\9&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\9&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\9&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="20">
+				<TD topBorder="0" formula="=data(&apos;ds1\9&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="21">
+				<TD formula="=data(&apos;ds1\10&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\10&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\10&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\10&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\10&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="22">
+				<TD topBorder="0" formula="=data(&apos;ds1\10&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="23">
+				<TD formula="=data(&apos;ds1\11&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\11&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\11&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\11&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\11&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="24">
+				<TD topBorder="0" formula="=data(&apos;ds1\11&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="25">
+				<TD formula="=data(&apos;ds1\12&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\12&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\12&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\12&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\12&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="26">
+				<TD topBorder="0" formula="=data(&apos;ds1\12&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="27">
+				<TD formula="=data(&apos;ds1\13&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\13&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\13&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\13&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\13&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="28">
+				<TD topBorder="0" formula="=data(&apos;ds1\13&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="29">
+				<TD formula="=data(&apos;ds1\14&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\14&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\14&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\14&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\14&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="30">
+				<TD topBorder="0" formula="=data(&apos;ds1\14&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="47" sequence="31">
+				<TD formula="=data(&apos;ds1\15&apos;,1,&apos;barcode_url&apos;)" maskid="1">barcode_url*</TD>
+				<TD formula="=data(&apos;ds1\15&apos;,1,&apos;actual_weight&apos;)">actual_weight*</TD>
+				<TD formula="=data(&apos;ds1\15&apos;,1,&apos;size&apos;)">size*</TD>
+				<TD formula="=data(&apos;ds1\15&apos;,1,&apos;volume_weight&apos;)">volume_weight*</TD>
+				<TD formula="=data(&apos;ds1\15&apos;,1,&apos;max_weight&apos;)">max_weight*</TD>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="32">
+				<TD topBorder="0" formula="=data(&apos;ds1\15&apos;,1,&apos;tracking_no&apos;)" charSpace="2">tracking_no*</TD>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD leftBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+			<TR height="18" sequence="33">
+				<TD leftBorder="0" align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD align="left"/>
+				<TD leftBorder="0" topBorder="0" decimal="2" align="left" isThousandSeparat="true"/>
+			</TR>
+		</Table>
+		<Merges>
+			<Range row1="0" col1="0" row2="0" col2="4"/>
+			<Range row1="3" col1="1" row2="4" col2="1"/>
+			<Range row1="3" col1="2" row2="4" col2="2"/>
+			<Range row1="3" col1="3" row2="4" col2="3"/>
+			<Range row1="3" col1="4" row2="4" col2="4"/>
+			<Range row1="5" col1="1" row2="6" col2="1"/>
+			<Range row1="5" col1="2" row2="6" col2="2"/>
+			<Range row1="5" col1="3" row2="6" col2="3"/>
+			<Range row1="5" col1="4" row2="6" col2="4"/>
+			<Range row1="7" col1="1" row2="8" col2="1"/>
+			<Range row1="7" col1="2" row2="8" col2="2"/>
+			<Range row1="7" col1="3" row2="8" col2="3"/>
+			<Range row1="7" col1="4" row2="8" col2="4"/>
+			<Range row1="9" col1="1" row2="10" col2="1"/>
+			<Range row1="9" col1="2" row2="10" col2="2"/>
+			<Range row1="9" col1="3" row2="10" col2="3"/>
+			<Range row1="9" col1="4" row2="10" col2="4"/>
+			<Range row1="11" col1="1" row2="12" col2="1"/>
+			<Range row1="11" col1="2" row2="12" col2="2"/>
+			<Range row1="11" col1="3" row2="12" col2="3"/>
+			<Range row1="11" col1="4" row2="12" col2="4"/>
+			<Range row1="13" col1="1" row2="14" col2="1"/>
+			<Range row1="13" col1="2" row2="14" col2="2"/>
+			<Range row1="13" col1="3" row2="14" col2="3"/>
+			<Range row1="13" col1="4" row2="14" col2="4"/>
+			<Range row1="15" col1="1" row2="16" col2="1"/>
+			<Range row1="15" col1="2" row2="16" col2="2"/>
+			<Range row1="15" col1="3" row2="16" col2="3"/>
+			<Range row1="15" col1="4" row2="16" col2="4"/>
+			<Range row1="17" col1="1" row2="18" col2="1"/>
+			<Range row1="17" col1="2" row2="18" col2="2"/>
+			<Range row1="17" col1="3" row2="18" col2="3"/>
+			<Range row1="17" col1="4" row2="18" col2="4"/>
+			<Range row1="19" col1="1" row2="20" col2="1"/>
+			<Range row1="19" col1="2" row2="20" col2="2"/>
+			<Range row1="19" col1="3" row2="20" col2="3"/>
+			<Range row1="19" col1="4" row2="20" col2="4"/>
+			<Range row1="21" col1="1" row2="22" col2="1"/>
+			<Range row1="21" col1="2" row2="22" col2="2"/>
+			<Range row1="21" col1="3" row2="22" col2="3"/>
+			<Range row1="21" col1="4" row2="22" col2="4"/>
+			<Range row1="23" col1="1" row2="24" col2="1"/>
+			<Range row1="23" col1="2" row2="24" col2="2"/>
+			<Range row1="23" col1="3" row2="24" col2="3"/>
+			<Range row1="23" col1="4" row2="24" col2="4"/>
+			<Range row1="25" col1="1" row2="26" col2="1"/>
+			<Range row1="25" col1="2" row2="26" col2="2"/>
+			<Range row1="25" col1="3" row2="26" col2="3"/>
+			<Range row1="25" col1="4" row2="26" col2="4"/>
+			<Range row1="27" col1="1" row2="28" col2="1"/>
+			<Range row1="27" col1="2" row2="28" col2="2"/>
+			<Range row1="27" col1="3" row2="28" col2="3"/>
+			<Range row1="27" col1="4" row2="28" col2="4"/>
+			<Range row1="29" col1="1" row2="30" col2="1"/>
+			<Range row1="29" col1="2" row2="30" col2="2"/>
+			<Range row1="29" col1="3" row2="30" col2="3"/>
+			<Range row1="29" col1="4" row2="30" col2="4"/>
+			<Range row1="31" col1="1" row2="32" col2="1"/>
+			<Range row1="31" col1="2" row2="32" col2="2"/>
+			<Range row1="31" col1="3" row2="32" col2="3"/>
+			<Range row1="31" col1="4" row2="32" col2="4"/>
+			<Range row1="0" col1="5" row2="32" col2="5"/>
+			<Range row1="33" col1="0" row2="33" col2="4"/>
+		</Merges>
+		<PrintPage>
+			<Paper>
+				<Margin left="3" top="3" right="3" bottom="3"/>
+			</Paper>
+			<Page isIgnoreValidBorder="false">
+				<PageCode isPrint="false"/>
+			</Page>
+		</PrintPage>
+	</WorkSheet>
+	<DataSources Version="255" isAutoCalculateWhenOpen="false" isSaveCalculateResult="false">
+		<DataSource type="4"><!-- Desc: Supcan Report Component DataSource Specification -->
+<Data>
+	<ID>ds1</ID>
+	<Version>2</Version>
+	<Type>4</Type>
+	<TypeMeaning>JSON</TypeMeaning>
+	<Source>weighttable?ali_order_no=ALS00200209099&amp;page=1</Source>
+	<XML_RecordAble_Nodes>
+		<Node>
+			<name>1</name>
+		</Node>
+		<Node>
+			<name>10</name>
+		</Node>
+		<Node>
+			<name>11</name>
+		</Node>
+		<Node>
+			<name>12</name>
+		</Node>
+		<Node>
+			<name>13</name>
+		</Node>
+		<Node>
+			<name>14</name>
+		</Node>
+		<Node>
+			<name>15</name>
+		</Node>
+		<Node>
+			<name>2</name>
+		</Node>
+		<Node>
+			<name>3</name>
+		</Node>
+		<Node>
+			<name>4</name>
+		</Node>
+		<Node>
+			<name>5</name>
+		</Node>
+		<Node>
+			<name>6</name>
+		</Node>
+		<Node>
+			<name>7</name>
+		</Node>
+		<Node>
+			<name>8</name>
+		</Node>
+		<Node>
+			<name>9</name>
+		</Node>
+	</XML_RecordAble_Nodes>
+	<Columns>
+		<Column>
+			<name>1\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>1\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>1\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>1\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>1\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>1\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>10\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>10\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>10\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>10\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>10\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>10\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>11\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>11\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>11\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>11\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>11\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>11\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>12\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>12\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>12\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>12\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>12\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>12\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>13\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>13\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>13\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>13\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>13\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>13\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>14\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>14\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>14\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>14\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>14\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>14\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>15\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>15\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>15\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>15\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>15\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>15\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>2\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>2\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>2\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>2\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>2\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>2\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>3\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>3\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>3\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>3\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>3\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>3\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>4\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>4\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>4\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>4\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>4\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>4\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>5\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>5\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>5\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>5\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>5\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>5\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>6\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>6\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>6\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>6\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>6\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>6\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>7\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>7\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>7\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>7\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>7\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>7\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>8\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>8\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>8\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>8\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>8\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>8\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>9\barcode_url</name>
+			<text>barcode_url</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>9\tracking_no</name>
+			<text>tracking_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>9\actual_weight</name>
+			<text>actual_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>9\size</name>
+			<text>size</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>9\volume_weight</name>
+			<text>volume_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>9\max_weight</name>
+			<text>max_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+	</Columns>
+</Data>
+
+		</DataSource>
+	</DataSources>
+	<Masks>
+		<mask id="1" datatype="1">picture()</mask>
+	</Masks>
+</Report>

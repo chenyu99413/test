@@ -1,0 +1,281 @@
+<?php
+class Controller_User extends Controller_Abstract {
+	
+	/**
+	 * 工作台
+	 */
+	function actionIndex() {
+		//分公司结算，部门经理
+		$isPartClearing=GroupRole::find('user_id =? and role_id in(6,3)',MyApp::currentUser('user_id'))->getCount();
+		if ($isPartClearing){
+			$this->_view['abnormal_state']=Waybill::find('abnormal_state !="无拒付" and profit_complete !=1 and department_id in(?)',RelevantDepartment::departmentids())->getCount();
+		}
+		/*
+		$unSigns=Waybill::find(' record_order_date < ? and ifnull(sign_flag,"0") ="0"  and network_code !="Money" and enable_flag=1',date('Y-m-d 23:59:59',strtotime('-8days')))
+			->where('department_id in(?)',RelevantDepartment::departmentids())
+			->limitPage(1,10)
+// 			->fetchPagination($this->_view['unSignsCount'])
+			->order('record_order_date')
+			->getAll();
+		$this->_view['unSigns']=$unSigns;
+		*/
+		$this->_view['unSigns']=$unSigns=array();
+		//燃油 #8358
+		$bafs=Baf::find('fail_date >= ? and effective_date <=?',date('Y-m-d'),date('Y-m-d'))
+			->getAll();
+		$this->_view['bafs']=$bafs;
+		$networks=Network::find()->getAll();
+		$this->_view['networks']=Helper_Array::toHashmap($networks, 'network_code');
+	}
+	/**
+	 * 用户查询
+	 */
+	function actionSearch() {
+		$select = User::find ( "department_id in (?)", RelevantDepartment::departmentids () );
+		if (request_is_post ()) {
+			if (request ( "user_name" ) != null) {
+				$select->where ( "user_name like ?", "%" . request ( "user_name" ) . "%" );
+			}
+			if (request ( "department" ) != null) {
+				$select->where ( "department_id in (?)", request ( "department" ) );
+			}
+			if (request ( 'salesperson' ) != 0) {
+				$select->where ( "salesperson = ? ", request ( "salesperson" ) );
+			}
+			if (request ( 'receiver' ) != 0) {
+				$select->where ( "receiver = ? ", request ( "receiver" ) );
+			}
+		}
+		$this->_view ["users"] = $select->order ( 'department_id,user_account' )->getAll ();
+	}
+	
+	/**
+	 * 用户编辑
+	 */
+	function actionEdit() {
+		// 显示用户
+		$user = new User ();
+		$relevants = array ();
+		$grouproles = array ();
+		if (request ( "id" ) != null) {
+			$user = User::find ( "user_id = ?", request ( "id" ) )->getOne ();
+			$relevants = RelevantDepartment::find ( "user_id = ?", $user->user_id )->getAll ();
+			$grouproles = GroupRole::find ( "user_id = ?", $user->user_id )->getAll ();
+			//所有用户名称(不包含自己)
+			$users_other = User::find ( 'user_id !=?', request ( "id" ) )->asArray ()->getAll ();
+			$users_name = implode ( ",", Helper_Array::getCols ( $users_other, "user_name" ) );
+		}else{
+		    $users_other = User::find ()->asArray ()->getAll ();
+		    $users_name = implode ( ",", Helper_Array::getCols ( $users_other, "user_name" ) );
+		}
+		$this->_view ["users_name"] = $users_name;
+		// 保存
+		if (request_is_post ()) {
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			
+			// 用户
+			if (request ( "user" ) != null || strlen ( request ( "user" ) ) > 0) {
+				$user->changeProps ( request ( "user" ) );
+				if (request("user_pwd") != $user->user_password) {
+					$user->user_password = request("user_pwd");
+				}
+				$user->status = "1";
+				$user->save ();
+				
+				// 如果编辑用户为当前用户，重新将用户信息存入SESSION
+				if ($user->user_id == MyApp::currentUser ( 'user_id' )) {
+					$this->_app->changeCurrentUser ( $user->toArray (), "MEMBER" );
+				}
+			}
+			
+			// 相关部门
+			if (request ( "relevant" ) != null || strlen ( request ( "relevant" ) ) > 0) {
+				RelevantDepartment::meta ()->destroyWhere ( "user_id = ?", $user->user_id );
+				foreach ( explode ( ",", request ( "relevant" ) ) as $value ) {
+					$relevantDepartment = new RelevantDepartment ();
+					$relevantDepartment->user_id = $user->user_id;
+					$relevantDepartment->department_id = $value;
+					$relevantDepartment->save ();
+				}
+			}
+			
+			// 权限角色
+			if (request ( "role" ) != null || strlen ( request ( "role" ) ) > 0) {
+				GroupRole::meta ()->destroyWhere ( "user_id = ?", $user->user_id );
+				$content='';
+				foreach ( request ( "role" ) as $value ) {
+					$grouprole = new GroupRole ();
+					$grouprole->role_id = $value;
+					$grouprole->user_id = $user->user_id;
+					$grouprole->save ();
+					//记录角色修改日志
+					$role=Role::find('role_id=?',$value)->getOne();
+					$content.=$role->role_name.";";
+				}
+				$rolelog=new Rolelog();
+				$rolelog->log_date=time();
+				$rolelog->operator=MyApp::currentUser("user_name");
+				$rolelog->user_id=$user->user_id;
+				$rolelog->log_content=rtrim($content,';');
+				$rolelog->save();
+			}
+			
+			$conn->completeTrans ();
+			return $this->_redirectMessage ( "用户保存", "保存成功", url ( "user/edit", array (
+				"id" => $user->user_id 
+			) ) );
+		}
+		
+		// 显示角色
+		$grouproles_id = Helper_Array::getCols ( $grouproles, "role_id" );
+		$roles = array ();
+		foreach ( Role::find ()->getAll () as $value ) {
+			if (in_array ( $value->role_id, $grouproles_id )) {
+				$roles [] = array (
+					"id" => $value->role_id,
+					"name" => $value->role_name,
+					"checked" => true 
+				);
+			} else {
+				$roles [] = array (
+					"id" => $value->role_id,
+					"name" => $value->role_name,
+					"checked" => false 
+				);
+			}
+		}
+		
+		$this->_view ["user"] = $user;
+		$this->_view ["relevants"] = array (
+			"state" => true,
+			"checked" => implode ( ",", Helper_Array::getCols ( $relevants, "department_id" ) ) 
+		);
+		$this->_view ["roles"] = $roles;
+	}
+	
+	/**
+	 * 停职操作
+	 */
+	function actionInterdicted() {
+		if (request ( "id" ) != null) {
+			$user = User::find ( "user_id = ?", request ( "id" ) )->getOne ();
+			$user->status = request ( "status" );
+			$user->save ();
+		}
+		return $this->_redirectMessage ( "用户状态", "保存成功", url ( "user/search" ) );
+	}
+	
+	/**
+	 * 用户登陆
+	 */
+	function actionLogin() {
+		$errors ["errors"] = array ();
+		if (request_is_post ()) {
+			// 验证用户名和密码
+			if ((post ( "user_account" ) == null) || (post ( "user_password" ) == null)) {
+				$errors ["errors"] [] = "用户名和口令不能为空";
+			} else {
+				$user = User::validateLogin ( request ( "user_account" ), request ( "user_password" ) );
+				if ($user === false) {
+					$errors ["errors"] [] = "用户名或口令错误";
+				}
+			}
+			if (! empty ( $errors ["errors"] )) {
+				$this->_view ["errors"] = $errors;
+				return;
+			} else {
+				session_start();
+				// 将登录用户的信息存入 SESSION，以便应用程序记住用户的登录状态
+				$this->_app->changeCurrentUser ( $user->toArray (), "MEMBER" );
+				// 登录成功后，重定向浏览器
+				return $this->_redirect ( url ( "user" ) );
+			}
+		}
+	}
+	
+	/**
+	 * 用户注销
+	 */
+	function actionLogout() {
+		session_start();
+		$this->_app->cleanCurrentUser ();
+		return $this->_redirect ( url ( 'default' ) );
+	}
+	
+	/**
+	 * 修改密码
+	 */
+	function actionChangepassword() {
+		if (request_is_post ()) {
+			if (User::validateLogin ( MyApp::currentUser ( "user_account" ), request ( "old_password" ) ) === false) {
+				$errors ["errors"] [] = "旧密码错误";
+			} else if (request ( "new_password" ) != request ( "confirm_password" )) {
+				$errors ["errors"] [] = "密码确认错误";
+			} else {
+				$user = User::find ( "user_id = ?", MyApp::currentUser ( "user_id" ) )->getOne ();
+				$user->user_password = request ( "new_password" );
+				$user->save ();
+				return $this->_redirectMessage ( "修改密码", "保存成功", url ( "user/changepassword" ) );
+			}
+			$this->_view ["errors"] = $errors;
+			return;
+		}
+	}
+	
+	/**
+	 * 逾期报告用户管理
+	 */
+	function actionOverdue(){
+		$select = User::find ('user_account !="admin"');
+		if (request_is_post ()) {
+			if (request ( "user_account" ) ) {
+				$select->where ( "user_account = ?",  request ( "user_account" )  );
+			}
+			if (request ( "user_name" )) {
+				$select->where ( "user_name = ?", request ( "user_name" ));
+			}
+		}
+		$this->_view ["users"] = $select->order ( 'department_id,user_account' )->getAll ();
+	}
+	
+	/**
+	 * 编辑逾期报用户
+	 */
+	function actionsetoverdue(){
+		$user = User::find ('user_id =?',request("id"))->getOne();
+		$overduedepartments = OverdueDepartment::find ( "user_id = ?", $user->user_id )->asArray()->getAll ();
+		if(request_is_post()){
+			// 相关部门
+			OverdueDepartment::meta ()->destroyWhere ( "user_id = ?", $user->user_id );
+			if (request ( "overduedepartments" ) != null || strlen ( request ( "overduedepartments" ) ) > 0) {
+				foreach ( explode ( ",", request ( "overduedepartments" ) ) as $value ) {
+					$overdueDepartment = new OverdueDepartment();
+					$overdueDepartment->user_id = $user->user_id;
+					$overdueDepartment->department_id = $value;
+					$overdueDepartment->save ();
+				}
+			}
+			if (request("email") && $user->email !=request("email")){
+				$user->email=request("email");
+			}
+			$user->account_period=request("account_period");
+			$user->save();
+			return $this->_redirectMessage ( "逾期报告用户", "保存成功", url ( "user/setoverdue", array (
+				"id" => $user->user_id
+			) ) );
+		}
+		$this->_view['user']=$user;
+		$this->_view ["departments"] = array (
+				"state" => true,
+				"checked" => implode ( ",", Helper_Array::getCols ( $overduedepartments, "department_id" ) )
+			);
+	}
+	/**
+	 * 角色变更记录
+	 */
+	function actionlog(){
+		$this->_view['logs']=rolelog::find()->getAll();
+	}
+	
+}

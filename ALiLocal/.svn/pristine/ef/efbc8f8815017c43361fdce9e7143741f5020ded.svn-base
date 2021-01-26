@@ -1,0 +1,2 @@
+ALTER TABLE `tb_channel_cost` ADD `single_lowest_weight` decimal(10,3) DEFAULT NULL COMMENT '单件最低计费重（单位为KG）' AFTER `fuel_surcharge_dicount`;
+ALTER TABLE `tb_order` ADD `total_single_weight` decimal(10,3) DEFAULT NULL COMMENT '整票货的计费重（单位为KG）' AFTER `weight_cost_out`;

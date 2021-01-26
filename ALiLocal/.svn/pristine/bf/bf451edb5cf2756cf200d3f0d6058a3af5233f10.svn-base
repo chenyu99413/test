@@ -1,0 +1,29 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    渠道分组编辑
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+    <?php echo Q::control ( 'path', '', array (
+		'path' => array (
+			'渠道管理' => '',
+			'渠道分组列表' => url ( 'channel/channelgroup' ),
+			'渠道分组编辑' => '#'
+			) ) 
+		) ?>
+<form method="post">
+    <div class="FarSearch">
+        <table>
+            <tr>
+                <th>渠道分组名称</th>
+                <td><input name="channel_group_name"  type="text" style="width: 250px" required="required" value="<?php echo $channel_group_info->channel_group_name?>"></td>
+                <td><button type="submit" class="btn btn-small btn-success"><i class="icon-save"></i> 保存</button></td>
+            </tr>
+        </table>
+    </div>
+    <input type="hidden" name="channel_group_id" value="<?php echo $channel_group_info->channel_group_id?>">
+</form>
+<?PHP $this->_endblock();?>
+

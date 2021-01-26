@@ -1,0 +1,34 @@
+命令行指令
+
+Git 全局设置
+```
+git config --global user.name "nqchen"
+git config --global user.email "firzen13@gmail.com"
+```
+
+```
+创建新版本库
+git clone https://code.aliyun.com/firzen/qeephp.git
+cd qeephp
+touch README.md
+git add README.md
+git commit -m "add README"
+git push -u origin master
+```
+
+已存在的文件夹或 Git 仓库
+```
+cd existing_folder
+git init
+git remote add origin https://code.aliyun.com/firzen/qeephp.git
+git add .
+git commit
+git push -u origin master
+```
+
+
+硬拉
+```
+git reset --hard HEAD
+git pull
+```

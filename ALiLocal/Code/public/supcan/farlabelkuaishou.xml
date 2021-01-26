@@ -1,0 +1,139 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!--By Supcan Report -->
+<Report>
+	<WorkSheet name="farlabel">
+		<Properties>
+			<BackGround bgColor="#FFFFFF"/>
+			<DefaultTD>
+				<TD fontIndex="0" textColor="#000000" transparent="true" leftBorder="1" topBorder="1" leftBorderColor="#C0C0C0" leftBorderStyle="solid" topBorderColor="#C0C0C0" topBorderStyle="solid" decimal="2" align="left" vAlign="middle" isProtected="false" isThousandSeparat="true" isRound="true" isPrint="true"/>
+			</DefaultTD>
+			<Other isShowZero="true" isRefOriPrecision="true" AutoBreakLine="2" LineDistance="0" isRowHeightAutoExtendAble="true"/>
+		</Properties>
+		<Fonts>
+			<Font faceName="Microsoft YaHei UI" charSet="134" height="-14" weight="400"/>
+			<Font faceName="Microsoft YaHei UI" charSet="134" height="-14" weight="700"/>
+		</Fonts>
+		<Table>
+			<Col width="34"/>
+			<Col width="30"/>
+			<Col width="13"/>
+			<Col width="15"/>
+			<Col width="19"/>
+			<Col width="12"/>
+			<Col width="19"/>
+			<Col width="14"/>
+			<Col width="26"/>
+			<Col width="11"/>
+			<Col width="21"/>
+			<Col width="13"/>
+			<TR height="6" sequence="0">
+				<TD col="0" leftBorder="0" topBorder="0" align="center" datatype="1" formula="=&apos;http://kuaijian.far800.com/public/barcode/html/image.php?filetype=PNG&amp;dpi=90&amp;scale=1&amp;rotation=0&amp;font_family=0&amp;font_size=0&amp;thickness=30&amp;start=C&amp;code=BCGcode128&amp;text=&apos;+data(&apos;ds1&apos;, 1, &apos;ali_order_no&apos;)" maskid="1">ali_order_no*</TD>
+				<TD col="1" leftBorder="0" topBorder="0"/>
+				<TD col="10" leftBorder="0" topBorder="0"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="17" sequence="1">
+				<TD col="1" leftBorder="0" topBorder="0" align="center" datatype="1" maskid="1"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="8" sequence="2">
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="10" sequence="3">
+				<TD col="0" fontIndex="1" leftBorder="0" topBorder="0" align="center" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;SP&apos;)">SP*</TD>
+				<TD col="1" leftBorder="0" topBorder="0" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;product&apos;)">product*</TD>
+				<TD col="2" leftBorder="0" topBorder="0" align="center" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;ali_order_no&apos;)">ali_order_no*</TD>
+				<TD col="9" fontIndex="1" leftBorder="0" topBorder="0" align="center" datatype="6" formula="=js(&apos;getSeqNum&apos;)"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="8" sequence="4">
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+			<TR height="13" sequence="5">
+				<TD col="0" leftBorder="0" topBorder="0" align="center" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;country&apos;)">country*</TD>
+				<TD col="1" leftBorder="0" topBorder="0"/>
+				<TD col="2" leftBorder="0" topBorder="0"/>
+				<TD col="3" leftBorder="0" topBorder="0"/>
+				<TD col="4" leftBorder="0" topBorder="0"/>
+				<TD col="5" leftBorder="0" topBorder="0"/>
+				<TD col="6" leftBorder="0" topBorder="0"/>
+				<TD col="7" leftBorder="0" topBorder="0"/>
+				<TD col="8" leftBorder="0" topBorder="0"/>
+				<TD col="9" leftBorder="0" topBorder="0"/>
+				<TD col="10" leftBorder="0" topBorder="0"/>
+				<TD col="11" leftBorder="0" topBorder="0"/>
+			</TR>
+		</Table>
+		<Merges>
+			<Range row1="3" col1="2" row2="4" col2="8"/>
+			<Range row1="3" col1="9" row2="4" col2="10"/>
+			<Range row1="0" col1="0" row2="2" col2="11"/>
+			<Range row1="5" col1="0" row2="5" col2="10"/>
+			<Range row1="3" col1="0" row2="4" col2="0"/>
+			<Range row1="3" col1="1" row2="4" col2="1"/>
+		</Merges>
+		<PrintPage>
+			<Printer>ZDesigner GK888t</Printer>
+			<Paper paperNumber="-1" paperName="60*20">
+				<Margin left="0" top="0" right="0" bottom="0"/>
+				<UserDefine Name="6*2" Width="64000" Height="20000" isVirtual="true">
+				</UserDefine>
+			</Paper>
+			<Page isIgnoreValidBorder="true">
+				<PageCode>
+					<Font faceName="Microsoft YaHei UI" charSet="134" height="-14" weight="400"/>
+				</PageCode>
+			</Page>
+		</PrintPage>
+	</WorkSheet>
+	<DataSources Version="255" isAutoCalculateWhenOpen="false" isSaveCalculateResult="false">
+		<DataSource type="4"><!-- Desc: Supcan Report Component DataSource Specification -->
+<Data>
+	<ID>ds1</ID>
+	<Version>2</Version>
+	<Type>4</Type>
+	<TypeMeaning>JSON</TypeMeaning>
+	<Source>http://1688.far800.com/index.php?controller=warehouse&amp;action=infarlabel&amp;orderid=148268</Source>
+	<XML_RecordAble_Nodes>
+		<Node>
+			<name/>
+		</Node>
+	</XML_RecordAble_Nodes>
+	<Columns>
+		<Column>
+			<name>ali_order_no</name>
+			<text>ali_order_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>SP</name>
+			<text>SP</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>product</name>
+			<text>product</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>country</name>
+			<text>country</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+	</Columns>
+</Data>
+
+		</DataSource>
+	</DataSources>
+	<Masks>
+		<mask id="1" datatype="1">picture()</mask>
+	</Masks>
+</Report>

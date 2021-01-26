@@ -1,0 +1,86 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    订单查询
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+					<th>ALI订单号</th>
+					<td>
+						<input name="ali_order_no" type="text" style="width: 150px"
+							value="<?php echo request('ali_order_no')?>">
+					</td>
+					<th>泛远订单号</th>
+					<td>
+						<input name="far_no" type="text" style="width: 150px"
+							value="<?php echo request('far_no')?>">
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th><input type="checkbox" id="checkall"
+						onclick="SelectAll(this,'checkbox_');getIds();"></th>
+				<th>No</th>
+				<th>ALI订单号</th>
+				<th>泛远单号</th>
+				<th>服务</th>
+				<th>取件</th>
+				<th>订单日期</th>
+				<th width="120px">操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php $i=1;?>
+		<?php foreach ($orders as $order):?>
+			<tr>
+				<td style="text-align: center"><input type="checkbox"  class="checkbox_"  value="<?php echo $order->order_id ?>" /></td>
+				<td><?php echo $i++ ?></td>
+				<td><a  target="_blank"
+					    href="<?php echo url('order/detail', array('order_id' => $order->order_id))?>">
+					    <?php echo $order->ali_order_no ?>
+					</a>
+				</td>
+				<td><?php echo $order->far_no?></td>
+				<td><?php echo $order->service_code?></td>
+				<td><?php echo $order->need_pick_up=='1'?'是':''?></td>
+				<td align="center" title="<?php echo Helper_Util::strDate('Y-m-d H:i:s', $order->create_time)?>"><?php echo Helper_Util::strDate('Y-m-d', $order->create_time)?></td>
+				<td>
+				    <a class="btn btn-mini btn-primary" target="_blank" href="<?php echo url('order/event', array('order_id' => $order->order_id))?>">
+						<i class="icon-asterisk"></i>
+						事件
+					</a>
+					<a class="btn btn-mini btn-info" target="_blank" href="<?php echo url('order/trace', array('order_id' => $order->order_id))?>">
+						<i class="icon-plane"></i>
+						轨迹
+					</a>
+				</td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+</form>
+<script type="text/javascript">
+</script>
+<?PHP $this->_endblock();?>
+

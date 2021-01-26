@@ -1,0 +1,53 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>渠道列表<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="post">
+	<div class="FarTool">
+		<a class="btn btn-success" target="_blank" href="<?php echo url('/edit')?>">
+			<i class="icon-plus"></i>
+			新建
+		</a>
+	</div>
+	<table class="FarTable" style="width:60%;">
+		<thead>
+			<tr>
+				<th>渠道名称</th>
+				<th>网络</th>
+				<th>末端网络</th>
+				<th>渠道分组</th>
+				<th>供应商</th>
+				<th>标签标记</th>
+				<th width=160>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+    		<?php foreach ($channels as $channel):?>
+    		<tr>
+				<td>
+					<a target="_blank" href="<?php echo url('/edit',array('channel_id'=>$channel->channel_id))?>"><?php echo $channel->channel_name?></a>
+				</td>
+				<td>
+					<?php echo $channel->network_code?>
+				</td>
+				<td>
+				    <?php echo $channel->trace_network_code?>
+				</td>
+				<td><?php echo $channel->channelgroup->channel_group_name?></td>
+				<td><?php echo $channel->supplier->supplier?></td>
+				<td><?php echo $channel->label_sign?></td>
+				<td>
+					<a class="btn btn-mini" target="_blank"
+						href="<?php echo url('/edit',array('channel_id'=>$channel->channel_id))?>">
+						<i class="icon-edit"></i>
+						编辑
+					</a>
+					<a class="btn btn-mini" href="<?php echo url('staff/sender',array('channel_id'=>$channel->channel_id))?>"><i class="icon-search"></i> 查看发件人</a>
+				</td>
+			</tr>
+    		<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+<script type="text/javascript">
+</script>
+<?PHP $this->_endblock();?>

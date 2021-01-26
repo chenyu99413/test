@@ -1,0 +1,228 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    订单查询
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<style>
+<!--
+td {
+         word-break: break-all;
+        }
+-->
+</style>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.browser.js"></script>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.sound.js"></script>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/supcan/binary/dynaload.js"></script>
+<script>
+$(function () {
+	var agent = navigator.userAgent.toLowerCase();
+	if (agent.indexOf("msie") > 0) {
+		return true;
+	}
+	iswin = (navigator.userAgent.indexOf("Windows",0) != -1)?1:0;
+	if (!navigator.mimeTypes["application/supcan-plugin"] && iswin ==1) {
+		if (agent.indexOf("chrome") > 0 ){
+			//window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.crx");
+		}
+		else{
+			//window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.xpi");
+		}
+	}
+});
+function OnReady(id){}
+function OnEvent(id, Event, p1, p2, p3, p4){}
+</script>
+<div>
+	<div style="height: 1px; width: 100%; visibility: hidden;">
+		<SCRIPT type="text/javascript">insertReport('AF', 'CollapseToolbar=true');</SCRIPT>
+	</div>
+</div>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>
+						订单日期从：
+					</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date" ),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>到</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date"),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>阿里订单号</th>
+					<td>
+						<input name="ali_order_no" type="text" style="width: 130px"
+							value="<?php echo request('ali_order_no')?>">
+					</td>
+					<th>泛远单号</th>
+					<td>
+						<input name="far_no" type="text" style="width: 130px"
+							value="<?php echo request('far_no')?>">
+					</td>
+					<th>快递单号</th>
+					<td>
+						<input name="reference_no" type="text" style="width: 130px"
+							value="<?php echo request('reference_no')?>">
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <button type="submit" name="export" class="btn btn-small btn-info" value="exportlist">
+							<i class="icon-download"></i>
+							导出
+						</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="tabs-container " style="min-width: 1148px;">
+		<?php
+		echo Q::control ( "tabs", "description", array (
+			"tabs" => $tabs,"active_id" => $active_id 
+		) );
+		?>
+		<div class="tabs-panels">
+			<div class="panel-body panel-body-noheader panel-body-noborder"
+				style="padding: 0px;">
+            </div>
+		</div>
+			<table class="FarTable">
+            		<thead>
+            			<tr>
+            				<th>No</th>
+            				<th>阿里订单号</th>
+            				<th>泛远单号</th>
+            				<th style="width:150px;">末端运单号</th>
+            				<th>目的地</th>
+            				<th>申报</th>
+            				<th>总价</th>
+            				<th>计费重</th>
+            				<th style="width:150px;">上门取件</th>
+            				<th>状态</th>
+            				<th>支付时间</th>
+            				<th>订单时间</th>
+            				<th width="145px">操作</th>
+            			</tr>
+            		</thead>
+            		<tbody>
+            		<?php $i=1;$status=array('1'=>'未入库','2'=>'已取消','3'=>'已退货','4'=>'已支付','5'=>'已入库','6'=>'已出库','7'=>'待发送','8'=>'已发送','9'=>'已签收','10'=>'已查验','11'=>'待退货','12'=>'已扣件');?>
+            		<?php foreach ($orders as $order):?>
+            			<tr>
+            				<td><?php echo $i++ ?></td>
+            				<td><a  target="_blank"
+            					    href="<?php echo url('order/detail', array('order_id' => $order->order_id))?>">
+            					    <?php echo $order->ali_order_no ?>
+            					</a>
+            				</td>
+            				<td><a href="javascript:void(0)" onClick="printfarlabel(<?php echo $order->order_id?>)"><?php echo $order->far_no?></a></td>
+            				<td><a target="_blank" href="<?php echo $_BASE_DIR?>_tmp/upload/<?php echo $order->tracking_no?>.pdf"><?php echo $order->tracking_no?></a></td>
+            				<td><?php echo $order->consignee_country_code?></td>
+            				<td><?php echo $order->declaration_type?></td>
+            				<td align="right"><?php echo $order->total_amount?></td>
+            				<td align="right"><?php if ($order->weight_income_in ) echo $order->weight_income_in?></td>
+            				<td style="width:70px;"><?php echo $order->need_pick_up=='1'?'是':$order->reference_no?></td>
+            				<td><?php echo $status[$order->order_status]?></td>
+            				<td align="center"><?php echo Helper_Util::strDate('m-d H:i', $order->payment_time)?></td>
+            				<td align="center" title="<?php echo Helper_Util::strDate('m-d H:i:s', $order->create_time)?>"><?php echo Helper_Util::strDate('m-d H:i', $order->create_time)?></td>
+            				<td>
+            				    <a class="btn btn-mini btn-primary" target="_blank" href="<?php echo url('order/event', array('order_id' => $order->order_id))?>">
+            						事件
+            					</a>
+            					<a class="btn btn-mini btn-info" target="_blank" href="<?php echo url('order/trace', array('order_id' => $order->order_id))?>">
+            						轨迹
+            					</a>
+            					<a class="btn btn-mini btn-danger" target="_blank" href="<?php echo url('order/orderreturn', array('ali_order_no' => $order->ali_order_no,'return_id'=>''))?>">
+            						退件
+            					</a>
+            				</td>
+            			</tr>
+            		<?php endforeach;?>
+            		</tbody>
+            	</table>
+	</div>
+	<input id="parameters" type="hidden" name="parameters" value="<?php echo $parameters?>">
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+</form>
+<script type="text/javascript">
+	//补打泛远面单
+	function printfarlabel(order_id){
+		var num=prompt('打印份数：','1');
+		if(num>0){
+			$.ajax({
+				url:'<?php echo url('order/getpackageamout')?>',
+				data:{order_id:order_id},
+				type:'post',
+				success:function(ali_quantity_total){
+					for(var i=0;i<num;i++){
+						AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/farlabel.xml?v=6");
+						AF.func("SetSource", "orderdata \r\n "+"<?php echo url_standard('warehouse/infarlabel')?>&orderid="+order_id);
+						switchPrinter('Zebra');
+						AF.func("Calc");
+						AF.func("Print", "isOpenSysDialog=0");
+					}
+				}
+			})
+		}
+	}
+	/**
+	 * 切换打印机
+	 * 例如 switchPrinter('EMS')，找到打印机名字中带 EMS的打印机并指定
+	 */
+	function switchPrinter(printerName){
+		var printers=AF.func("GetPrinters").split(',');
+		//搜索打印机
+		for (i in printers){
+			if(typeof(printers[i]) == 'string' ){
+				if (printers[i].indexOf(printerName)>-1){
+					printerName=printers[i];
+				}
+			}
+		}
+		var setting=AF.func("GetProp", "Print");
+		// console.log(setting);
+		if (setting.indexOf('<Printer>') > -1){
+			setting=setting.replace(/<Printer>.*?<\/Printer>/mg,'<Printer>'+printerName+'</Printer>');
+		}else {
+			setting=setting.replace('<PrintPage>',"<PrintPage>\r\n<Printer>"+printerName+'</Printer>');
+		}
+		// console.log(setting);
+		AF.func("SetProp", "Print \r\n" + setting);
+	}
+	// 打印顺序号
+	var seqnum = '';
+	function getSeqNum(){
+		return seqnum;
+	}
+	/**
+	 *  点击tabs设置隐藏框值 
+	 */	 
+	function TabSwitch(code){
+		$("#parameters").val(code);
+		$("form").trigger("submit");
+	}
+</script>
+<?PHP $this->_endblock();?>
+

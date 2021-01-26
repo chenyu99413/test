@@ -1,0 +1,1 @@
+ALTER TABLE `tb_abnormal_parcel` ADD `deadline` INT(11) NULL COMMENT '截止时间' AFTER `update_time`;

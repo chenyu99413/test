@@ -1,0 +1,122 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <style type="text/css">
+        .table>tbody>tr>td{
+            border:0px;
+        }
+    .table>tbody>tr>th{
+            border:0px;
+        }
+    </style>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'业务管理' => '','订单查询' => url ( 'order/search' ),'订单编辑' => '' 
+	) 
+) )?>
+<form method="POST" onsubmit=" return checktime();">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+					<th>阿里订单号</th>
+					<td>
+						<?php echo $order->ali_order_no?>
+					</td>
+					<th>末端运单号</th>
+					<td>
+						<input name="tracking_no" type="text" style="width: 200px" required="required"
+							value="<?php echo $order->tracking_no?>">
+					</td>
+					<th> <button class="btn btn-small btn-success" id="search">
+			                                        保存
+			       		</button>
+       				</th>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<input type="hidden" name="order_id" value="<?php echo $order->order_id?>">
+</form>
+<div style="clear:both;margin-top:30px;">
+    <h4>产品信息</h4>
+    <table class="FarTable" style="width:60%">
+        <thead>
+          <tr>
+              <th>产品中文名</th>
+              <th>产品英文名</th>
+              <th>产品数量</th>
+              <th>产品单位</th>
+              <th>HScode</th>
+              <th>申报单价</th>
+              <th>带电池</th>
+          </tr>
+       </thead>
+       <tbody>
+       <?php foreach ($order->product as $v):?>
+           <tr>
+               <td><?php echo $v->product_name?></td>
+               <td><?php echo $v->product_name_en?></td>
+               <td style="text-align: right"><?php echo $v->product_quantity?></td>
+               <td><?php echo $v->product_unit?></td>
+               <td><?php echo $v->hs_code?></td>
+               <td style="text-align: right"><?php echo $v->declaration_price?></td>
+               <td><?php echo $v->has_battery=='1'?'是':''?></td>
+           </tr>
+       <?php endforeach;?>
+       </tbody>
+    </table>
+    <h4>阿里包裹信息</h4>
+    <table class="FarTable" style="width:60%">
+       <thead>
+          <tr>
+              <th>数量</th>
+              <th>长度</th>
+              <th>宽度</th>
+              <th>高度</th>
+              <th>重量</th>
+          </tr>
+       </thead>
+       <tbody>
+           <?php foreach ($order->packages as $value):?>
+           <tr>
+               <td style="text-align: right"><?php echo $value->quantity?></td>
+               <td style="text-align: right"><?php echo $value->length?></td>
+               <td style="text-align: right"><?php echo $value->width?></td>
+               <td style="text-align: right"><?php echo $value->height?></td>
+               <td style="text-align: right"><?php echo $value->weight?></td>
+           </tr>
+           <?php endforeach;?>
+       </tbody>
+    </table>
+    <h4>泛远包裹信息</h4>
+    <table class="FarTable" style="width:60%">
+       <thead>
+          <tr>
+              <th>数量</th>
+              <th>长度</th>
+              <th>宽度</th>
+              <th>高度</th>
+              <th>重量</th>
+          </tr>
+       </thead>
+       <tbody>
+           <?php foreach ($order->farpackages as $package):?>
+           <tr>
+               <td style="text-align: right"><?php echo $package->quantity?></td>
+               <td style="text-align: right"><?php echo $package->length?></td>
+               <td style="text-align: right"><?php echo $package->width?></td>
+               <td style="text-align: right"><?php echo $package->height?></td>
+               <td style="text-align: right"><?php echo $package->weight?></td>
+           </tr>
+           <?php endforeach;?>
+       </tbody>
+    </table>
+</div>
+<?PHP $this->_endblock();?>
+

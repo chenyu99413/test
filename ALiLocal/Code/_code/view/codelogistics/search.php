@@ -1,0 +1,67 @@
+<div class="FarSearch"  class="list-search">
+	<form id="logistics-search-form" class="list-search-form"
+		action="<?php echo url('/list')?>" method="post">
+		<table>
+			<tbody>
+				<tr>
+					<th>代码</th>
+					<td>
+						<input type="text" name="code" value="<?php echo request('code')?>"
+							placeholder="精确查找" style="width: 150px;">
+					</td>
+					<th>名称</th>
+					<td>
+						<input type="text" name="name" value="<?php echo request('name')?>"
+							placeholder="模糊查找" style="width: 150px;">
+					</td>
+					<td>
+						<button class="btn btn-small btn-primary" type="submit"
+							id="search-logistics-btn">
+							<i class="icon-search"></i>
+							搜索
+						</button>
+						<button type="button" class="btn btn-small btn-success edit-modal"
+							data-toggle="tooltip" data-placement="top" title="新增"
+							data-url="<?php echo url('codelogistics/editmodal')?>" data-w="340px"
+							data-h="250px">
+							<i class="icon-plus"></i>
+							新建
+						</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</form>
+</div>
+<div id="logistics-list"></div>
+<script type="text/javascript">
+function getList(page, page_size) {
+	var url = "<?php echo url('codelogistics/list')?>";
+	var form = document.getElementById('logistics-search-form');
+	var page = page || '1';
+	var page_size = page_size || '30';
+	var formData = new FormData(form);
+	formData.append('page', page);
+	formData.append('page_size', page_size);
+	$.ajax({
+		url: url,
+		type: 'POST',
+		dataType: 'html',
+		data: formData,
+		processData: false,
+		contentType: false
+	})
+	.done(function (data) {
+		$('#logistics-list').html(data);
+	});
+}
+$(function () {
+	// 初始化
+	getList();
+	// 
+	$('#logistics-search-form').on('submit',function(e){
+		e.preventDefault();
+		getList();
+	});
+});
+</script>

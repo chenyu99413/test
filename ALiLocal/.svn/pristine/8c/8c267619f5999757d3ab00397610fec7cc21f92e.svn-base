@@ -1,0 +1,1 @@
+ALTER TABLE `tb_channel` ADD COLUMN `account`  varchar(20) NULL COMMENT '渠道账号' AFTER `sender_id`;

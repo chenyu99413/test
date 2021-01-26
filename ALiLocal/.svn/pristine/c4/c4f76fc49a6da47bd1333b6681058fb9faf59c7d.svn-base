@@ -1,0 +1,62 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/supcan/binary/dynaload.js"></script>
+<script>
+printTest=function () {
+	var agent = navigator.userAgent.toLowerCase();
+	if (agent.indexOf("msie") > 0) {
+		return true;
+	}
+	if (!navigator.mimeTypes["application/supcan-plugin"]) {
+		if (agent.indexOf("chrome") > 0){
+			$.messager.alert('', '条码打印功能暂时不支持谷歌浏览器');
+			//window.open("install_chrome.htm");
+		}
+		else{
+			window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.xpi");
+		}
+	}
+};
+function OnReady(id){}
+function OnEvent(id, Event, p1, p2, p3, p4){}
+</script>
+
+<div class="container">
+	<div class="span3">
+	<h4>单号（每个单号一行）</h4>
+	<form action="" method="post">
+	<textarea rows="" style="width:250px;height: 360px;" cols="" id="wcode" name="wcode"></textarea><br>
+	<a class="btn btn-primary" id="printLabel">打印</a> 
+	</form>
+	</div>
+	<div class="span8">
+	<div style="height: 450px; width: 95% ">
+		<SCRIPT type="text/javascript">insertReport('AF', 'CollapseToolbar=true');</SCRIPT>
+	</div>
+	</div>
+</div>
+<script type="text/javascript">
+$('#printLabel').click(function(){
+	printTest();
+	AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsedibarcode.xml?v=6");
+	var codes=[];
+	str=$('#wcode').val().trim();
+	if(str.length <1){
+		alert('请输入单号');
+		return ;
+	}
+	codes=str.replace(/\r/,'').split("\n");
+	AF.func("SetSource", "ds1 \r\n "+'<?php echo url_standard('order/bc')?>&code='+codes.join(','));
+	AF.func("Calc", ""); //填充数据
+	AF.func("CallFunc","18");
+})
+</script>
+<?PHP $this->_endblock();?>
+

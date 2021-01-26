@@ -1,0 +1,1027 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    订单查询
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.tablesorter.min.js"></script>
+<link rel="stylesheet"
+	href="<?php echo $_BASE_DIR?>public/css/tablesorter.css">
+<?php function showFN(){return request('parameters') =='warehouse_out' || request('parameters') =='wait_to_send'|| request('parameters') =='sent';} ?>
+<style>
+td{
+     word-break: break-all;white-space:nowrap;
+}
+th{
+     word-break: break-all;white-space:nowrap;
+}
+.tabs li a.tabs-inner{
+	padding:0 5px;
+}
+.badge {
+	padding-left:5px;
+	padding-right:5px;
+}
+</style>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.browser.js"></script>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.sound.js"></script>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/supcan/binary/dynaload.js"></script>
+	<script type="text/javascript" src="<?php echo $_BASE_DIR?>qz/demo/js/dependencies/rsvp-3.1.0.min.js"></script>
+<script type="text/javascript" src="<?php echo $_BASE_DIR?>qz/demo/js/dependencies/sha-256.min.js"></script>
+<script type="text/javascript" src="<?php echo $_BASE_DIR?>qz/demo/js/qz-tray.js"></script>
+<script>
+$(function () {
+	var agent = navigator.userAgent.toLowerCase();
+	if (agent.indexOf("msie") > 0) {
+		return true;
+	}
+	iswin = (navigator.userAgent.indexOf("Windows",0) != -1)?1:0;
+	if (!navigator.mimeTypes["application/supcan-plugin"] && iswin ==1) {
+		if (agent.indexOf("chrome") > 0 ){
+			//window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.crx");
+		}
+		else{
+			//window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.xpi");
+		}
+	}
+});
+function OnReady(id){}
+function OnEvent(id, Event, p1, p2, p3, p4){}
+</script>
+<div>
+	<div style="height: 1px; width: 100%; visibility: hidden;">
+		<SCRIPT type="text/javascript">insertReport('AF', 'CollapseToolbar=true');</SCRIPT>
+	</div>
+</div>
+<form method="POST" id="searchForm" style="margin-bottom:0px;">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>
+					<?php
+                            echo Q::control ( 'dropdownlist', 'timetype', array (
+                            'items'=>array('1'=>'订单时间','2'=>'支付时间','3'=>'入库时间','4'=>'出库时间'),
+                            'value' => request('timetype'),
+                            'style'=>'width:80px'
+                         ) )?>
+				    </th>
+					<td>
+					<input type="text" data-options = "showSeconds:false" class="easyui-datetimebox" name="start_date"
+							value="<?php echo request('start_date')?>" style="width: 125px;">
+					</td>
+					<th>到</th>
+					<td>
+					<input type="text" data-options = "showSeconds:false" class="easyui-datetimebox" name="end_date"
+						value="<?php echo request('end_date')?>" style="width: 125px;">
+					</td>
+					<th>(阿里/泛远/末端/总单)单号</th>
+					<td>   
+					   <input name="order_no" type="text" style="width: 110px"
+							value="<?php echo request('order_no')?>">
+                    </td>
+					<th>快递单号</th>
+					<td>
+						<input name="reference_no" type="text" style="width: 110px"
+							value="<?php echo request('reference_no')?>">
+					</td>
+					<th>目的国</th>
+					<td>
+						<input name="consignee_country_code" type="text" style="width: 30px"
+							value="<?php echo request('consignee_country_code')?>">
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <button type="submit" name="export" class="btn btn-small btn-info" value="exportlist">
+							<i class="icon-download"></i>
+							导出
+						</button>
+                        <a class="btn btn-small btn-info" href="javascript:void(0);" onclick="$('#dialog_search').dialog('open');$('.window-shadow').css('top','106px');$('.panel').css('top','106px');$('#dialog_search').removeClass('hide');"> 高级搜索 </a>
+					  </td>
+				</tr>           
+			</tbody>           
+		</table>  
+	</div>
+	<div id="dialog_search" class="easyui-dialog hide"title="高级搜索"
+		data-options="closed:true, modal:true"
+		style="width: 65%; height: 355px;">
+		<div class="span4">
+        <table class="FarTable">
+        	  <tr>
+                    <th>(阿里/泛远/末端/总单)单号</th>
+					<td>   
+                        <textarea id="waybill_codes" name="waybill_codes" rows="12" placeholder="每行一个单号"
+							style="width: 90%"><?php echo request("waybill_codes")?></textarea>
+					</td>
+              </tr>
+        </table>
+        <table>
+        <tr>
+		    <td>
+		      <button class="btn btn-primary" type="submit" onclick="waybillSearch()" style="margin-left: 150px">
+					<i class="icon-search"></i>
+					搜索
+				</button>
+			</td>
+		</tr>
+		</table>		
+        </div>
+		<div class="span4">
+        <table class="FarTable">
+        	  <tr>
+                  <th style="width: 100px"><input type="checkbox" id="need_pick_up" name="need_pick_up" value="1" <?php echo request("need_pick_up") != null ? "checked='checked'" : "" ?>>上门取件</th>
+    			  <th style="padding-left: 10px"><input  type="checkbox" id="negative_profit" name="negative_profit" value="1" <?php echo request("negative_profit") != null ? "checked='checked'" : ""?>>负毛利</th>
+              </tr>
+              <tr>
+                  <th>部门</th>
+                  <td><?php
+                        echo Q::control ( 'dropdownbox', 'department_id', array (
+                        'items'=>Helper_Array::toHashmap(Department::departmentlist(),'department_id','department_name'),
+                        'empty'=>true,
+                        'style'=>'width:130px',
+                        'value' => request('department_id'),
+                        ) )?>
+                   </td>
+              </tr>
+              <tr>
+                  <th>产品</th>
+                  <td><?php
+                        echo Q::control ( 'dropdownbox', 'service_code', array (
+                        'items'=>Helper_Array::toHashmap(Order::find("ali_testing_order !='1'")->setColumns('service_code')->asArray()->getall(),'service_code','service_code'),
+                        'empty'=>true,
+                        'value' => request('service_code'),
+                        ) )?>
+                   </td>
+              </tr>
+              <tr>
+                  <th>客重</th>
+                  <td><input style="width: 50px" type="text" id="weight_cost_out_start" name="weight_cost_out_start"  value="<?php echo  request('weight_cost_out_start')?>">
+                        -
+                        <input style="width: 50px" type="text" id="weight_cost_out_end" name="weight_cost_out_end"  value="<?php echo  request('weight_cost_out_end')?>"  >
+                   </td>
+              </tr>
+              <tr>
+                  <th>包裹类型</th>
+                  <td><?php
+                        echo Q::control ( 'dropdownbox', 'packing_type', array (
+                        'items'=>Helper_Array::toHashmap(Order::find()->setColumns('packing_type')->asArray()->getall(),'packing_type','packing_type'),
+                        'empty'=>true,
+                        'value' => request('packing_type'),
+                        ) )?>
+                   </td>
+              </tr>
+              <tr>
+                  <th>网络</th>
+                  <td><?php
+                    echo Q::control ( 'dropdownbox', 'network_code', array (
+                        'items' => Helper_Array::toHashmap(Channel::find()->setColumns('network_code')->asArray()->getAll(),'network_code','network_code'),
+                            'empty'=>true,
+                            'value'=>request('network_code'),
+                    ) )?>
+                  </td>
+              </tr>
+              <tr>
+                  <th>渠道</th>
+                  <td><?php
+                    echo Q::control ( 'dropdownbox', 'channel_id', array (
+                        'items' => Helper_Array::toHashmap(Channel::find()->asArray()->getAll(),'channel_id','channel_name'),
+                            'empty'=>true,
+                            'value'=>request('channel_id'),
+                    ) )?>
+                  </td>
+              </tr>
+              <tr>
+                  <th>供应商</th>
+                  <td><?php
+                    echo Q::control ( 'dropdownbox', 'supplier_id', array (
+                        'items' => Helper_Array::toHashmap(Supplier::find()->asArray()->getAll(),'supplier_id','supplier'),
+                            'empty'=>true,
+                            'value'=>request('supplier_id'),
+                    ) )?>
+                  </td>
+              </tr>
+              <tr>
+                  <th>报关类型</th>
+                  <td><?php
+                    echo Q::control('dropdownbox','declaration_type',
+                    array(
+                    'items' => Helper_Array::toHashmap(Order::find("declaration_type !=?",'')->setColumns('declaration_type')->asArray()->getAll(),'declaration_type','declaration_type'),
+                    'empty' => true,
+                    'value' => request('declaration_type'),
+                    ) )?>
+                    </td>
+              </tr>
+              <tr>
+                  <th>发件人信息</th>
+                  <td>
+                  <input style="width: 250px" type="text" id="sender" name="sender"  value="<?php echo  request('sender')?>">
+                  </td>
+              </tr>
+              <tr>
+                  <th>入库部门</th>
+                  <td><?php
+                        echo Q::control ( 'dropdownbox', 'warehouse_in_department_id', array (
+                        'items'=>Helper_Array::toHashmap(Department::departmentlist(),'department_id','department_name'),
+                        'empty'=>true,
+                        'style'=>'width:130px',
+                        'value' => request('warehouse_in_department_id'),
+                        ) )?>
+                   </td>
+              </tr>
+        </table>
+    </div>
+    </div>
+	<div class="tabs-container " style="min-width: 1148px;border-bottom:0px;">
+       <?php
+		echo Q::control ( "tabs", "description", array (
+			"tabs" => $tabs,"active_id" => $active_id 
+		) );
+		?>
+		<div class="tabs-panels">
+			<div class="panel-body panel-body-noheader panel-body-noborder"
+				style="padding: 0px;">
+            </div>
+		</div>
+		<div style="width: 100%;overflow: scroll;" id='table-cont'>
+			<table id="myTable" class="FarTable tablesorter" style="max-width: 7100px;margin-top:0px;">
+            		<thead>
+            			<tr>
+            				<th class="x_scroll x_scroll_th">No</th>
+            				<th class="x_scroll x_scroll_th">操作</th>
+            				<th class="x_scroll x_scroll_th">阿里订单号</th>
+            				<th>部门</th>
+            				<?php if (request('parameters') =='hold') :?>
+            				<th>扣外状态</th>
+            				<?php endif?>
+            				<?php if(request('parameters') =='' || request('parameters') =='hold'):?>
+            				<th>状态</th>
+            				<?php endif?>
+            				<?php if (request('parameters') =='hold') :?>
+            				<th>问题</th>
+            				<?php endif?>
+            				<?php if (request('parameters') =='') :?>
+            				<th>泛远单号</th>
+            				<?php endif?>
+            				<?php if(request('parameters') =='' || showFN() || request('parameters') =='sign'):?>
+            				<th>末端运单号</th>
+            				<?php endif?>
+            				<?php if(request('parameters') =='' || request('parameters') =='wait_to_send' || request('parameters') =='sent' || request('parameters') =='sign'):?>
+            				<th>总单单号</th>
+            				<?php endif?>
+        					<th>订单时间</th>
+        					<?php if(request('parameters') =='' || request('parameters')== 'no_package'):?>
+                            <th>客户</th>
+        					<th>销售产品</th>
+        					<?php endif;?>
+            				<?php if (request('parameters') =='' || request('parameters') =='warehouse_in' || request('parameters') =='prove' || request('parameters') =='hold') :?>
+                            <th>入库时间</th>
+                            <?php endif?>
+                            <?php if(request('parameters') == 'warehouse_in'):?>
+                            <th>客户</th>
+                            <th>销售产品</th>
+                            <?php endif;?>
+                            <?php if (request('parameters') =='') :?>
+                            <th>入库人</th>
+                            <?php endif?>
+                            <?php if (request('parameters') =='' || request('parameters') =='prove' || request('parameters') =='paid' || request('parameters') =='hold') :?>
+                            <th>核查时间</th>
+                            <?php endif?>
+                            <?php if(request('parameters') == 'prove'):?>
+                            <th>客户</th>
+                            <th>销售产品</th>
+                            <?php endif;?>
+                            <?php if (request('parameters') =='') :?>
+                            <th>核查人</th>
+                            <?php endif?>
+                            <?php if (request('parameters') =='' || request('parameters') =='paid' || showFN() || request('parameters') =='hold' || request('parameters') =='termination') :?>
+                            <th>支付时间</th>
+                            <?php endif?>
+                            <?php if(request('parameters') == 'paid'):?>
+                            <th>客户</th>
+                            <th>销售产品</th>
+                            <?php endif;?>
+                            <?php if(request('parameters') =='' || showFN() || request('parameters') =='sign' || request('parameters') =='termination'):?>
+                            <th>出库时间</th>
+                            <?php endif?>
+            				<?php if (request('parameters') =='') :?>
+                            <th>出库人</th>
+                            <?php endif?>
+                            <?php if (request('parameters') =='' || request('parameters') =='sign') :?>
+                            <th>签收时间</th>
+                            <?php endif?>
+            				<?php if (request('parameters') =='' || request('parameters') =='sign') :?>
+                            <th>妥投天数</th>
+                            <?php endif?>
+            				<?php if (request('parameters') =='' || showFN() || request('parameters') =='termination') :?>
+                            <th>最新轨迹</th>
+                            <th>最新轨迹时间</th>
+                            <?php endif?>
+            				<?php if (!(request('parameters') =='' || request('parameters') =='warehouse_in' || request('parameters') =='paid' || request('parameters') =='prove' || request('parameters') =='hold' || request('parameters') =='termination')) :?>
+            				<th>问题</th>
+            				<?php endif?>
+            				<?php if (request('parameters') =='warehouse_in' || request('parameters') =='paid' || request('parameters') =='prove' || request('parameters') =='termination') :?>
+            				<th>问题</th>
+            				<?php endif?>
+            				<?php if (request('parameters') =='cancel') :?>
+            				<th>取消原因</th>
+            				<?php endif?>
+            				<?php if (request('parameters') =='wait_to_return' || request('parameters') =='returned') :?>
+            				<th>退货原因</th>
+            				<?php endif?>
+            				<?php if (request('parameters') =='returned') :?>
+            				<th>退货时间</th>
+            				<th>快递公司</th>
+            				<th>快递单号</th>
+            				<?php endif?>
+            				<?php if(request('parameters') =='' || showFN() || request('parameters') =='sign' || request('parameters') =='termination'):?>
+                            <th>网络</th>
+                            <?php endif?>
+            				<th>目的地</th>
+            				<?php if(!(request('parameters') =='no_package' || request('parameters') =='warehouse_in' || request('parameters') =='cancel' || request('parameters') =='returned' || request('parameters') =='wait_to_return')):?>
+            				<th>应收偏远</th>
+            				<?php endif?>
+            				<?php if (request('parameters') =='') :?>
+    						<th>包裹类型</th>
+    						<?php endif?>
+    						<th>件数</th>
+    						<?php if (request('parameters') =='') :?>
+            				<th>收入</th>
+            				<th>成本</th>
+            				<th>毛利</th>
+            				<th>毛利率</th>
+            				<th>收货实重</th>
+            				<th>收货体积重</th>
+                            <th>收货计费重</th>
+                            <th>预报重</th>
+                            <?php endif?>
+                            <?php if (request('parameters') =='') :?>
+                            <th>出货实重</th>
+                            <th>账单重量</th>
+                            <th>出货体积重</th>
+                            <?php endif?>
+                            <?php if (request('parameters') =='' || showFN() || request('parameters') =='sign') :?>
+                            <th>计费重</th>
+                            <?php endif?>
+                            <?php if(request('parameters') =='' || showFN() || request('parameters') =='sign'):?>
+                            <?php if(!(request('parameters') == '' || request('parameters') == 'no_package' || request('parameters') == 'warehouse_in' || request('parameters') == 'prove' || request('parameters') == 'paid')):?>
+                            <th>客户</th>
+                            <th>销售产品</th>
+                            <?php endif;?>
+                            <th>出货渠道</th>
+                            <th>供应商</th>
+                            <?php endif?>
+                            <?php if (!(showFN() || request('parameters') =='sign')) :?>
+                            <th>申报总价</th>
+                            <?php endif?>
+                            <th>报关</th>
+                            <?php if (request('parameters') =='') :?>
+                            <th>发件公司</th>
+                            <th>发件人</th>
+                            <th>发件人电话</th>
+                            <th>发件人邮箱</th>
+                            <th>发件地址</th>
+                            <th>收件公司</th>
+                            <th>收件人</th>
+                            <th>收件人电话</th>
+                            <th>收件人邮箱</th>
+                            <th>收件人城市</th>
+                            <th>收件人邮编</th>
+                            <th>收件地址</th>
+                            <?php endif?>
+            				<?php if (!(request('parameters') =='sign' || request('parameters') =='warehouse_in' || request('parameters') =='prove' || request('parameters') =='paid' || showFN())) :?>
+            				<th>上门取件</th>
+            				<?php endif?>
+            				<?php if (request('parameters') =='') :?>
+                            <th>国内快递单号</th>
+                            <?php endif?>
+                            <th>订单备注</th>
+            			</tr>
+            		</thead>
+            		<tbody>
+            		<?php $i=1;$status=Order::$status?>
+            		<?php foreach ($orders as $order):?>
+            			<tr>
+            				<td class="x_scroll x_scroll_td"><a href="javascript:void(0)" onClick="farbilpdf(<?php echo $order->order_id?>)"><?php echo $i++ ?></a></td>
+            				<td class="x_scroll x_scroll_td">
+            				    <a class="btn btn-mini btn-primary" target="_blank" href="<?php echo url('order/event', array('order_id' => $order->order_id))?>">
+            						事件
+            					</a>
+            					<a class="btn btn-mini btn-info" target="_blank" href="<?php echo url('order/trace', array('order_id' => $order->order_id))?>">
+            						轨迹
+            					</a>
+            					<a class="btn btn-mini btn-danger" target="_blank" href="<?php echo url('order/orderreturn', array('ali_order_no' => $order->ali_order_no,'return_id'=>''))?>">
+            						退件
+            					</a>
+            					<?php if ($order->order_status=='12'):?>
+            					<a class="btn btn-mini btn-info" href="<?php echo url('order/release', array('order_id' => $order->order_id,'parameters' => request('parameters')))?>">
+				                                                            解扣
+				       		    </a>
+				       		    <?php endif;?>
+            				</td>
+            				<td class="x_scroll x_scroll_td"><a  target="_blank"
+            					    href="<?php echo url('order/detail', array('order_id' => $order->order_id))?>">
+            					    <?php echo $order->ali_order_no ?>
+            					</a>
+            				</td>
+            				<td>
+            					<?php echo $order->department_id?$dpms[$order->department_id]:''?>
+            				</td>
+            				<?php if (request('parameters') =='hold') :?>
+            				<td><?php echo $status[$order->order_status_copy]?></td>
+            				<?php endif;?>
+            		        <?php if(request('parameters') =='' || request('parameters') =='hold'):?>
+            				<td ><?php echo $status[$order->order_status]?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='hold') :?>
+            				<td>
+            					<a target="_blank" href="<?php echo url('/issue',array('ali_order_no'=>$order->ali_order_no,'parcel_flag'=>1))?>">
+            					<?php echo $order->getACount()?$order->getACount():''?>
+            					</a>
+            				</td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='') :?>
+            				<td><a href="javascript:void(0)" onClick="printfarlabel(<?php echo $order->order_id?>)"><?php echo $order->far_no?></a></td>
+            				<?php endif;?>
+            				<?php if(request('parameters') =='wait_to_send'|| request('parameters') =='sent' || request('parameters') =='sign'):?>
+            				<td>
+                                <?php if($order->channel->network_code=="EMS"):?>
+                                <a target="_blank" href="https://t.17track.net/en#nums=<?php echo $order->tracking_no?>">
+                                <?php elseif($order->channel->network_code=="FEDEX" || $order->channel->trace_network_code=="FEDEX") :?>
+                                <a target="_blank" href="https://www.trackingmore.com/fedex-tracking/cn.html?number=<?php echo $order->tracking_no?>">
+                                <?php elseif($order->channel->trace_network_code=="DHL") :?>
+                                <a target="_blank" href="https://www.dhl.com/en/express/tracking.html?AWB=<?php echo $order->tracking_no?>&brand=DHL">
+                                <?php elseif($order->channel->trace_network_code=="DHLE") :?>
+                                <a target="_blank" href="https://ecommerceportal.dhl.com/track/?locale=en">
+                                <?php else :?>
+                                <a target="_blank" href="https://www.ups.com/track?loc=en_US&tracknum=<?php echo $order->tracking_no?>&requester=WT/trackdetails">
+                                <?php endif;?>
+                                <?php echo $order->tracking_no?>
+                                </a>
+                            </td>
+            				<?php endif;?>
+            				<?php if(request('parameters') =='' || request('parameters') =='warehouse_out'):?>
+            				<td><a target="_blank" href="<?php echo $_BASE_DIR?>_tmp/upload/<?php echo $order->tracking_no?>.pdf"><?php echo $order->tracking_no?></a></td>
+            				<?php endif;?>
+            				<?php if(request('parameters') =='' || request('parameters') =='wait_to_send' || request('parameters') =='sent' || request('parameters') =='sign'):?>
+            				<td><?php echo $order->total_list_no?></td>
+            				<?php endif?>
+            				<td align="center" title="<?php echo Helper_Util::strDate('m-d H:i:s', $order->create_time)?>"><?php echo Helper_Util::strDate('m-d H:i', $order->create_time)?></td>
+            				<?php if (request('parameters') =='' || request('parameters')== 'no_package') :?>
+            				<td><?php echo $order->customer->customer?></td>
+            				<td align="center"><?php echo $order->service_product->product_chinese_name ?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='' || request('parameters') =='warehouse_in' || request('parameters') =='prove' || request('parameters') =='hold') :?>
+            				<td align="center"><?php echo Helper_Util::strDate('m-d H:i', $order->far_warehouse_in_time)?></td>
+            				<?php endif;?>
+            				<?php if(request('parameters') == 'warehouse_in'):?>
+            				<td><?php echo $order->customer->customer?></td>
+                            <td align="center"><?php echo $order->service_product->product_chinese_name ?></td>
+                            <?php endif;?>
+            				<?php if (request('parameters') =='') :?>
+            				<td><?php echo $order->far_warehouse_in_operator?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='' || request('parameters') =='prove' || request('parameters') =='paid' || request('parameters') =='hold') :?>
+            				<td align="center" <?php echo time()-$order->warehouse_confirm_time>86400 && empty($order->payment_time)?'style="color:red;"':''?>><?php echo Helper_Util::strDate('m-d H:i', $order->warehouse_confirm_time)?></td>
+            				<?php endif;?>
+            				<?php if(request('parameters') == 'prove'):?>
+            				<td><?php echo $order->customer->customer?></td>
+                            <td align="center"><?php echo $order->service_product->product_chinese_name ?></td>
+                            <?php endif;?>
+                            <?php if (request('parameters') =='') :?>
+            				<td><?php echo Event::find('order_id=? and event_code="CONFIRM"',$order->order_id)->getOne()->operator?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='' || request('parameters') =='paid' || showFN() || request('parameters') =='hold' || request('parameters') =='termination') :?>
+            				<td align="center"><?php echo Helper_Util::strDate('m-d H:i', $order->payment_time)?></td>
+            				<?php endif;?>
+            				<?php if(request('parameters') == 'paid'):?>
+            				<td><?php echo $order->customer->customer?></td>
+                            <td align="center"><?php echo $order->service_product->product_chinese_name ?></td>
+                            <?php endif;?>
+            				<?php if(request('parameters') =='' || showFN() || request('parameters') =='sign' || request('parameters') =='termination'):?>
+            				<td align="center"><?php echo Helper_Util::strDate('m-d H:i', $order->warehouse_out_time)?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='') :?>
+            				<td><?php echo Event::find('order_id=? and event_code="WAREHOUSE_OUTBOUND"',$order->order_id)->getOne()->operator?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='' || request('parameters') =='sign') :?>
+            				<td align="center"><?php echo Helper_Util::strDate('m-d H:i', $order->delivery_time)?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='' || request('parameters') =='sign') :?>
+            				<td><?php if($order->delivery_time && $order->carrier_pick_time):?><?php echo round((($order->delivery_time-$order->carrier_pick_time)/86400),1)?><?php endif;?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='' || showFN() || request('parameters') =='termination') :?>
+            				<?php $route=Route::find('tracking_no=?',$order->tracking_no)->order('time desc')->getOne()?>
+            				<td><?php echo $route->description?></td>
+            				<td align="center"><?php echo Helper_Util::strDate('m-d H:i', $route->time)?></td>
+            				<?php endif;?>
+            				<?php if (!(request('parameters') =='' || request('parameters') =='warehouse_in' || request('parameters') =='paid' || request('parameters') =='prove' || request('parameters') =='hold' || request('parameters') =='termination')) :?>
+            				<td>
+            					<a target="_blank" href="<?php echo url('/issue',array('ali_order_no'=>$order->ali_order_no,'parcel_flag'=>1))?>">
+            					<?php echo $order->getACount()?$order->getACount():''?>
+            					</a>
+            				</td>
+            				<?php endif;?>
+                            <?php if (request('parameters') =='warehouse_in' || request('parameters') =='paid' || request('parameters') =='prove' || request('parameters') =='termination') :?>
+            				<td>
+            					<a target="_blank" href="<?php echo url('/issue',array('ali_order_no'=>$order->ali_order_no,'parcel_flag'=>1))?>">
+            					<?php echo $order->getACount()?$order->getACount():''?>
+            					</a>
+            				</td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='cancel') :?>
+            				<td><?php echo $order->reason_name?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='wait_to_return' || request('parameters') =='returned') :?>
+            				<td><?php echo $order->reason_name?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='returned') :?>
+            				<?php $return_order=Returned::find('ali_order_no=?',$order->ali_order_no)->getOne()?>
+            				<td><?php echo Helper_Util::strDate('m-d H:i', $return_order->create_time)?></td>
+            				<td><?php echo $return_order->express_company?></td>
+            				<td><?php echo $return_order->express_no?></td>
+            				<?php endif;?>
+            				<?php if(request('parameters') =='' || showFN() || request('parameters') =='sign' || request('parameters') =='termination'):?>
+                            <td><?php echo $order->channel->network_code?></td>
+                            <?php endif;?>
+            				<td><?php if(($order->order_status=='6' || $order->order_status=='7' || $order->order_status=='8'|| $order->order_status=='9') && (in_array($order->service_code, array('Express_Standard_Global','WIG-FY','EUUS-FY')))):?>
+            				<a href="javascript:void(0)" data="<?php echo $order->ali_order_no?>" account="<?php echo $order->account?>" onclick="printlabel(this)"><?php echo $order->consignee_country_code?></a>
+            				<?php else : echo $order->consignee_country_code?>
+            				<?php endif;?></td>
+            				<?php if(!(request('parameters') =='no_package' || request('parameters') =='warehouse_in' || request('parameters') =='cancel' || request('parameters') =='returned' || request('parameters') =='wait_to_return')):?>
+            				<td><?php if(Fee::find('order_id=? and fee_item_code="logisticsExpressASP_EX0020"',$order->order_id)->getOne()->isNewRecord()):?><?php else: ?>有<?php endif;?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='') :?>
+            				<td><?php echo $order->packing_type?></td>
+            				<?php endif;?>
+            				<td><?php echo Farpackage::find('order_id=?',$order->order_id)->getSum('quantity')?></td>
+            				<?php if (request('parameters') =='') :?>
+            				<?php $fee_in=Fee::find('order_id=? and fee_type= "1"',$order->order_id)->getSum('amount')?>
+            				<?php $fee_out=Fee::find('order_id=? and fee_type= "2"',$order->order_id)->getSum('amount')?>
+            				<td align="right"><?php echo $fee_in?round($fee_in,2):''?></td>
+            				<td align="right"><?php echo $fee_out?round($fee_out,2):''?></td>
+            				<td align="right"><?php if($fee_in && $fee_out):?><?php echo round($fee_in-$fee_out,2)?><?php endif;?></td>
+            				<td align="right"><?php if($fee_in && $fee_out):?><?php echo round(($fee_in-$fee_out)/$fee_in,4)*100?><?php echo '%'?><?php endif;?></td>
+            				<td align="right"><?php echo $order->weight_actual_in?round($order->weight_actual_in,1):''?></td>
+            				<?php $wi=0?>
+            				<?php foreach ($order->farpackages as $p):?>
+            				    <?php $wi=$wi+($p->length*$p->width*$p->height)/5000*$p->quantity?>
+            				<?php endforeach;?>
+            				<td align="right"><?php echo $wi?round($wi,1):''?></td>
+            				<td align="right"><?php echo $order->weight_income_in?round($order->weight_income_in,1):''?></td>
+            				<td align="right"><?php echo $order->weight_label?round($order->weight_label,1):''?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='') :?>
+            				<td align="right"><?php echo $order->weight_actual_out?round($order->weight_actual_out,1):''?></td>
+            				<td align="right"><?php echo $order->weight_bill?round($order->weight_bill,1):''?></td>
+            				<?php $wo=0?>
+            				<?php 
+            				    $pr=Product::find('product_name=?',$order->service_code)->getOne();
+            				    $ratio='5000';
+            				    $ch=ChannelCost::find('channel_id=? and product_id=?',$order->channel_id,$pr->product_id)->getOne();
+        				          if($ch->ratio){
+    				                  $ratio=$ch->ratio;
+    				              }
+            				    ?>
+            				<?php foreach ($order->faroutpackages as $po):?>
+            				    <?php $wo=$wo+($po->length_out*$po->width_out*$po->height_out)/$ratio*$po->quantity_out?>
+            				<?php endforeach;?>
+            				<td align="right"><?php echo $wo?round($wo,1):''?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='' || showFN() || request('parameters') =='sign') :?>
+            				<td align="right"><?php echo $order->weight_cost_out?round($order->weight_cost_out,1):''?></td>
+            				<?php endif;?>
+            				<?php if(request('parameters') =='' || request('parameters') =='warehouse_out' || request('parameters') =='wait_to_send' || request('parameters') =='sent' || request('parameters') =='sign'):?>
+                				<?php if(!(request('parameters') == '' || request('parameters') == 'no_package' || request('parameters') == 'warehouse_in' || request('parameters') == 'prove' || request('parameters') == 'paid')):?>
+                				<td><?php echo $order->customer->customer ?></td>
+                                <td align="center"><?php echo $order->service_product->product_chinese_name ?></td>
+                                <?php endif;?>
+            				<td><?php echo $order->channel->channel_name?></td>
+            				<td><?php echo $order->channel->supplier->supplier?></td>
+            				<?php endif;?>
+            				<?php if (!(showFN() || request('parameters') =='sign')) :?>
+            				<td align="right"><?php echo $order->total_amount?round($order->total_amount,2):''?></td>
+            				<?php endif;?>
+            				<td><?php echo $order->declaration_type=='DL'?$order->declaration_type:(($order->total_amount>700 || $order->weight_actual_in>70)?'强制':$order->declaration_type)?></td>
+            				<?php if (request('parameters') =='') :?>
+            				<td><?php echo $order->sender_name2?></td>
+            				<td><?php echo $order->sender_name1?></td>
+            				<td><?php echo $order->sender_mobile?$order->sender_mobile:$order->sender_telephone?></td>
+            				<td><?php echo $order->sender_email?></td>
+            				<td><?php echo $order->sender_state_region_code.$order->sender_city.$order->sender_street1.$order->sender_street2?></td>
+            				<td><?php echo $order->consignee_name2?></td>
+            				<td><?php echo $order->consignee_name1?></td>
+            				<td><?php echo $order->consignee_mobile?$order->consignee_mobile:$order->consignee_telephone?></td>
+            				<td><?php echo $order->consignee_email?></td>
+            				<td><?php echo $order->consignee_city?></td>
+            				<td><?php echo $order->consignee_postal_code?></td>
+            				<td><?php echo $order->consignee_country_code.'&nbsp;'.$order->consignee_state_region_code.'&nbsp;'.$order->consignee_city.'&nbsp;'.$order->consignee_street1.'&nbsp;'.$order->consignee_street2?></td>
+            				<?php endif;?>
+            				<?php if (!(request('parameters') =='sign' || request('parameters') =='warehouse_in' || request('parameters') =='prove' || request('parameters') =='paid' || showFN())) :?>
+            				<td style="width:70px;"><?php echo $order->need_pick_up=='1'?'是':$order->reference_no?></td>
+            				<?php endif;?>
+            				<?php if (request('parameters') =='') :?>
+            				<td><?php echo $order->reference_no?></td>
+            				<?php endif;?>
+            				<td><?php echo $order->remark?></td>
+            			</tr>
+            		<?php endforeach;?>
+            		</tbody>
+            	</table>
+            	</div>
+    </div>
+    <input id="parameters" type="hidden" name="parameters" value="<?php echo $parameters?>">
+    <input id="need_pick_up1" type="hidden" name="need_pick_up" value="<?php echo request('need_pick_up')?>">
+    <input id="negative_profit1" type="hidden" name="negative_profit" value="<?php echo request('negative_profit')?>">
+    <input id="service_code1" type="hidden" name="service_code" value="<?php echo request('service_code')?>">
+    <input id="channel_id1" type="hidden" name="channel_id" value="<?php echo request('channel_id')?>">
+    <input id="supplier_id1" type="hidden" name="supplier_id" value="<?php echo request('supplier_id')?>">
+    <input id="packing_type1" type="hidden" name="packing_type" value="<?php echo request('packing_type')?>">
+    <input id="network_code1" type="hidden" name="network_code" value="<?php echo request('network_code')?>">
+    <input id="declaration_type1" type="hidden" name="declaration_type" value="<?php echo request('declaration_type')?>">
+    <input id="sender1" type="hidden" name="sender" value="<?php echo request('sender')?>">
+    <input id="waybill_codes1" type="hidden" name="waybill_codes" value="<?php echo request('waybill_codes')?>">
+    <input type="hidden" id="weight_cost_out_start1" name="weight_cost_out_start"  value="<?php echo request('weight_cost_out_start')?>">
+    <input type="hidden" id="weight_cost_out_end1" name="weight_cost_out_end"  value="<?php echo request('weight_cost_out_end')?>"  >
+    <input id="department" type="hidden" name="department_id" value="<?php echo request('department_id')?>">
+    <input id="warehouse_in_department" type="hidden" name=warehouse_in_department_id value="<?php echo request('warehouse_in_department_id')?>">
+    </form>
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+
+<script type="text/javascript">
+$(document).ready(function(){ 
+		//第一列不进行排序(索引从0开始)
+	    $.tablesorter.defaults.headers = {1: {sorter:false}}
+	    $("#myTable").tablesorter(); 
+});
+function waybillSearch(){
+	$("#waybill_codes1").val($("#waybill_codes").val());
+   	$("#service_code1").val($("#service_code").val());
+   	$("#channel_id1").val($("#channel_id").val());
+   	$("#supplier_id1").val($("#supplier_id").val());
+    $("#packing_type1").val($("#packing_type").val());
+   	$("#declaration_type1").val($("#declaration_type").val());
+   	$("#sender1").val($("#sender").val());
+   	$("#network_code1").val($("#network_code").val());
+    $("#weight_cost_out_start1").val($("#weight_cost_out_start").val());
+   	$("#weight_cost_out_end1").val($("#weight_cost_out_end").val());
+   	if($('#need_pick_up').attr('checked')=='checked'){
+		   $("#need_pick_up1").val($("#need_pick_up").val());
+	}else{
+		$("#need_pick_up1").val('');
+	}
+	if($('#negative_profit').attr('checked')=='checked'){
+		   $("#negative_profit1").val($("#negative_profit").val());
+	}else{
+		$("#negative_profit1").val('');
+	}
+	$("#department").val($("#department_id").val());
+	$("#warehouse_in_department").val($("#warehouse_in_department_id").val());
+   	$("#searchForm").submit();
+}
+	//补打泛远面单
+	function printfarlabel(order_id){
+		var num=prompt('打印份数：','1');
+		if(num>0){
+			$.ajax({
+				url:'<?php echo url('order/getpackageamout')?>',
+				data:{order_id:order_id},
+				type:'post',
+				success:function(ali_quantity_total){
+					for(var i=0;i<num;i++){
+						AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/farlabel.xml?v=6");
+						AF.func("SetSource", "orderdata \r\n "+"<?php echo url_standard('warehouse/infarlabel')?>&orderid="+order_id);
+						switchPrinter('Zebra');
+						AF.func("Calc");
+						AF.func("Print", "isOpenSysDialog=0");
+					}
+				}
+			})
+		}
+	}
+	/**
+	 * 切换打印机
+	 * 例如 switchPrinter('EMS')，找到打印机名字中带 EMS的打印机并指定
+	 */
+	function switchPrinter(printerName){
+		var printers=AF.func("GetPrinters").split(',');
+		//搜索打印机
+		for (i in printers){
+			if(typeof(printers[i]) == 'string' ){
+				if (printers[i].indexOf(printerName)>-1){
+					printerName=printers[i];
+				}
+			}
+		}
+		var setting=AF.func("GetProp", "Print");
+		// console.log(setting);
+		if (setting.indexOf('<Printer>') > -1){
+			setting=setting.replace(/<Printer>.*?<\/Printer>/mg,'<Printer>'+printerName+'</Printer>');
+		}else {
+			setting=setting.replace('<PrintPage>',"<PrintPage>\r\n<Printer>"+printerName+'</Printer>');
+		}
+		// console.log(setting);
+		AF.func("SetProp", "Print \r\n" + setting);
+	}
+	// 打印顺序号
+	var seqnum = '';
+	function getSeqNum(){
+		return seqnum;
+	}
+	/**
+	 *  点击tabs设置隐藏框值 
+	 */	 
+	function TabSwitch(code){
+		$("#parameters").val(code);
+		$("form").trigger("submit");
+	}
+	/**
+	*打印功能
+	**/
+	function printlabel(obj){
+		$.messager.confirm('重新打印','是否重新打印？',function(rs){
+			if(rs){
+				var ali_order_no=$(obj).attr('data');
+				var account=$(obj).attr('account');
+				$.ajax({
+					url:'<?php echo url('warehouse/gettrackingno')?>',
+					type:'POST',
+					dataType:'json',
+					data:{ali_order_no:ali_order_no},
+					success:function(data){
+						if(data.network_code=='FEDEX' && account=='FEDEX'){
+							for(var ll=1;ll<4;ll++){
+    		    				AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/fedex_invoice.xml?v=2");
+    							AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+    							switchPrinter('P1606dn');
+    							AF.func("Calc", ""); //填充数据
+    							AF.func("Print", "isOpenSysDialog=false");
+		    				}
+						}else if(data.network_code=='DHL' || (data.network_code=='FEDEX' && account !='FEDEX') || data.network_code=="DHLE" || data.network_code=="YWML"){
+							for(var ll=1;ll<3;ll++){
+    		    				AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/hlt_invoice.xml?v=2");
+    							AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+    							switchPrinter('P1606dn');
+    							AF.func("Calc", ""); //填充数据
+    							AF.func("Print", "isOpenSysDialog=false");
+		    				}
+						} else{
+    						if(data.network_code!='UPS' || account==''){
+    							for(var s=0;s<2;s++){
+    								AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/invoice_pe.xml?v=1");
+    								AF.func("SetSource", "ds1 \r\n "+"<?php echo url_standard('warehouse/peinvoice')?>&tracking_no="+data.tracking_no);
+    								switchPrinter('P1606dn');
+    								AF.func("Calc", ""); //填充数据
+    								AF.func("Print", "isOpenSysDialog=false");
+    							}
+    						}else{
+    							if(account=='4F1R24'){
+    								for(var s=0;s<2;s++){
+    									if(data.country=='PE' || data.country=='VG'){
+    										AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/invoice_pe.xml?v=1");
+    										AF.func("SetSource", "ds1 \r\n "+"<?php echo url_standard('warehouse/peinvoice')?>&tracking_no="+data.tracking_no);
+    										switchPrinter('P1606dn');
+    										AF.func("Calc", ""); //填充数据
+    										AF.func("Print", "isOpenSysDialog=false");
+    									}else{
+    										AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsprintsheet3.xml?v=1");
+    										AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+    										switchPrinter('P1606dn');
+    										AF.func("Calc", ""); //填充数据
+    										AF.func("Print", "isOpenSysDialog=false");
+    									}
+    								}
+    								AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/renfeng_copy.xml?v=1");
+    								AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+    								switchPrinter('P1606dn');
+    								AF.func("Calc", ""); //填充数据
+    								AF.func("Print", "isOpenSysDialog=false");
+    							}else{
+    								if(data.country=='PE' || data.country=='VG'){
+    									for(var tt=1;tt<=4;tt++){
+    										if(data.sub_code_count <= 11 && tt==2){
+    											continue;
+    										}
+    										if(tt<3){
+    											AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsprintsheet"+tt+".xml?v=1");
+    											AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+    											switchPrinter('P1606dn');
+    											AF.func("Calc", ""); //填充数据
+    											AF.func("callfunc", "105\r\nType=pdf; Scale=100;ExportAsPrint=true;filename="+ file_path +file_name);
+    											AF.func("Print", "isOpenSysDialog=false");
+    										}else{
+    											AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/invoice_pe.xml?v=1");
+    											AF.func("SetSource", "ds1 \r\n "+"<?php echo url_standard('warehouse/peinvoice')?>&tracking_no="+data.tracking_no);
+    											switchPrinter('P1606dn');
+    											AF.func("Calc", ""); //填充数据
+    											AF.func("Print", "isOpenSysDialog=false");
+    										}
+    									}
+    								}else{
+    									for(var tt=1;tt<=4;tt++){
+    										if(data.sub_code_count <= 11 && tt==2){
+    											continue;
+    										}
+    										if(tt==4){
+    											var num=3;
+    											var file_name=data.tracking_no+"_invoice.pdf";
+    											AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsprintsheet"+num+".xml?v=1");
+    											AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+    											switchPrinter('P1606dn');
+    											AF.func("Calc", ""); //填充数据
+    											AF.func("Print", "isOpenSysDialog=false");
+    										}else{
+    											AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsprintsheet"+tt+".xml?v=1");
+    											AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+    											switchPrinter('P1606dn');
+    											AF.func("Calc", ""); //填充数据
+    											AF.func("Print", "isOpenSysDialog=false");
+    										}
+    									}
+    								}
+    							}
+    						}
+    					}
+					}
+				})
+			}
+		})
+	}
+	/// QZ Config ///
+    var cfg = null;
+    function getUpdatedConfig(type) {
+        if (cfg == null) {
+            cfg = qz.configs.create(null);
+        }
+
+        updateConfig(type);
+        return cfg
+    }
+
+    function updateConfig(type) {
+        var pxlSize = null;
+        if (true) {
+            if(type==null || type=='FEDEX'){
+                pxlSize = {
+                    width: 100,
+                    height: 145
+                };
+            }
+         }
+
+        var pxlMargins = $("#pxlMargins").val();
+        if (true) {
+            if(type=='A4'){
+            	pxlMargins = {
+                        top: 6,
+                        right: 6,
+                        bottom: 6,
+                        left: 6
+                    };
+            }
+            if(type==null){
+            	pxlMargins = {
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        left:0
+                    };
+            }
+            if(type=='FEDEX'){
+                	pxlMargins = {
+                            top: 2,
+                            right: 0,
+                            bottom: 0,
+                            left:6
+                        };
+            }
+        }
+
+        var copies = 1;
+        var jobName = null;
+        if ($("#rawTab").hasClass("active")) {
+            copies = $("#rawCopies").val();
+            jobName = $("#rawJobName").val();
+        } else {
+            copies = $("#pxlCopies").val();
+            jobName = $("#pxlJobName").val();
+        }
+
+        cfg.reconfigure({
+                            altPrinting: $("#rawAltPrinting").prop('checked'),
+                            encoding: $("#rawEncoding").val(),
+                            endOfDoc: $("#rawEndOfDoc").val(),
+                            perSpool: $("#rawPerSpool").val(),
+
+                            colorType: $("#pxlColorType").val(),
+                            copies: copies,
+                            density: $("#pxlDensity").val(),
+                            duplex: $("#pxlDuplex").prop('checked'),
+                            interpolation: $("#pxlInterpolation").val(),
+                            jobName: jobName,
+                        	legacy: false,
+                            margins: pxlMargins,
+                            orientation: '',
+                            paperThickness: '',
+                            printerTray:'',
+                            rasterize: false,
+                            rotation: '0',
+                            scaleContent:true,
+                            size: pxlSize,
+                            units: 'mm'
+                        });
+    }
+
+    function setPrintFile() {
+        setPrinter({ file: $("#askFile").val() });
+        $("#askFileModal").modal('hide');
+    }
+
+    function setPrintHost() {
+        setPrinter({ host: $("#askHost").val(), port: $("#askPort").val() });
+        $("#askHostModal").modal('hide');
+    }
+
+    function setPrinter(printer) {
+        var cf = getUpdatedConfig();
+        cf.setPrinter(printer);
+
+        if (typeof printer === 'object' && printer.name == undefined) {
+            var shown;
+            if (printer.file != undefined) {
+                shown = "<em>FILE:</em> " + printer.file;
+            }
+            if (printer.host != undefined) {
+                shown = "<em>HOST:</em> " + printer.host + ":" + printer.port;
+            }
+
+            $("#configPrinter").html(shown);
+        } else {
+            if (printer.name != undefined) {
+                printer = printer.name;
+            }
+
+            if (printer == undefined) {
+                printer = 'NONE';
+            }
+            $("#configPrinter").html(printer);
+        }
+    }
+    function displayError(err) {
+	    console.error(err);
+	    displayMessage(err, 'alert-danger');
+	}
+	$(function(){
+		//加载可信证书
+		qz.security.setCertificatePromise(function(resolve, reject) {
+	    	$.ajax("<?php echo $_BASE_DIR?>qz/demo/assets/signing/digital-certificate.txt").then(resolve, reject);
+		});
+		//签名
+    	qz.security.setSignaturePromise(function(toSign) {
+            return function(resolve, reject) {
+            	$.post("<?php echo $_BASE_DIR?>qz/demo/assets/signing/sign-message.php", {request: toSign}).then(resolve, reject);
+            };
+        });
+     });
+    //泛远面单
+    function farbilpdf(order_id){
+        AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/farbillpdf.xml?v=8");
+        AF.func("BeginBatchPrint", "isPreview=true");
+        AF.func("SetSource", "orderdata \r\n "+"<?php echo url_standard('warehouse/farbillpdf')?>&order_id="+order_id);
+        switchPrinter('Zebra');
+        AF.func("Calc","");
+        AF.func("Print", "isOpenSysDialog=0");
+        AF.func("EndBatchPrint", ""); 
+    }
+    $('#table-cont').data('slt',{sl:$(this).scrollLeft()-1,st:$(this).scrollTop()-2}).scroll(function(){
+    	var scrollTop = $(this).scrollTop()-2;
+    	var scrollLeft = $(this).scrollLeft()-1;
+    	d=$('#table-cont').data('slt');
+    	if(d.sl!=scrollLeft){
+        	$('.x_scroll_td').css({'background-color':'#fff','transform':'translate3d('+scrollLeft+'px,0,0)'});
+        	$('.x_scroll_th').css({'background-color':'#f4f4f4','background-image':'linear-gradient(#FFF 0px, #F2F2F2 100%)','transform':'translate3d('+scrollLeft+'px,0,0)'});
+        }
+        if(d.st!=scrollTop){
+        	$(this).find('thead').css({'transform':'translateY('+scrollTop+'px)','z-index':'100'});
+        }
+        $('#table-cont').data('slt',{sl:$(this).scrollLeft(),st:$(this).scrollTop()-2})
+    })
+    $(function(){
+        var height_window=$(window).height();//浏览器当前窗口可视区域高度
+        var height_table=0.6*height_window;//计算调节表格高度
+        $('#table-cont').height(height_table);
+    })
+</script>
+<?PHP $this->_endblock();?>
+

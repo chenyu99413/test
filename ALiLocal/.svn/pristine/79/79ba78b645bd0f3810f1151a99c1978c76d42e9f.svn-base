@@ -1,0 +1,104 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+    <?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'产品管理' => '','同步账号' => url ( 'account/sync' ),'账号编辑' => '' 
+	) 
+) )?>
+<h5>账号：<?php echo $account->account?></h5>
+<form method="post" onsubmit="return account()">
+    <div class="FarSearch">
+		<table style="width:95%;">
+           <tbody>
+               <tr>
+                   <th class="required-title">省英文</th>
+                   <td>
+                        <input name="state" type="text" style="width: 100%" required value="<?php echo $account->state?>">
+                   </td>
+                   <th class="required-title">邮编</th>
+                   <td>
+                        <input name="postcode" id="postcode" type="text" style="width: 100%" required value="<?php echo $account->postcode?>">
+                   </td>
+                   <th class="required-title">联系人</th>
+                   <td>
+                        <input name="aname" type="text" style="width: 100%" required value="<?php echo $account->aname?>">
+                   </td>
+               </tr>
+               <tr>
+                   <th class="required-title">城市英文</th>
+                   <td>
+                        <input name="city" type="text" style="width: 100%" required value="<?php echo $account->city?>">
+                   </td>
+				   <th class="required-title">城市中文</th>
+                   <td>
+                        <input name="city_cn" type="text" style="width: 100%" required value="<?php echo $account->city_cn?>">
+                   </td>
+                   <th class="required-title">电话</th>
+				   <td>
+				        <input name="phone" type="text" style="width: 100%" required value="<?php echo $account->phone?>">
+				   </td>
+               </tr>
+               <tr>
+				   <th class="required-title">地址英文</th>
+				   <td colspan="3">
+						<input name="address" type="text" style="width: 100%" required value="<?php echo $account->address?>">
+				   </td>
+                   <th class="required-title">地址中文</th>
+				   <td colspan="3">
+						<input name="address_cn" type="text" style="width: 100%" required value="<?php echo $account->address_cn?>">
+				   </td>
+               </tr>
+               <tr>
+                   <th class="required-title">公司英文名</th>
+                   <td colspan="3">
+                        <input name="name" type="text" style="width: 100%" required value="<?php echo $account->name?>">
+                   </td>
+                   <th class="required-title">经营单位编码</th>
+				   <td>
+						<input id="business_code" name="business_code" onblur="Bc()" type="text" style="width: 100%" required value="<?php echo $account->business_code?>">
+				   </td>
+               </tr>
+               <tr>
+                   <th class="required-title">公司中文名</th>
+				   <td colspan="3">
+						<input name="sender_cn" type="text" style="width: 100%" required value="<?php echo $account->sender_cn?>">
+				   </td>
+				   <th class="required-title">社会信用代码</th>
+                   <td>
+                        <input id="credit_code" name="credit_code" onblur="Cc()" type="text" style="width: 100%" required value="<?php echo $account->credit_code?>">
+                   </td>
+               </tr>
+           </tbody>
+        </table>
+        <div class="FarTool text-center">
+        	<button class="btn btn-small btn-success" id="search">
+                                        保存修改
+       		</button>
+       	</div>
+     </div>
+</form>
+<!--判断长度-->
+<script type="text/javascript">
+function account(){  
+	var postcode=document.getElementById("postcode").value;
+	var cc=document.getElementById("credit_code").value.length;
+	var bc=document.getElementById("business_code").value.length;
+	if(cc!=18 || bc!=10){
+	   alert("请检查社会信用代码与经营单位编码！");
+	   return false;
+	}
+	if(!(/^[0-9]{6}$/.test(postcode))){
+	   alert("邮编错误！");
+	   return false;
+	}
+	return true;
+} 
+</script>
+<?PHP $this->_endblock();?>

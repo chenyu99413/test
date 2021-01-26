@@ -1,0 +1,99 @@
+<?php
+use OSS\OssClient;
+use OSS\Core\OssException;
+
+
+class Helper_AlipicsOss {
+	
+	function uploadAlifiles($file){
+		
+		if (is_file(_INDEX_DIR_ . '/_code/helper/aliyunoss/autoload.php')) {
+			require_once _INDEX_DIR_ . '/_code/helper/aliyunoss/autoload.php';
+		}
+		if (is_file(_INDEX_DIR_ . '/_code/helper/aliyunoss/vendor/autoload.php')) {
+			require_once _INDEX_DIR_ . '/_code/helper/aliyunoss/vendor/autoload.php';
+		}
+		
+		// 阿里云主账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM账号进行API访问或日常运维，请登录RAM控制台创建RAM账号。
+		$accesskeyid = "LTAIoc2nJkBFzud9";
+		$accesskeysecret = "fBTeUJdNXY02f7IDTdP7xxkMJpw72i";
+		// Endpoint以杭州为例，其它Region请按实际情况填写。
+		$endpoint = "http://oss-cn-hangzhou.aliyuncs.com";
+		// 设置存储空间名称。
+		$bucket= "ia1";
+		// 设置文件名称。
+		$object = "alipics_tmp/".$file;
+		// <yourLocalFile>由本地文件路径加文件名包括后缀组成，例如/users/local/myfile.txt。
+		$filepath = _INDEX_DIR_ . "/_tmp/upload/".$file;
+		
+		try{
+			$ossclient = new OssClient($accesskeyid, $accesskeysecret, $endpoint);
+			$ossclient->uploadFile($bucket, $object, $filepath);
+		} catch(OssException $e) {
+			$msg['message']='FAILED';
+			$msg['reason']=$e->getMessage();
+			QLog::log('FAILED' );
+			QLog::log($e->getMessage() );
+			return $msg;
+		}
+		$msg['message']='OK';
+		QLog::log('OK' );
+		return $msg;
+	}
+	
+	function uploadAlistrings($data,$track_no){
+		if (is_file(_INDEX_DIR_ . '/_code/helper/aliyunoss/autoload.php')) {
+			require_once _INDEX_DIR_ . '/_code/helper/aliyunoss/autoload.php';
+		}
+		if (is_file(_INDEX_DIR_ . '/_code/helper/aliyunoss/vendor/autoload.php')) {
+			require_once _INDEX_DIR_ . '/_code/helper/aliyunoss/vendor/autoload.php';
+		}
+		// 阿里云主账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM账号进行API访问或日常运维，请登录RAM控制台创建RAM账号。
+		$accesskeyid = "LTAIoc2nJkBFzud9";
+		$accesskeysecret = "fBTeUJdNXY02f7IDTdP7xxkMJpw72i";
+		// Endpoint以杭州为例，其它Region请按实际情况填写。
+		$endpoint = "http://oss-cn-hangzhou.aliyuncs.com";
+		// 设置存储空间名称。
+		$bucket= "ia1";
+		// 设置文件名称。
+		$object = "alipics_tmp/ali/example2.pdf";
+		// 配置文件内容。
+// 		$content = "Hello OSS 111";
+		$content = file_get_contents(_INDEX_DIR_ . "/_tmp/upload/1Z4F1R246707811679.pdf");
+		try{
+			$ossclient = new OssClient($accesskeyid, $accesskeysecret, $endpoint);
+			$ossclient->putObject($bucket, $object, $content);
+		} catch(OssException $e) {
+			QLog::log('FAILED' );
+			QLog::log($e->getMessage() );
+			return;
+		}
+		QLog::log('OK' );
+	}
+	function doesExist($file){
+		if (is_file(_INDEX_DIR_ . '/_code/helper/aliyunoss/autoload.php')) {
+			require_once _INDEX_DIR_ . '/_code/helper/aliyunoss/autoload.php';
+		}
+		if (is_file(_INDEX_DIR_ . '/_code/helper/aliyunoss/vendor/autoload.php')) {
+			require_once _INDEX_DIR_ . '/_code/helper/aliyunoss/vendor/autoload.php';
+		}
+		// 阿里云主账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM账号进行API访问或日常运维，请登录RAM控制台创建RAM账号。
+		$accesskeyid = "LTAIoc2nJkBFzud9";
+		$accesskeysecret = "fBTeUJdNXY02f7IDTdP7xxkMJpw72i";
+		// Endpoint以杭州为例，其它Region请按实际情况填写。
+		$endpoint = "http://oss-cn-hangzhou.aliyuncs.com";
+		// 设置存储空间名称。
+		$bucket= "ia1";
+		$object = "alipics_tmp/".$file;
+		
+		try{
+			$ossclient = new OssClient($accesskeyid, $accesskeysecret, $endpoint);
+			$exist = $ossclient->doesObjectExist($bucket, $object);
+		} catch(OssException $e) {
+			QLog::log("FAILED");
+			QLog::log($e->getMessage());
+			return false;
+		}
+		return $exist;
+	}
+}

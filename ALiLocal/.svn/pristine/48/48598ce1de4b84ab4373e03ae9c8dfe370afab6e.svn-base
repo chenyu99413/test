@@ -1,0 +1,36 @@
+[{"url":"staff\/index","param":null,"name":"工作台","children":null}
+,{"url":"#","param":null,"name":"业务管理","children":
+	[{"url":"order\/search","param":null,"name":"订单查询","children":null}
+	,{"url":"order\/paddingdata","param":null,"name":"补充数据","children":null}
+	,{"url":"order\/showerrormessage","param":null,"name":"推送订单检查","children":null}
+]}
+,{"url":"#","param":null,"name":"产品管理","children":
+	[{"url":"product\/search","param":null,"name":"产品列表","children":null}
+	,{"url":"price\/search","param":null,"name":"价格列表","children":null}
+	,{"url":"partition\/search","param":null,"name":"分区列表","children":null}
+	,{"url":"remote\/search","param":null,"name":"偏派列表","children":null}
+	,{"url":"network\/search","param":null,"name":"网络列表","children":null}
+	,{"url":"channel\/search","param":null,"name":"渠道列表","children":null}
+	,{"url":"account\/sync","param":null,"name":"同步账号","children":null}
+]}
+,{"url":"#","param":null,"name":"仓库业务","children":
+	[{"url":"warehouse\/in","param":null,"name":"包裹入库","children":null}
+	,{"url":"order\/paymentverify","param":null,"name":"支付验证","children":null}
+	,{"url":"warehouse\/confirm","param":null,"name":"中心仓包裹核查","children":null}
+	,{"url":"warehouse\/batchupdate","param":null,"name":"批量修改包裹类型","children":null}
+	,{"url":"warehouse\/checkout","param":null,"name":"包裹出库","children":null}
+	,{"url":"warehouse\/comparison","param":null,"name":"包裹交货核查","children":null}
+]}
+,{"url":"#","param":null,"name":"财务管理","children":
+	[{"url":"statistics\/payment","param":null,"name":"收付统计","children":null}
+]}
+,{"url":"#","param":null,"name":"部门管理","children":
+	[{"url":"department\/search","param":null,"name":"部门查询","children":null}
+]}
+,{"url":"#","param":null,"name":"员工管理","children":
+	[{"url":"staff\/search","param":null,"name":"员工查询","children":null}
+]}
+,{"url":"#","param":null,"name":"角色管理","children":
+	[{"url":"role\/search","param":null,"name":"角色查询","children":null}
+]}
+]

@@ -1,0 +1,200 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script type="text/javascript">
+var tns=[];
+</script>
+<form method="post">
+<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+					<th>阿里/末端单号</th>
+					<td colspan="2">
+						<textarea placeholder="每行一个单号" name="ali_order_no"  rows="2" style="width:130px;"><?php echo request('ali_order_no')?></textarea>
+					</td>
+					<th>轨迹内容</th>
+					<td colspan="2">
+						<input name="tracking_name" type="text" style="width: 200px"
+							value="<?php echo request('tracking_name')?>">
+					</td>
+					<th>状态</th>
+					<td>
+						<?php echo Q::control('dropdownbox','confirm_flag',array(
+							'items'=>array(
+								'0'=>'未确认',
+								'isnull'=>'无匹配',
+								'2'=>'已忽略',
+							),
+							'value'=>request('confirm_flag','0'),
+							'empty'=>true,
+							'emptyValue'=>'all'
+						))?>
+					</td>
+					<th>网络</th>
+					<td>
+						<?php
+                        echo Q::control ( 'dropdownbox', 'network_code', array('items'=>Helper_Array::toHashmap(Network::find()->getAll(),'network_code','network_code'),
+                        'value' => request('network_code'),
+                        'style'=>'width:120px',
+                        'empty'=>'true'
+                     ) )?>
+					</td>
+					<th>阿里code</th>
+					<td>
+					<?php
+                        echo Q::control ( 'dropdownbox', 'ali_code', array(
+                        'items'=>Helper_Array::toHashmap(Tracking::find()->group('tracking_code')->getAll(),'tracking_code','tracking_code'),
+                        'value' => request('ali_code'),
+                        'style'=>'width:210px',
+                        "empty"=>"true"
+                     ) )?>
+					</td>
+				</tr>
+				<tr>
+					<th>问题件状态</th>
+					<td>
+						<?php
+						echo Q::control ( 'dropdownbox', 'parcel_flag', array (
+							'items' => array (
+								'1' => '开启',
+								'2' => '关闭',
+							    '3' => '延置处理'
+							),
+							'empty'=>'true',
+							'value' => request ( 'parcel_flag' ) 
+						) )?>
+					</td>
+					<th>未更新时长</th>
+					<td>
+					   <input type="text" style="width:30px;" name="nochange_time" value="<?php echo request('nochange_time')?>"><span> 天</span>
+					</td>
+					<th>出货渠道</th>
+					<td>
+						<?php
+    					    echo Q::control("dropdownbox", "channel_id", array(
+    						"items" => Helper_Array::toHashmap(Channel::find()->getAll(), "channel_id", "channel_name"),
+    						"value" => request('channel_id'),
+    						"style" => "width:130px;",
+    						"empty" => "true"
+					    ))?>
+					</td>
+					<th>目的国</th>
+					<td>
+					   <input type="text" style="width:50px;" name="consignee_country_code" value="<?php echo request('consignee_country_code')?>">
+					</td>
+					<td colspan="2">
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <button class="btn btn-info btn-small" id="exp" name="exp" value="exp">
+			             <i class="icon-download"></i>
+			                                         导出
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+<div>
+</form>
+<table class="FarTable">
+<thead>
+<tr>
+	<th>阿里单号</th>
+	<th>DST</th>
+	<th>网络</th>
+	<th>运单号 &nbsp;<?php if(request('network_code') !="all" && request('network_code') !="FEDEX" && request('network_code') !="YWML" && request('network_code') !="DHLE" && request('network_code')):?><a href="#13" onclick="trace()"><i class="icon icon-link"></i></a><?php endif;?></th>
+	<th>预派时间</th>
+	<th>最近轨迹时间</th>
+	<th>最近轨迹地点</th>
+	<th style="width:300px">最近轨迹</th>
+	<th>抓取时间</th>
+	<th width="60px">状态</th>
+	<th width="100">操作</th>
+	<th>?</th>
+</tr>
+</thead>
+<tbody>
+<?php if(isset($list)):?>
+<?php foreach ($list as $row):?>
+<tr>
+	<td><?php echo $row->ali_order_no?></td>
+	<td><?php echo $row->consignee_country_code?></td>
+	<td>
+		<?php echo $row->order->channel->network_code?>
+	</td>
+	<td>
+	<?php if($row->order->channel->network_code=="EMS"):?>
+	<a target="_blank" href="https://t.17track.net/en#nums=<?php echo $row->tracking_no?>">
+	<?php elseif($row->order->channel->network_code=="FEDEX" || $row->order->channel->trace_network_code=="FEDEX") :?>
+	<a target="_blank" href="https://www.trackingmore.com/fedex-tracking/cn.html?number=<?php echo $row->tracking_no?>">
+	<?php elseif($row->order->channel->trace_network_code=="DHL") :?>
+	<a target="_blank" href="https://www.dhl.com/en/express/tracking.html?AWB=<?php echo $row->tracking_no?>&brand=DHL">
+	<?php elseif($row->order->channel->trace_network_code=="DHLE") :?>
+	<a target="_blank" href="https://ecommerceportal.dhl.com/track/?locale=en">
+	<?php else :?>
+	<a target="_blank" href="https://www.ups.com/track?loc=en_US&tracknum=<?php echo $row->tracking_no?>&requester=WT/trackdetails">
+	<?php endif;?>
+	<?php echo $row->tracking_no?>
+	</a>
+	</td>
+	<td><?php echo $row->order->present_time?date('m-d H:i',$row->order->present_time):''?></td>
+	<td><?php echo date('m-d H:i',$row->time)?></td>
+	<td><?php echo $row->location?></td>
+	<td><?php echo $row->description?></td>
+	<td><?php echo date('m-d H:i',$row->create_time)?></td>
+	<td >
+		<?php if ($row->confirm_flag ==2):?>已忽略
+		<?php elseif (strlen($row->confirm_flag)==0):?>无匹配
+		<?php elseif ($row->confirm_flag =='0'):?>未确认
+		<?php endif;?>
+	</td>
+	<td>
+		<a class="btn btn-mini" target="_blank" href="<?php echo url('order/trace',array('order_id'=>$row->order_id))?>">轨迹</a>
+		<a class="btn btn-mini" target="_blank" href="<?php echo url('order/newIssueParcel',array('ali_order_no'=>$row->ali_order_no))?>">问题</a>
+		<script type="text/javascript">tns.push("<?php echo $row->tracking_no?>")</script>
+	</td>
+	<td>
+	    <?php $ab=Abnormalparcel::find('ali_order_no = ?',$row->ali_order_no)->columns('abnormal_parcel_id')->asArray()->getAll();
+	       $ab=Helper_Array::getCols($ab, 'abnormal_parcel_id');
+	       $hi=new Abnormalparcelhistory();
+           if(count($ab)>0){
+	           $hi=Abnormalparcelhistory::find('abnormal_parcel_id in (?)',$ab)->order('abnormal_parcel_history_id DESC')->getOne();
+           }
+	    ?>
+	    <?php if(isset($hi)):?>
+	    <?php if($hi->abnormalparcel->parcel_flag=='1'):?>
+	    <a target="_blank" href="<?php echo url('order/issuehistory',array('abnormal_parcel_id'=>$hi->abnormal_parcel_id))?>">
+	    <?php elseif ($hi->abnormalparcel->parcel_flag=='2'):?>
+	    <a target="_blank" style="color:#C0C0C0" href="<?php echo url('order/issuehistory',array('abnormal_parcel_id'=>$hi->abnormal_parcel_id))?>">
+	    <?php endif;?>
+	    <?php echo $hi->follow_up_content?>
+	    </a> 
+	    <?php endif;?>
+	</td>
+</tr>
+<?php endforeach;?>
+<?php endif;?>
+</tbody>
+</table>
+<?php echo Q::control('pagination','',array('pagination'=>@$pagination))?>
+</div>
+<script type="text/javascript">
+function trace(){
+	var network_code="<?php echo request('network_code')?>";
+	if(network_code=="EMS"){
+		window.open("https://t.17track.net/en#nums="+tns.join());
+	}else{
+		window.open("https://www.ups.com/track?loc=en_US&tracknum="+tns.join("%250D%250A")+"&requester=WT/trackdetails");
+	}
+}
+</script>
+<?PHP $this->_endblock();?>
+

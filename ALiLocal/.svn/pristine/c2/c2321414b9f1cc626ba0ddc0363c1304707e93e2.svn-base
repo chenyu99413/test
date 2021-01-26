@@ -1,0 +1,75 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'仓库业务' => '','包裹抵达扫描列表' => url ( 'warehouse/totalinlist' ),'总单明细' => '' 
+	) 
+) )?>
+<label>总单单号：<?php echo $total_no?></label>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>(阿里/末端)单号</th>
+					<td>   
+					   <input name="order_no" type="text" style="width: 110px"
+							value="<?php echo request('order_no')?>">
+                    </td>
+					<td colspan="2">
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <button type="submit" name="export" class="btn btn-small btn-info" value="exportlist">
+						 <i class="icon-download"></i>
+							导出
+					   </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th>No</th>
+				<th>总单单号</th>
+				<th>扫描时间</th>
+				<th>阿里单号</th>
+				<th>末端单号</th>
+				<th>产品</th>
+				<th>目的国家</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php $i=1; foreach ($lists as $list):?>
+			<tr>
+				<td><?php echo $i++ ?></td>
+				<td><?php echo $list->total_no?></td>
+				<td><?php echo Helper_Util::strDate('Y-m-d H:i:s',$list->create_time)?></td>
+				<td><?php echo $list->ali_order_no ?></td>
+				<td><?php echo $list->tracking_no?></td>
+				<td><?php echo $list->order->service_code ?></td>
+				<td><?php echo $list->order->consignee_country_code?></td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+</form>
+<script type="text/javascript">
+</script>
+<?PHP $this->_endblock();?>
+

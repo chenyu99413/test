@@ -1,0 +1,72 @@
+<?php
+/**
+ * 后台服务控制器
+ *
+ */
+class Controller_Cron extends Controller_Abstract{
+    /**
+     * notifyBizEvent
+     */
+    function actionnotifyBizEvent(){
+        $url_sign='https://gw.open.1688.com/openapi/param2/1/ali.intl.onetouch/logistics.order.notifyBizEvent/563333';
+        $events=Event::find("ifnull('send_flag','')!='1' and confirm_flag = '1' and event_time<=?",time())->order('order_id,event_time')->getAll();
+        foreach ($events as $event){
+            $ali=new Helper_ALI();
+            $event_request_data=$ali->notifyBizEvent($event);
+            $sign=$ali->sign($url_sign, json_encode($event_request_data),'notifyBizEvent');
+            //组合完整url
+            QLog::log($url_sign.'?notifyBizEventDTO='.json_encode($event_request_data).'&_aop_signature='.$sign);
+            $url=$url_sign.'?notifyBizEventDTO='.urlencode(json_encode($event_request_data)).'&_aop_signature='.$sign;
+            QLog::log($url);
+            //通过curl get 方式发送至阿里
+            $response=Helper_Curl::get1($url);
+            QLog::log('event_response'.$response);
+            $response=json_decode($response,true);
+            if($response['success']==true){
+                $event->send_flag='1';
+                $event->save();
+            }
+        }
+        exit();
+    }
+    /**
+     * notifyTrace
+     */
+    function actionnotifyTrace(){
+        $url_sign='https://gw.open.1688.com/openapi/param2/1/ali.intl.onetouch/logistics.order.notifyTrace/563333';
+        $tracking=Tracking::find("ifnull('send_flag','')!='1' and confirm_flag = '1' and trace_time<=?",time())->getAll();
+        foreach ($tracking as $temp){
+            $ali=new Helper_ALI();
+            $trace_request_data=$ali->notifyTrace($temp);
+            $sign=$ali->sign($url_sign, json_encode($trace_request_data),'notifyTrace');
+            //组合完整url
+            $url=$url_sign.'?notifyTraceDTO='.urlencode(json_encode($trace_request_data)).'&_aop_signature='.$sign;
+            //通过curl get 方式发送至阿里
+            $response=Helper_Curl::get1($url);
+            QLog::log('trace_request'.json_encode($trace_request_data));
+            QLog::log('trace_response'.$response);
+            $response=json_decode($response,true);
+            if($response['success']==true){
+                $temp->send_flag='1';
+                $temp->save();
+            }
+        }
+        exit();
+    }
+    /**
+     * 测试二维码识别
+     */
+    function actionBarcodeTest(){
+        $dir=Q::ini('upload_tmp_dir');
+        dump($dir.DS.'1Z4F1R246707811679.pdf');
+        $image = new ZBarCodeImage($dir.DS.'1Z4F1R246707811679.pdf');
+        dump($image);
+        $scanner = new ZBarCodeScanner();
+        $barcode = $scanner->scan($image);
+        dump($barcode);
+        $barcode=Helper_Array::getCols($barcode, 'data');
+        $barcode=array_reverse($barcode);
+        dump($barcode);
+        die();
+    }
+}

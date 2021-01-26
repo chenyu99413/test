@@ -1,0 +1,34 @@
+<?php
+class Controller_Account extends Controller_Abstract {
+	/**
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 账号---产品---渠道同步
+	 */
+	function actionSync() {
+		if(request_is_post()){
+			$account=json_decode(Helper_Curl::get1('http://kuaijian.far800.com/index.php?controller=cron&action=getaccount'),true);
+			if(count($account)){
+				Accountsync::find()->getAll()->destroy();
+				foreach ($account as $value){
+					$account_sync=new Accountsync();
+					$account_sync->changeProps(array(
+						'account'=>$value['print_account'] ,
+						'product_id'=>$value['product_id'] ,
+						'product_code'=>$value['product_code'] ,
+						'product_name'=>$value['product_name'] ,
+						'channel_id'=>$value['channel_id'] ,
+						'channel_name'=>$value['channel_name'] ,
+						'fail_time'=>$value['fail_time'] ,
+						'operator'=>MyApp::CurrentUser('staff_name')
+					));
+					$account_sync->save();
+				}
+			}
+		}
+		$this->_view['account']=Accountsync::find()->getAll();
+	}
+}

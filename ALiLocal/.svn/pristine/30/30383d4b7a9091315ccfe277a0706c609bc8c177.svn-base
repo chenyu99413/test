@@ -1,0 +1,116 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    打印重量对比表
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<script type="text/javascript" src="<?php echo $_BASE_DIR;?>public/js/jquery.sound.js"></script>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/supcan/binary/dynaload.js"></script>
+	<script>
+$(function () {
+	var agent = navigator.userAgent.toLowerCase();
+	if (agent.indexOf("msie") > 0) {
+		return true;
+	}
+	iswin = (navigator.userAgent.indexOf("Windows",0) != -1)?1:0;
+	if (!navigator.mimeTypes["application/supcan-plugin"] && iswin ==1) {
+		if (agent.indexOf("chrome") > 0 ){
+			window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.crx");
+		}
+		else{
+			window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.xpi");
+		}
+	}
+});
+function OnReady(id){}
+function OnEvent(id, Event, p1, p2, p3, p4){}
+</script>
+<div>
+	<div style="height: 1px; width: 100%; visibility: hidden;">
+		<SCRIPT type="text/javascript">insertReport('AF', 'CollapseToolbar=true');</SCRIPT>
+	</div>
+</div>
+<div class="FarSearch" >
+	<table>
+		<tbody>
+			<tr>
+				<th>(阿里/末端)单号</th>
+				<td>
+					<input name="order_no" type="text" id="order_no" style="width: 200px" value=""><span id="explain" style="margin-left:10px;"></span>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+    
+<?PHP $this->_endblock();?>
+<script type="text/javascript">
+	$(function(){
+		document.getElementById("order_no").focus();
+		//扫描阿里单号
+		$('#order_no').on('keyup', function (e) {
+			if (e.keyCode == 13) {
+				$("#explain").html('');
+				$.ajax({
+					url:'<?php echo url('warehouse/printweighttable')?>',
+					type:'POST',
+					data:{order_no:$("#order_no").val()},
+					dataType:'json',
+					success:function(data){
+						if(data.message=="notexist"){
+    						$("#explain").html('单号不存在').css('color','red');
+    						$.sound.play('<?php echo $_BASE_DIR;?>public/sound/danhaobucunzai.mp3');//单号不存在
+						}else if(data.sub_code_count<1){
+    						$("#explain").html('包裹信息不存在').css('color','red');
+    						$.sound.play('<?php echo $_BASE_DIR;?>public/sound/shujubuwanzheng.mp3');//包裹信息不完整
+						}else if(data.sub_code_count==1){
+    						$("#explain").html('一票一件包裹无需打印重量对比表').css('color','red');
+    						$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yichang.mp3');
+						}else{
+							var file_path="C:\\Users\\admin\\Pictures\\";
+							for(wt=1;wt<=Math.ceil((data.sub_code_count-1)/14);wt++){
+								AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/weighttable.xml?v=1");
+								AF.func("SetSource", "ds1 \r\n "+"<?php echo url('warehouse/weighttable')?>?ali_order_no="+data.ali_order_no+"&page="+wt);
+								switchPrinter('P1606dn');
+								AF.func("Calc", ""); //填充数据
+								AF.func("callfunc", "105\r\nType=pdf; Scale=100;ExportAsPrint=true;filename="+ file_path + data.tracking_no + "_weight_table.pdf");
+								AF.func("Print", "isOpenSysDialog=false");
+							}
+							$("#explain").html('成功').css('color','green');
+    						$.sound.play('<?php echo $_BASE_DIR;?>public/sound/chenggong.mp3');
+						}
+						$("#order_no").select();
+					}
+				})
+			}
+		});
+	})
+	/**
+	 * 切换打印机
+	 * 例如 switchPrinter('EMS')，找到打印机名字中带 EMS的打印机并指定
+	 */
+	function switchPrinter(printerName){
+		var printers=AF.func("GetPrinters").split(',');
+		//搜索打印机
+		for (i in printers){
+			if(typeof(printers[i]) == 'string' ){
+				if (printers[i].indexOf(printerName)>-1){
+					printerName=printers[i];
+				}
+			}
+		}
+		var setting=AF.func("GetProp", "Print");
+		// console.log(setting);
+		if (setting.indexOf('<Printer>') > -1){
+			setting=setting.replace(/<Printer>.*?<\/Printer>/mg,'<Printer>'+printerName+'</Printer>');
+		}else {
+			setting=setting.replace('<PrintPage>',"<PrintPage>\r\n<Printer>"+printerName+'</Printer>');
+		}
+		// console.log(setting);
+		AF.func("SetProp", "Print \r\n" + setting);
+	}
+</script>
+

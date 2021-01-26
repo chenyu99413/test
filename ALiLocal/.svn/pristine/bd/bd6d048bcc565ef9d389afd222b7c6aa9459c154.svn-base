@@ -1,0 +1,242 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>首页<?php $this->_endblock(); ?>
+<?PHP $this->_block('head');?>
+<style>
+#dashLeft .nav>li {
+	float: left;
+	height: 150px;
+	width: 140px;
+}
+
+#dashLeft .nav>li>a {
+	color: black;
+}
+
+#dashLeft .nav>li>a:hover {
+	background: white;
+}
+</style>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php if(!empty($abnormal_state)):?>
+	<div class="row">
+		<div class="span12">
+			<div class="alert alert-error">
+				<a target="_blank" href="<?php echo url_standard('waybill/search',array('parameters'=>'profitCal','abnormal_state'=>array('到付拒付','到付已付','到付转预付','税金'),'nodate'=>1))?>">
+				有<?php echo $abnormal_state?>票包裹到付拒付，利润分析需要重新做。
+				</a>
+			</div>
+		</div>
+	</div>
+<?php endif;?>
+<div class="row">
+	<div class="span6">
+		<div class="alert alert-error">
+			<a href="<?php echo url('customs/search',array('parameters'=>'contract_expire'))?>">
+			有<?php echo Customs::find ()
+				->where ( "department_id in(?) and contract_expiration_date between ? And ? And contract_code is not null And contract_code != '' And contract_date is not null And contract_date!= '' ",
+					RelevantDepartment::departmentids(),
+					 date ( 'Y-m-d H:i:s' ),
+					 date ( "Y-m-d H:i:s", strtotime ( "+30days" ) ) )->getCount ()?> 个客户合同快到期，有 
+					 <?php echo Customs::find ()
+					 ->where ( "department_id in(?) and contract_expiration_date < ? And contract_code is not null And contract_code!= '' And contract_date is not null And contract_date!= '' And status !='1' ",
+					 	RelevantDepartment::departmentids(), date ( 'Y-m-d H:i:s' ) )->getCount ()?>个客户合同已过期(合作)，有
+				 	<?php echo Customs::find ()
+					 ->where ( "department_id in(?) and contract_expiration_date < ? And contract_code is not null And contract_code!= '' And contract_date is not null And contract_date!= '' And status ='1' ",
+					 	RelevantDepartment::departmentids(), date ( 'Y-m-d H:i:s' ) )->getCount ()?>个客户合同已过期(不合作)
+			</a>
+		</div>
+	</div>
+	<?php if(MyApp::checkVisible ( "product/search" )):?>
+	<div class="span3">
+		<div class="alert alert-error">
+		<a href="<?php echo url('product/search')?>">
+			有<?php echo Product::find ()
+				->where ( " fail_date between ? And ? ",
+					 date ( 'Y-m-d H:i:s' ),
+					 date ( "Y-m-d H:i:s", strtotime ( "+7days" ) ) )->getCount ()?> 个产品即将到期
+		</a>
+		</div>
+	</div>
+	<?php endif;?>
+</div>
+<div class="row" style="height: 450px;">
+	<div class="span6" id="dashLeft">
+		<h4>功能列表</h4>
+		<div class="span6" >
+			<?php
+			$m = Q::control ( 'menu', 'description', '' );
+			$m = str_replace ( "<li><a href='/index.php?controller=user'>工作台</a></li>", '', $m );
+			$m = str_replace ( "<li><a href='/Far800Express/index.php?controller=user'>工作台</a></li>", '', $m );
+			
+			echo str_replace ( 'dropdown', '', $m );
+			?>
+		</div>
+	</div>
+	<div class="span3">
+		<div class="easyui-panel" title="快速查单"  >
+			<form action="<?php echo url('waybill/search')?>" method="post" style="margin: 5px 0 5px 10px">
+			<input name="waybill_code" type="text" placeholder="运单号">
+			<input type="submit" value="查询" class="btn btn-small">
+			</form>
+		</div>
+		<?php if (count($unSigns)):?>
+		<div id="tt7">
+			<a href="<?php echo url('waybill/search',array('start_date'=>date('Y-m-d',strtotime('-60days')),'end_date'=>date('Y-m-d',strtotime('-8days')),'sign_flag'=>'0'))?>" class="icon-search" title="查找全部"></a>
+			<a href="#" class="icon-x"></a>
+		</div>
+		<div class="easyui-panel" title="7天前未签收运单（共 <?php //echo $unSignsCount['record_count']?>）" data-options="tools:'#tt7'" >
+			<ul style="margin: 5px 0 5px 10px;list-style: inside;">
+				<?php foreach ($unSigns as $wb):?>
+				<li>
+				<a target="_blank" href="<?php echo url('waybill/edit',array('id'=>$wb->waybill_id))?>"><?php echo $wb->waybill_code?></a> 
+				<i style="color: gray"><?php echo Helper_Util::strDate('Y-m-d', $wb->record_order_date)?></i>
+				</li>
+				<?php endforeach;?>
+			</ul>
+		</div>
+		<?php endif?>
+		<br>
+		<div class="easyui-panel" title="最新燃油" >
+			<table class="FarTable" style="margin: 5px;width:90%;">
+			<thead>
+			<tr>
+				<th>网络</th>
+				<th>燃油</th>
+				<th>到期</th>
+			</tr>
+			</thead>
+			<?php
+			$baf_k=$baf_r=array('UPS'=>0,'DHL'=>0,'FEDEX'=>0);
+			foreach ($bafs as $b){
+				$baf_k[$b->network->network_code]=$b->fail_date;
+				$baf_r[$b->network->network_code]=$b->price_rates;
+			} 
+			?>
+			<tbody>
+			<?php foreach ($baf_r as $k=> $v):?>
+			<tr>
+				<td><?php echo $k?></td>
+				<td><?php echo $v?></td>
+				<td>
+					<?php if ($baf_k[$k]==0):?>
+					<span class="label label-important">未设置燃油</span>
+					<?php else:?>
+					<?php
+					$f=strtotime($baf_k[$k]);
+					if ($f - time()<3*86400){
+						$newer=Baf::find('network_id =? and effective_date >=?',$networks[$k]->network_id,date('Y-m-d',$f))->getOne();
+						if ($newer->isNewRecord()){
+							echo '<span class="label label-important">'.date('Y-m-d',$f).'</span>';
+						}else {
+							echo date('Y-m-d',$f);
+						}
+					} else {
+						echo date('Y-m-d',$f);
+					}
+					?>
+					<?php endif?>
+				</td>
+			</tr>
+			<?php endforeach;?>
+			</tbody>
+			</table>
+		</div>
+	</div>
+	<div class="span3">
+		<a target="_blank" href="http://barscaner.far800.com/"><i class="icon-bar-chart"></i>&nbsp;无线巴枪数据</a>
+		<a style="display: inline-block;margin-left: 35px;" target="_blank" href="http://mail.farlogistics.com">
+			<i class="icon-envelope"></i>&nbsp;进入企业邮箱
+		</a>
+		
+		
+		<hr>
+		<div id="YOUDAO_DICTER_WRAPPER"
+			style="margin: 0; border: 0; padding: 0; width: 220px; height: 240px;"></div>
+		<br>
+		<div class="easyui-panel" title="海关编码HSCODE查询"
+			style="width: 240px; padding: 10px;">
+			<form action="http://www.hsbianma.com/search" target="_blank"
+				method="get">
+				<input required="required" name="keywords" autocomplete="off" style="width: 150px"
+					maxlength="30" value="" placeholder="请输入商品名称" tabindex="1">
+				<input type="submit" id="sou" value="查询" class="s_btn" tabindex="3">
+			</form>
+		</div>
+	</div>
+</div>
+<div class="row">
+	<div class="span12">
+		<h4>S1 班车情况</h4>
+			<?php
+			$data = Waybill::find ( "record_order_date >= ? and record_order_date <= ? and department_abbreviation is not null and department_abbreviation != '' and department_id in (?) and sort = 'S1'", Helper_Util::strDate ( "Y-m-d 00:00:00", time () ), Helper_Util::strDate ( "Y-m-d 23:59:59", time () ), RelevantDepartment::departmentids () )->group ( "department_abbreviation" )->setColumns ( "department_abbreviation" )->getAll ();
+			foreach ( $data as $value ) :
+				?>
+				<table class="FarTable"
+			style="width: 350px; float: left; margin: 5px;">
+			<thead>
+				<tr>
+					<th nowrap="nowrap"><?php echo $value["department_abbreviation"]?></th>
+					<th width=>文件</th>
+					<th width=>包裹</th>
+					<th width=>ESF</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>UPS</td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'S1' and network_code = 'UPS' and department_abbreviation = ? and (boxing_category = 'L' or boxing_category = 'D')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->getAll(); echo $result["row_count"];?></td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'S1' and network_code = 'UPS' and department_abbreviation = ? and (boxing_category = 'P1' or boxing_category = 'P2')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->sum("item_count","sum_count")->sum("actual_weight","sum_weight")->getAll(); echo $result["row_count"]."票/".$result["sum_count"]."件/".$result["sum_weight"]."kg";?></td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'S1' and network_code = 'UPS' and department_abbreviation = ? and (boxing_category = 'ESF')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->sum("item_count","sum_count")->sum("actual_weight","sum_weight")->getAll(); echo $result["row_count"]."票/".$result["sum_count"]."件/".$result["sum_weight"]."kg";?></td>
+				</tr>
+				<tr>
+					<td>非UPS</td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'S1' and network_code != 'UPS' and department_abbreviation = ? and (boxing_category = 'L' or boxing_category = 'D')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->count("boxing_category")->getAll(); echo $result["row_count"];?></td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'S1' and network_code != 'UPS' and department_abbreviation = ? and (boxing_category = 'P1' or boxing_category = 'P2')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->sum("item_count","sum_count")->sum("actual_weight","sum_weight")->getAll(); echo $result["row_count"]."票/".$result["sum_count"]."件/".$result["sum_weight"]."kg";?></td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'S1' and network_code != 'UPS' and department_abbreviation = ? and (boxing_category = 'ESF')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->sum("item_count","sum_count")->sum("actual_weight","sum_weight")->getAll(); echo $result["row_count"]."票/".$result["sum_count"]."件/".$result["sum_weight"]."kg";?></td>
+				</tr>
+			</tbody>
+		</table>
+		<?php endforeach;?>
+	</div>
+</div>
+<div class="row">
+	<div class="span12">
+		<h4>D3 班车情况</h4>
+				<?php
+				$data = Waybill::find ( "record_order_date >= ? and record_order_date <= ? and department_abbreviation is not null and department_abbreviation != '' and department_id in (?) and sort = 'D3'", Helper_Util::strDate ( "Y-m-d 00:00:00", time () ), Helper_Util::strDate ( "Y-m-d 23:59:59", time () ), RelevantDepartment::departmentids () )->group ( "department_abbreviation" )->setColumns ( "department_abbreviation" )->getAll ();
+				foreach ( $data as $value ) :
+					?>
+					<table class="FarTable"
+			style="width: 350px; float: left; margin: 5px;">
+			<thead>
+				<tr>
+					<th nowrap="nowrap"><?php echo $value["department_abbreviation"]?></th>
+					<th width=>文件</th>
+					<th width=>包裹</th>
+					<th width=>ESF</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>UPS</td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'D3' and network_code = 'UPS' and department_abbreviation = ? and (boxing_category = 'L' or boxing_category = 'D')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->getAll(); echo $result["row_count"];?></td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'D3' and network_code = 'UPS' and department_abbreviation = ? and (boxing_category = 'P1' or boxing_category = 'P2')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->sum("item_count","sum_count")->sum("actual_weight","sum_weight")->getAll(); echo $result["row_count"]."票/".$result["sum_count"]."件/".$result["sum_weight"]."kg";?></td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'D3' and network_code = 'UPS' and department_abbreviation = ? and (boxing_category = 'ESF')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->sum("item_count","sum_count")->sum("actual_weight","sum_weight")->getAll(); echo $result["row_count"]."票/".$result["sum_count"]."件/".$result["sum_weight"]."kg";?></td>
+				</tr>
+				<tr>
+					<td>非UPS</td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'D3' and network_code != 'UPS' and department_abbreviation = ? and (boxing_category = 'L' or boxing_category = 'D')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->count("boxing_category")->getAll(); echo $result["row_count"];?></td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'D3' and network_code != 'UPS' and department_abbreviation = ? and (boxing_category = 'P1' or boxing_category = 'P2')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->sum("item_count","sum_count")->sum("actual_weight","sum_weight")->getAll(); echo $result["row_count"]."票/".$result["sum_count"]."件/".$result["sum_weight"]."kg";?></td>
+					<td style="text-align: center;"><?php $result = Waybill::find("record_order_date >= ? and record_order_date <= ? and sort = 'D3' and network_code != 'UPS' and department_abbreviation = ? and (boxing_category = 'ESF')", Helper_Util::strDate("Y-m-d 00:00:00", time()), Helper_Util::strDate("Y-m-d 23:59:59", time()), $value["department_abbreviation"])->count("boxing_category")->sum("item_count","sum_count")->sum("actual_weight","sum_weight")->getAll(); echo $result["row_count"]."票/".$result["sum_count"]."件/".$result["sum_weight"]."kg";?></td>
+				</tr>
+			</tbody>
+		</table>
+		<?php endforeach;?>
+	</div>
+</div>
+<script type="text/javascript"
+	src="http://fanyi.youdao.com/openapi.do?keyfrom=FarService&key=365254590&type=dicter&version=1.2&select=off&translate=on"
+	charset="utf-8"></script>
+<?PHP $this->_endblock();?>
+

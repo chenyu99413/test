@@ -1,0 +1,61 @@
+<?php
+class Controller_Department extends Controller_Abstract {
+	
+	/**
+	 * 初始化
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 检索
+	 */
+	function actionSearch() {
+		$this->_view ["departments"] = Department::find ( "department_id in (?)", RelevantDepartment::departmentids () )->order ( 'super_department,convert(abbreviation using gbk) ASC' )
+			->getAll ();
+	}
+	
+	/**
+	 * 编辑
+	 */
+	function actionEdit() {
+		//获取部门
+		$department = new Department ();
+		if (request ( "id" ) != null) {
+			$department = Department::find ( "department_id = ?", request ( "id" ) )->getOne ();
+		}
+		
+		//提交部门
+		if (request_is_post ()) {
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			
+			//部门
+			if (request ( "department" ) != null || strlen ( request ( "department" ) ) > 0) {
+				$department->changeProps ( request ( "department" ) );
+				$department->save ();
+			}
+			
+			//取件地
+			if (request ( "areas" ) != null || strlen ( request ( "areas" ) ) > 0) {
+				Area::meta ()->destroyWhere ( "department_id = ?", $department->department_id );
+				foreach ( json_decode ( request ( "areas" ) ) as $value ) {
+					$area = new Area ();
+					$area->department_id = $department->department_id;
+					$area->changeProps ( $value );
+					$area->save ();
+				}
+			}
+			
+			//可用部门
+			$relevantDepartment = new RelevantDepartment ();
+			$relevantDepartment->user_id = $this->_login_user ['user_id'];
+			$relevantDepartment->department_id = $department->department_id;
+			$relevantDepartment->save ();
+			
+			$conn->completeTrans ();
+			return $this->_redirectMessage ( "部门保存", "保存成功", url ( "department/search" ) );
+		}
+		$this->_view ["department"] = $department;
+	}
+}

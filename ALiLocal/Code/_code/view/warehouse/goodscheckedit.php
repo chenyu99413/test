@@ -1,0 +1,211 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php echo Q::control ( 'path', '', array (
+		'path' => array (
+			'仓库业务' => '',
+			'随货单证核查' => url ( '/goodscheck' ),
+			'随货单证扫描' => ''
+		) 
+	) );
+?>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.sound.js"></script>
+<?php 
+	$d = array();
+	$i=1;
+	$first_key='';
+	if(MyApp::currentUser('department_id')=='23'){
+	    $first_key='青岛 FedEx';
+	    $d['青岛 FedEx'] = '青岛 FedEx';
+	    $d['中美经济专线'] = '中美经济专线';
+	    $d['FAR中美-美东'] = 'FAR中美-美东';
+	    $d['FAR中美-美西'] = 'FAR中美-美西';
+	    $d['香港DHL'] = '香港DHL';
+	}else {
+    	foreach(Order::channelgroup() as $k => $v){
+    	    if($i=='1'){
+    	        $first_key=$k;
+    	    }
+    		$d[$k] = $k;
+    		$i++;
+    	}
+	}
+?>
+<?php if(count(@$order_id)):?>
+<span style="font-size: 20px">未成功的：(<?php echo count(@$order_id)?>)</span><a href="<?php echo  url('/totallist')?>" style="font-size: 20px;float: right">返回</a><br>
+	<table class="table table-bordered">
+		<tr>
+			<th>阿里单号</th>
+			<th>系统单号</th>
+			<th>包裹号</th>
+		</tr>
+		<?php foreach ($order_id as $v):?>
+		<tr>
+			<td><?php echo $v['ali_order_no']?></td>
+			<td><?php echo $v['far_no']?></td>
+			<td><?php echo $v['sub_code']?></td>
+		</tr>
+		<?php endforeach;?>
+	</table>
+<?php else :?>
+<form action="" method="post" onsubmit="return checkdata();">
+<table class="table table-bordered checkin-table-1" style="margin-bottom: 10px;margin-left:130px;width:880px;">
+	<tbody>
+		<tr>
+		    <th style="width: 100px;" class='required-title'>随货总单号</th>
+			<td style="width: 200px;">
+			<input type="text" style="width: 200px;" name="goods_check_no" id="goods_check_no" value="<?php //echo $check->goods_check_no?>" readonly="readonly">
+			<input type="hidden" name="goods_check_id" id="goods_check_id" value="<?php echo request('goods_check_id')?>" readonly="readonly">
+			</td>
+			<th style="width: 100px;" class='required-title'>渠道分组</th>
+			<td style="width: 120px;">
+				<?php
+				echo Q::control ( 'dropdownlist', 'account', array (
+					'items' => $d,
+					//'value' => Channelgroup::find('channel_group_id=?',$check->channel_group_id)->getOne()->channel_group_name,
+					'style' => 'width: 120px'
+				) )?>
+			</td>
+		</tr>
+	</tbody>
+</table>
+<div class="row-fluid" style="width:100%;margin-left:10%">
+	<div class="span8">
+		<table class="table table-bordered">
+			<tr>
+				<th>扫描货件（子单号）（总件数）<span id="goods_count">（0）</span></th>
+				<th>核对成功
+				<input type="submit" class="btn btn-sm btn-info" value="提交"><span style="float:right" id="id3_count">（0）</span></th>
+				<th>一票多件单号不全<span id="id2_count">（0）</span></th>
+				<th>其他错误<span id="id1_count">（0）</span></th>
+			</tr>
+			<tr>
+				<td><textarea style="width:200px; height:350px" id="goods"><?php /*foreach($item as $v){echo $v.'&#10;';}*/ ?></textarea></td>
+				<td><textarea style="width:200px; height:350px" id="id3" name="sub_code" readonly></textarea></td>
+				<td><textarea style="width:200px; height:350px" id="id2" readonly></textarea></td>
+				<td><textarea style="width:200px; height:350px" id="id1" readonly></textarea></td>
+			</tr>
+		</table>
+	</div>
+</div>   
+</form>
+<?php endif;?>
+<?PHP $this->_endblock();?>
+<script>
+$(function(){
+	document.getElementById("goods").select();
+})
+$('#goods').bind('keydown',function(e){
+	if(e.which==13){
+		var sub_code = $('#goods').val();
+		var arr1 = sub_code.split('\n');
+		arr1 = arr1.filter(s => $.trim(s).length > 0);
+		$('#goods').val('');
+		$.each(arr1,function(k,v){
+			//IB扫到的单号，例如，420461069205590237757358406483，去掉前八位
+			if(v.substring(0,1)==4 && (v.length == 30 || v.length == 32)){
+				v = v.substring(8);
+			}
+			//FEDEX末端单号第一位是B,去掉
+			if(v.substring(0,1).toUpperCase()=='B'){
+				v = v.substring(1);
+			}
+			//FEDEX末端单号最后是0430D,去掉
+			if(v.substring(v.length-5).toUpperCase()=='0430D'){
+				v = v.substring(0,v.length-5);
+			}
+			//FEDEX末端单号16位且最后是0430
+			if(v.length == 16  && v.substring(v.length-4)=='0430'){
+				v = v.substring(0,v.length-4);
+			}
+			$('#goods').val($('#goods').val()+v+'\n');
+		});
+		$('#goods').val($('#goods').val().trim('\n'));
+		sub_code = $('#goods').val();
+		arr1 = sub_code.split('\n');
+		arr1 = arr1.filter(s => $.trim(s).length > 0);
+// 		return false
+		var account = $('#account').val();
+		var goods_check_id = $('#goods_check_id').val();
+		$.ajax({
+			url:'<?php echo url('warehouse/goodscheckeditajax')?>',
+			type:'POST',
+			dataType:'json',
+			data:{'sub_code' : sub_code,'account':account,'goods_check_id':goods_check_id},
+			//async : false,
+			success:function(data){
+				//每次编辑都先清空原数据
+				$('#id1').val('');
+				$('#id1_count').html('（0）');
+				$('#id2').val('');
+				$('#id2_count').html('（0）');
+				$('#id3').val('');
+				$('#id3_count').html('（0）');
+				console.log(data)
+				if(data.tracking_no1.length != 0){
+					$.each(data.tracking_no1,function(k,v){
+						$('#id1').val($('#id1').val()+v.code+'('+v.msg+')\n')
+						$('#id1_count').html('（'+$("#id1").val().trim('\n').split('\n').length+'）');
+						console.log(arr1[arr1.length-1])
+						console.log(v.code)
+						if(arr1[arr1.length-1] == v.code){
+							$.sound.play('<?php echo $_BASE_DIR?>public/sound/cuowu.mp3');
+						}
+					});
+				}
+				if(data.tracking_no2.length != 0){
+					$.each(data.tracking_no2,function(k,v){
+						$('#id2').val($('#id2').val()+v.code+'\n')
+						$('#id2_count').html('（'+$("#id2").val().trim('\n').split('\n').length+'）');
+						if(arr1[arr1.length-1] == v.code){
+							$.sound.play('<?php echo $_BASE_DIR?>public/sound/cuowu.mp3');
+						}
+					});
+				}
+				if(data.tracking_no3.length != 0){
+					$.each(data.tracking_no3,function(k,v){
+						$('#id3').val($('#id3').val()+v.code+'\n')
+						$('#id3_count').html('（'+$("#id3").val().trim('\n').split('\n').length+'）');
+						if(arr1[arr1.length-1] == v.code){
+							//报关状态
+							if(v.drs){
+								$.sound.play('<?php echo $_BASE_DIR?>public/sound/chenggonggaoguanjian.mp3');
+							}else{
+								$.sound.play('<?php echo $_BASE_DIR?>public/sound/chenggong.mp3');
+							}
+						}
+					});
+				}
+				$('#goods_count').html('（'+$("#goods").val().trim('\n').split('\n').length+'）');
+// 				if(data.tracking_no1.length == 0 && data.tracking_no2.length == 0){
+// 					layer.msg('保存成功')
+//					setTimeout(function(){ window.location.href="<?php echo url('warehouse/goodscheck')?>"; }, 2000);
+					
+// 				}
+			}
+		})
+	}
+})
+	function checkdata(){
+		var id1 = $('#id1').val();
+		var id2 = $('#id2').val();
+		var id3 = $('#id3').val();
+		if(id1!='' || id2!=''){
+			$.messager.alert('', '有错误订单');
+			return false;
+		}
+		if(id3==''){
+			$.messager.alert('', '请先核对订单');
+			return false;
+		}
+		return true
+	}
+
+
+</script>

@@ -1,0 +1,98 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    退件列表
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<div>
+</div>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>
+						创建日期从：
+					</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date" ),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>到</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date"),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>阿里订单号</th>
+					<td>
+						<input name="ali_order_no" type="text" style="width: 150px"
+							value="<?php echo request('ali_order_no')?>">
+					</td>
+					<th>状态类型</th>
+					<td>
+						<?php
+						echo Q::control ( 'dropdownbox', 'return_status', array (
+							'items' => array (
+								'1' => '待退件',
+								'2' => '已退件'
+							),
+							'empty'=>true,
+							'value' => request ( 'return_status' ) 
+						) )?>
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th>No</th>
+				<th>退件编号</th>
+				<th>阿里单号</th>
+				<th>状态</th>
+				<th>发起人</th>
+				<th>发起时间</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php $i=1; foreach ($returnlist as $temp):?>
+			<tr>
+				<td><?php echo $i++ ?></td>
+				<td><a  target="_blank"
+					    href="<?php echo url('order/orderreturn', array('return_id' => $temp->return_id))?>">
+					    <?php echo $temp->return_no ?>
+					</a>
+				</td>
+				<td><?php echo $temp->ali_order_no?></td>
+				<td style="width:70px;"><?php echo $temp->return_status=='1'?"待退件":"已退件"?></td>
+				<td><?php echo $temp->return_operator?></td>
+				<td align="center"><?php echo Helper_Util::strDate('Y-m-d H:i', $temp->create_time)?></td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+</form>
+<script type="text/javascript">
+</script>
+<?PHP $this->_endblock();?>
+

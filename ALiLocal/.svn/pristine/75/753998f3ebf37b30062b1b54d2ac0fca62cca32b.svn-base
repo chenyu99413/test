@@ -1,0 +1,41 @@
+<?php
+/**
+ * 商品编码选择控件
+ *
+ * @author firzen
+ *        
+ */
+class Control_Commodity extends Control_ComboGrid {
+	function _before_render() {
+		$columns = array (
+			array (
+				'field' => 'hs_code',
+				'title' => '商品编码',
+				'width' => 50,
+				'align' => 'center' 
+			),
+			array (
+				'field' => 'commodity_name',
+				'title' => '品名',
+				'width' => 60,
+				'align' => 'center' 
+			),
+			array (
+				'field' => 'unit',
+				'title' => '单位',
+				'width' => 50,
+				'align' => 'center' 
+			),
+			array (
+				'field' => 'regulatory_conditions',
+				'title' => '监管条件',
+				'width' => 50,
+				'align' => 'center' 
+			) 
+		);
+		$this->_attrs ['columns'] = $columns;
+		$this->_attrs ['url'] = url ( 'common/commoditygrid' );
+		$this->_attrs ['textField'] = $this->_extract ( 'textField', 'hs_code' );
+		$this->_attrs ['idField'] = $this->_extract ( 'idField', 'hs_code' );
+	}
+}

@@ -1,0 +1,209 @@
+<?PHP $this->_extends("_layouts/default_layout"); ?>
+<?php $this->_block('title'); ?>渠道成本编辑<?php $this->_endblock(); ?>
+<?PHP $this->_block("contents");?>
+<?php
+
+echo Q::control ( "path", "", array (
+	"path" => array (
+		"产品管理" => "",
+		"产品列表" => url ( "product/search" ),
+		$product->product_name => "",
+		"渠道成本" => url ( "channelcost/search", array (
+			"id" => $product->product_id 
+		) ),
+		"渠道成本信息" => "" 
+	) 
+) )?>
+<div class="container" style="width:100%">
+	<form method="post">
+		<div class="tabs-container">
+			<?php echo Q::control("tabs", "tabs_product", array ("tabs" => $tabs,"active_id" => "4"))?>
+			<div class="tabs-panels">
+				<div class="panel-body panel-body-noheader panel-body-noborder"
+					style="padding: 10px;">
+					<div class="FarSearch">
+						<table>
+							<tbody>
+								<tr>
+									<th class="required-title">渠道</th>
+									<td>
+										<?php
+										echo Q::control ( "dropdownbox", "dropdown_channel", array (
+											"name" => "channelcost[channel_id]",
+											"items" => Helper_Array::toHashmap ( $channel, "channel_id", "channel_name" ),
+											"value" => $channelcost->channel_id,
+											"style" => "width: 150px" 
+										) )?>
+									</td>
+								</tr>
+								<tr>
+									<td colspan="2">
+										<a class="btn btn-samll btn-success" onclick="addtr();"
+											href="javascript:void(0);">
+											<i class="icon-plus"></i>
+											新增渠道成本-价格-分区-偏派体系
+										</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+						
+						<table class="FarTable" id="ChannelcostpprmyTable" style="margin-left:0px;">
+							<thead>
+								<tr>
+									<th width="180px;">渠道成本价格表</th>
+									<th width="180px;">分区表</th>
+									<th width="180px;">偏派表</th>
+									<th width="120px;">生效日期&nbsp;&gt;=</th>
+									<th width="120px;">失效日期&nbsp;&lt;=</th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php $Channelcostpprs= Channelcostppr::find("channel_cost_id=?",$channelcost->channel_cost_id)->getAll()?>
+								<?php if(count($Channelcostpprs)):?>
+								<?php foreach ($Channelcostpprs as $Channelcostppr):?>
+								<tr class="Channelcostppr">
+									<td>
+										<?php
+										echo Q::control ( "dropdownbox", "dropdown_price_manage1", array (
+											"items" => Helper_Array::toHashmap ( PriceManage::find ()->getAll (), "price_manage_id", "price_name" ),
+											"value" => $Channelcostppr->price_manage_id,
+											"style" => "width: 260px",
+											"empty" => "true" 
+										) )?>
+									</td>
+									<td>
+										<?php
+										echo Q::control ( "dropdownbox", "dropdown_partition_manage1", array (
+											"items" => Helper_Array::toHashmap ( PartitionManage::find ()->getAll (), "partition_manage_id", "partition_name" ),
+											"value" => $Channelcostppr->partition_manage_id,
+											"style" => "width: 200px",
+											"empty" => "true" 
+										) )?>
+									</td>
+									<td>
+										<?php
+										echo Q::control ( "dropdownbox", "dropdown_remote_manage1", array (
+											"items" => Helper_Array::toHashmap ( RemoteManage::find ()->getAll (), "remote_manage_id", "remote_name" ),
+											"value" => $Channelcostppr->remote_manage_id,
+											"style" => "width: 180px",
+											"empty" => "true" 
+										) )?>
+									</td>
+									<td>
+										<?php
+										echo Q::control ( "datebox", "datebox_effective_time1_".$Channelcostppr->channel_cost_p_p_r_id, array (
+											"value" => Helper_Util::strDate ( "Y-m-d", $Channelcostppr->effective_time ),
+											"style" => "width: 120px"
+										) )?>
+									</td>
+									<td>
+										<?php
+										echo Q::control ( "datebox", "datebox_invalid_time1_".$Channelcostppr->channel_cost_p_p_r_id, array (
+											"value" => Helper_Util::strDate ( "Y-m-d", $Channelcostppr->invalid_time ),
+										    "style"=>($Channelcostppr->invalid_time < Helper_Util::strDate("Y-m-d",time()))?"color:red;width: 120px":"width: 120px"
+										) )?>
+									</td>
+								</tr>
+								<?php endforeach;?>
+								<?php endif;?>
+								<tr class="Channelcostppr_hidden" style="display:none">
+										<td><?php
+											echo Q::control ( "dropdownbox", "dropdown_price_manage1_0", array (
+												"items" => Helper_Array::toHashmap ( PriceManage::find ()->getAll (), "price_manage_id", "price_name" ),
+												"value" => '',
+												"style" => "width: 260px",
+												"empty" => "true" 
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "dropdownbox", "dropdown_partition_manage1_0", array (
+												"items" => Helper_Array::toHashmap ( PartitionManage::find ()->getAll (), "partition_manage_id", "partition_name" ),
+												"value" => '',
+												"style" => "width: 200px",
+												"empty" => "true" 
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "dropdownbox", "dropdown_remote_manage1_0", array (
+												"items" => Helper_Array::toHashmap ( RemoteManage::find ()->getAll (), "remote_manage_id", "remote_name" ),
+												"value" => '',
+												"style" => "width: 180px",
+												"empty" => "true" 
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "datebox", "datebox_effective_time1_0", array (
+												"value" => '',
+												"style" => "width: 120px",
+											) )?>
+										</td>
+										<td>
+											<?php
+											echo Q::control ( "datebox", "datebox_invalid_time1_0", array (
+												"value" => '',
+												"style" => "width: 120px",
+											) )?>
+										</td>
+									</tr>
+							</tbody>
+						</table>
+					</div>
+					<div class="FarTool text-center">
+						<a class="btn btn-inverse"
+							href="<?php echo url('channelcost/search',array("id"=>$product->product_id))?>">
+							<i class="icon-reply"></i>
+							返回
+						</a>
+						<button type="submit" class="btn btn-primary" onclick="Save();">
+							<i class="icon-save"></i>
+							保存
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<input id="hidden_channelcost_p_r_p" type="hidden" name="Channelcostppr" />
+	</form>
+
+	<script type="text/javascript">
+	/**
+	 * 保存
+	 */
+	function Save(){
+		//渠道成本-价格-偏派-分区表格
+		var json="";
+		var channel_cost_id="<?php echo $channelcost->channel_cost_id;?>";
+		var product_id="<?php echo $channelcost->product_id;?>";
+		var channel_id="<?php echo $channelcost->channel_id;?>";
+		$(".Channelcostppr").each(function(){
+			var price_manage_id=$(this).children().children().eq(0).val();
+			var partition_manage_id=$(this).children().children().eq(1).val();
+			var remote_manage_id=$(this).children().children().eq(2).val();;
+			var effective_time=$(this).children().children().eq(3).children().val();
+			var invalid_time=$(this).children().children().eq(4).children().val();
+				json+='{"channel_cost_id":"'+channel_cost_id
+				+'","product_id":"'+product_id
+				+'","channel_id":"'+channel_id
+				+'","price_manage_id":"'+price_manage_id
+				+'","partition_manage_id":"'+partition_manage_id
+				+'","remote_manage_id":"'+remote_manage_id
+				+'","effective_time":"'+effective_time
+				+'","invalid_time":"'+invalid_time+'"},';
+		});
+		json="["+json.substring(0,json.length-1)+"]";
+		$("#hidden_channelcost_p_r_p").val(json);
+	}
+	//新增渠道成本-价格-偏派-分区表格
+	function addtr(){
+		$(".Channelcostppr_hidden").show();
+		$(".Channelcostppr_hidden").removeClass("Channelcostppr_hidden").addClass("Channelcostppr");
+	}
+</script>
+
+<?PHP $this->_endblock();?>
+

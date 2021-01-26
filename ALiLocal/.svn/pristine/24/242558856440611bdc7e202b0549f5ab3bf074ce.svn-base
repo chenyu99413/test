@@ -1,0 +1,96 @@
+[{"url":"staff\/index","param":null,"name":"工作台","children":null}
+,{"url":"#","param":null,"name":"订单管理","children":
+	[{"url":"order\/search","param":null,"name":"订单列表","children":null}
+	,{"url":"warehouse\/batchupdate","param":null,"name":"批量修改包裹类型","children":null}
+	,{"url":"order\/paddingdata","param":null,"name":"补充数据","children":null}
+	,{"url":"order\/issue","param":null,"name":"问题件列表","children":null}
+	,{"url":"order\/returnlist","param":null,"name":"退件列表","children":null}
+	,{"url":"order\/pictures","param":null,"name":"照片上传","children":null}
+	,{"url":"order\/barcode","param":null,"name":"打印条码","children":null}
+	,{"url":"order\/prealert","param":null,"name":"预报清单","children":null}
+	,{"url":"order\/replacetrackingno","param":null,"name":"替换末端单号","children":null}
+	,{"url":"warehouse\/totaltrack","param":null,"name":"批量轨迹更新","children":null}
+	,{"url":"warehouse\/batchtraceimport","param":null,"name":"批量轨迹导入","children":null}
+	,{"url":"warehouse\/eventimport","param":null,"name":"批量事件导入","children":null}
+	,{"url":"order\/importedit","param":null,"name":"批量修改快递单号","children":null}
+	,{"url":"order\/sendcontact","param":null,"name":"发件人备注项","children":null}
+	,{"url":"order\/headline","param":null,"name":"渠道异常件标签","children":null}
+]}
+,{"url":"#","param":null,"name":"取件业务","children":
+	[{"url":"pickup\/search","param":null,"name":"取件订单列表","children":null}
+	,{"url":"pickup\/pickupnetworkin","param":null,"name":"网点入库","children":null}
+	,{"url":"pickup\/zipcode","param":null,"name":"取件邮编","children":null}
+	,{"url":"pickup\/pickupmember","param":null,"name":"取件员管理","children":null}
+]}
+,{"url":"#","param":null,"name":"仓库业务","children":
+	[{"url":"warehouse\/scantotallist","param":null,"name":"快递扫描","children":null}
+	,{"url":"warehouse\/in","param":null,"name":"包裹入库","children":null}
+	,{"url":"warehouse\/confirmone","param":null,"name":"单票核查","children":null}
+	,{"url":"order\/issuepackagescan","param":null,"name":"扣件扫描","children":null}
+	,{"url":"order\/releaseverify","param":null,"name":"解扣验证","children":null}
+	,{"url":"order\/paymentverify","param":null,"name":"支付验证","children":null}
+	,{"url":"warehouse\/checkout","param":null,"name":"标签打印","children":null}
+	,{"url":"warehouse\/palletlist","param":null,"name":"出库打托","children":null}
+	,{"url":"warehouse\/totallist","param":null,"name":"包裹交货核查","children":null}
+	,{"url":"warehouse\/totaloutlist","param":null,"name":"包裹启程扫描","children":null}
+	,{"url":"warehouse\/totalinlist","param":null,"name":"包裹抵达扫描","children":null}
+	,{"url":"order\/showerrormessage","param":null,"name":"推送订单检查","children":null}
+	,{"url":"warehouse\/printweighttable","param":null,"name":"打印重量对比表","children":null}
+	,{"url":"warehouse\/comparisonexport","param":null,"name":"交货数据导出","children":null}
+	,{"url":"warehouse\/ems","param":null,"name":"EMS数据","children":null}
+	,{"url":"warehouse\/us","param":null,"name":"中美专线数据","children":null}
+	,{"url":"warehouse\/sh","param":null,"name":"中美专线上海出口数据","children":null}
+	,{"url":"warehouse\/codeprint","param":null,"name":"条码打印","children":null}
+	,{"url":"warehouse\/hlimport","param":null,"name":"华磊订单导入","children":null}
+	,{"url":"warehouse\/poslist","param":null,"name":"库位管理","children":null}
+]}
+,{"url":"#","param":null,"name":"基本资料","children":
+	[{"url":"product\/search","param":null,"name":"产品列表","children":null}
+	,{"url":"price\/search","param":null,"name":"价格列表","children":null}
+	,{"url":"partition\/search","param":null,"name":"分区列表","children":null}
+	,{"url":"remote\/search","param":null,"name":"偏派列表","children":null}
+	,{"url":"network\/search","param":null,"name":"网络列表","children":null}
+	,{"url":"channel\/search","param":null,"name":"渠道列表","children":null}
+	,{"url":"supplier\/search","param":null,"name":"供应商列表","children":null}
+	,{"url":"customer\/search","param":null,"name":"客户列表","children":null}
+	,{"url":"account\/sync","param":null,"name":"同步账号","children":null}
+	,{"url":"channel\/channelgroup","param":null,"name":"渠道分组管理","children":null}
+	,{"url":"product\/noserivcezipcode","param":null,"name":"无服务邮编","children":null}
+	,{"url":"product\/blacklist","param":null,"name":"黑名单","children":null}
+	,{"url":"product\/book","param":null,"name":"渠道通讯录","children":null}
+	,{"url":"product\/emailtemplate","param":null,"name":"邮件模板","children":null}
+	,{"url":"product\/automaticemailrule","param":null,"name":"自动邮件规则","children":null}
+	,{"url":"code\/set","param":null,"name":"基础代码管理","children":null}
+	,{"url":"account\/upslist","param":null,"name":"UPS账号管理","children":null}
+]}
+,{"url":"#","param":null,"name":"财务管理","children":
+	[{"url":"statistics\/receivable","param":null,"name":"应收统计","children":null}
+	,{"url":"statistics\/payment","param":null,"name":"应付统计","children":null}
+	,{"url":"statistics\/receivablecost","param":null,"name":"收款","children":null}
+	,{"url":"statistics\/pay","param":null,"name":"付款","children":null}
+	,{"url":"statistics\/route","param":null,"name":"轨迹监控","children":null}
+	,{"url":"statistics\/event","param":null,"name":"事件监控","children":null}
+	,{"url":"statistics\/route3","param":null,"name":"自动忽略报表","children":null}
+	,{"url":"statistics\/sign","param":null,"name":"签收监控","children":null}
+	,{"url":"statistics\/route1","param":null,"name":"时效预警","children":null}
+	,{"url":"statistics\/route2","param":null,"name":"超时效预警","children":null}
+	,{"url":"statistics\/serviceindicators","param":null,"name":"服务指标监控","children":null}
+	,{"url":"order\/chaoshi","param":null,"name":"入库超时","children":null}
+	,{"url":"order\/zhifu","param":null,"name":"支付超时","children":null}
+	,{"url":"order\/yujing","param":null,"name":"三免数据预警","children":null}
+	,{"url":"statistics\/recalculationcost","param":null,"name":"重算收付","children":null}
+	,{"url":"statistics\/editaddressform","param":null,"name":"更改地址报表","children":null}
+	,{"url":"statistics\/picture","param":null,"name":"未上传照片预警","children":null}
+	,{"url":"statistics\/search","param":null,"name":"条件查询","children":null}
+]}
+,{"url":"#","param":null,"name":"系统管理","children":
+	[{"url":"department\/search","param":null,"name":"部门查询","children":null}
+	,{"url":"staff\/search","param":null,"name":"员工查询","children":null}
+	,{"url":"role\/search","param":null,"name":"角色查询","children":null}
+	,{"url":"staff\/matchrules","param":null,"name":"轨迹匹配规则","children":null}
+	,{"url":"staff\/sender","param":null,"name":"发件人查询","children":null}
+	,{"url":"staff\/config","param":null,"name":"关账日设置","children":null}
+	,{"url":"staff\/editlog","param":null,"name":"员工权限修改日志","children":null}
+	
+]}
+]

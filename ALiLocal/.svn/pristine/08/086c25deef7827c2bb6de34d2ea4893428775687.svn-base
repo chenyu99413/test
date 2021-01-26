@@ -1,0 +1,60 @@
+#!/bin/bash
+
+pid_nums1=`ps aux | grep "/bin/bash.*alicronjobs.sh" | grep -v grep | wc -l`
+if [ $pid_nums1 -gt "2" ]
+then
+    echo " I exit"
+    exit
+fi
+#echo  " I do"
+
+function checkprocess(){
+    nowdate=`date +%y%m%d%H`
+    pid_nums="0"
+    pid_nums=`ps aux | grep "$*" | grep -v grep | wc -l`
+    if [ $pid_nums -gt "1" ]
+    then
+        for pid in `ps aux | grep "$*" | grep -v grep|awk '{print $2}'`; do
+          echo "${pid}";
+          rundate=`ps -p "${pid}" -o lstart|grep ':'`;
+          timestamp2=`date +%s -d"$rundate"` ;
+          if [  `expr $timestamp2 + 43200 ` -gt $timestamp1 ]
+          then
+              echo "kill ${pid}"
+              kill -9 "${pid}";              
+          else
+              echo "run ${pid}"
+          fi
+        done
+        echo "  $pid_nums exit $* "
+    fi
+    
+    pid_nums=`ps aux | grep "$*" | grep -v grep | wc -l`
+    if [ $pid_nums -lt "1" ]
+    then
+        echo " $pid_nums  begin $*"
+        if [ "${#4}" -gt "0" ]
+        then
+             php -c/etc/php_cli.ini $@ >> "log/${3:0:124}${4:0:55}_${nowdate}.log" &
+        elif [ "${#3}" -gt "0" ]
+        then
+            php -c/etc/php_cli.ini $@ >> "log/${3:0:124}_${nowdate}.log" &
+        fi
+    fi
+}
+
+# go to www _devel root
+cd  /www/AliExpress/_devel
+
+#获取签收状态
+#checkprocess ../_code/cli.php cron TrackComplete
+
+#sync item
+#for((i=0;i<3;i=i+1))
+#do
+#checkprocess ../_code/cli.php cron syncitem2 3,${i}
+#done
+
+
+# auto read updates log
+#svn log .. -l100 --xml > log/versions.log

@@ -1,0 +1,1 @@
+ALTER TABLE `tb_order` DROP `cainiao_order_no`;

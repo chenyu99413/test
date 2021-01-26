@@ -1,0 +1,1 @@
+ALTER TABLE `tb_zip_code` ADD `province` VARCHAR(6) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '省份：浙江等' AFTER `zip_code_high`;

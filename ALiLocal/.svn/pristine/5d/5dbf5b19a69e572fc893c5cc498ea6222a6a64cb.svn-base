@@ -1,0 +1,128 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+轨迹总单列表
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>创建日期</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date" ),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>到</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date"),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>总单单号</th>
+					<td><textarea rows="1" name="total_list_no" placeholder="每行一个单号"><?php echo request('total_list_no')?></textarea></td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <button class="btn btn-success btn-small" name="addnewtotal" value="addnewtotal">
+			             <i class="icon-plus"></i>
+			                                         新建
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th>No</th>
+				<th>总单单号</th>
+				<th>操作人</th>
+				<th>操作日期</th>
+				<th>创建日期</th>
+				<th>备注</th>
+				<th>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php $i=0; foreach ($total_list as $temp):?>
+			<tr>
+				<td><?php echo ++$i; ?></td>
+				<td>
+				    <a  target="_blank"
+				        href="<?php echo url('warehouse/totaltrackdetail', array('total_list_no' => $temp->total_list_no))?>">
+            					    <?php echo $temp->total_list_no?>
+            	    </a>
+            	</td>
+				<td><?php echo $temp->operation_name?></td>
+				<td><?php echo Helper_Util::strDate('Y-m-d H:i:s', $temp->operation_time)?></td>
+				<td><?php echo Helper_Util::strDate('Y-m-d H:i:s', $temp->create_time)?></td>
+				<td><?php echo $temp->remark?></td>
+				<td>
+				    <?php if(count($temp->totaltracking)==0):?>
+				    <a class="btn btn-mini btn-info" href="<?php echo url('warehouse/bindorder',array('total_list_no' => $temp->total_list_no))?>">
+				                     绑定订单
+				    </a>
+				    <?php endif;?>
+				    <?php if(count($temp->totalordertrack)>0):?>
+				    <a class="btn btn-mini btn-primary" href="<?php echo url('warehouse/totaltracking',array('total_list_no' => $temp->total_list_no))?>">
+				        <i class="icon-edit"></i>              
+				                       轨迹管理
+				    </a>
+				    <?php endif;?>
+				    <button type="button" class="btn btn-mini btn-success edit-modal-bootcss"
+						data-toggle="tooltip" data-placement="top" title="修改备注"
+						data-type="remark"
+						data-url="<?php echo url('warehouse/editmodal',array('total_list_id'=>$temp->total_list_id))?>">
+						<i class="icon-edit"></i>
+						修改
+					</button>
+				</td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+<!-- 弹窗 -->
+<div id="remark_modal" class="modal hide fade" tabindex="-1"
+	style="width: 550px; height:230px;">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+		<h3>备注</h3>
+	</div>
+	<div class="modal-body">-</div>
+</div>
+<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+<script type="text/javascript">
+$("[data-toggle='tooltip']").tooltip();
+//edit modal ( bootstrap )
+$('body').on('click','.edit-modal-bootcss',function(e){
+	e.preventDefault();
+	var type = $(this).data('type');
+	var url = $(this).data('url');
+	var $modal = $('#'+type+'_modal');
+	$modal.modal('show');
+	$modal.find('.modal-body').load(url);
+	// 绑定事件：关闭时清空 modal-body
+	$modal.on('hidden',function(e){
+		$(this).find('.modal-body').html('-');
+	});
+});
+</script>
+<?PHP $this->_endblock();?>
+

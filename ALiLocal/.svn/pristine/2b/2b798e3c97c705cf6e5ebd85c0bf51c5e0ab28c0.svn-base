@@ -1,0 +1,387 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>渠道编辑<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<?php
+if (request('id') != null) {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'渠道管理' => '',
+			'渠道列表' => url ( 'channel/search' ),
+			'渠道编辑' => url ( 'channel/edit', array (
+				'id' => $channel->channel_id 
+			) ) 
+		) 
+	) );
+} else {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'渠道管理' => '',
+			'渠道列表' => url ( 'channel/search' ),
+			'新建渠道' => url ( 'channel/edit' ) 
+		) 
+	) );
+}
+?>
+<form method="post" onsubmit="return Check();">
+	<div class="FarSearch">
+		<table>
+			<tbody>
+				<tr>
+					<th><span class="required-title">渠道名称</span></th>
+					<td><input id="channel_name" required="required" style="width: 100%" type="text"
+						maxlength="50" name="channel[channel_name]"
+						value="<?php  echo $channel->channel_name ?>" /></td>
+					<th>Email</th>
+					<td><input type="email" style="width: 100%; ime-mode: disabled;"
+						maxlength="100" name="channel[channel_contacts_email]"
+						value="<?php  echo $channel->channel_contacts_email ?>" /></td>
+					<td rowspan="5" style="width: 510px; padding-left: 30px;"><strong>备注</strong>
+						<br> <textarea  style="width:550px;height: 90%;"
+							name="channel[remark]"><?php  echo $channel->remark ?></textarea>
+					</td>
+				</tr>
+				<tr>
+					<th>公司全称</th>
+					<td colspan="3"><input style="width: 100%" maxlength="100"
+						type="text" name="channel[channel_company_full_name]"
+						value="<?php  echo $channel->channel_company_full_name ?>" /></td>
+				</tr>
+				<tr>
+					<th>联系人</th>
+					<td><input type="text" style="width: 100%" maxlength="10"
+						name="channel[channel_contacts]"
+						value="<?php  echo $channel->channel_contacts ?>" /></td>
+					<th>联系电话</th>
+					<td><input type="text" style="width: 100%" maxlength="20"
+						name="channel[channel_contacts_tel]"
+						value="<?php  echo $channel->channel_contacts_tel ?>" /></td>
+				</tr>
+				<tr>
+					<th>联系地址</th>
+					<td colspan="3"><input style="width: 100%" maxlength="100"
+						type="text" name="channel[channel_contacts_address]"
+						value="<?php  echo $channel->channel_contacts_address ?>" /></td>
+				</tr>
+				<tr>
+					<td colspan="4">
+					<table class="FarTable" id="waybilltitle" style="width: 100%">
+						<thead>
+							<tr>
+								<th>账单抬头</th>
+								<th width=160>操作</th>
+							</tr>
+						</thead>
+						<tbody>
+						<?php  foreach ($channel->waybilltitle as $waybilltitle): ?>
+						<tr>
+								<td><?php echo $waybilltitle->name;?></td>
+								<td width="100px">
+								<?php if (MyApp::checkVisible("channel-new")):?>
+								   <a class="btn btn-mini" href="javascript:void(0);"
+										onclick="EditRow([{'type':'text','required':'true'}],this);">
+										<i class="icon-pencil"></i>
+										编辑
+									</a>
+									<a class='btn btn-mini btn-danger'
+										onclick="DeleteRow(this);"> <i class='icon-trash'></i> 删除
+									</a>
+								<?php endif;?>
+								</td>
+							</tr>
+						<?php endforeach;?>
+						<?php if (MyApp::checkVisible("channel-new")):?>
+						<tr>
+								<td></td>
+								<td><a class="btn btn-mini btn-success" href="javascript:void(0);"
+									onclick="NewRow([{'type':'text','required':'true'}],this);"> <i
+										class="icon-plus"></i> 新建
+								</a></td>
+							</tr>
+						<?php endif;?>
+						</tbody>
+					</table>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		
+	</div>
+	<div id="tabs_sender" class="easyui-tabs">
+    	<?php foreach ($channel->sender as $sender):?>
+		<div title="<?php echo $sender->sender_account?>"
+			data-options="closable:true" style="padding: 5px 5px 5px 5px">
+			<div class="FarSearch">
+				<table id="<?php echo $sender->sender_id ?>" class="tabs_table">
+					<tr>
+						<th width=100 class="required-title">分账号</th>
+						<td><input
+							id="text_sender_account_<?php echo $sender->sender_id ?>"
+							type="text" value="<?php echo $sender->sender_account ?>"
+							required="required" maxlength="6" onchange="CheckSenderAccount(this);" /></td>
+						<th>主账号</th>
+						<td>
+						<?php
+						echo Q::control ( "dropdownbox", "dropdown_sender_master_account_" . $sender->sender_id, array (
+							"items" => Helper_Array::toHashmap ( $proxys, "main_account", "main_account" ),
+							"value" => $sender->sender_master_account,
+							"style" => "width: 130px" 
+						) )?>
+						</td>
+					</tr>
+					<tr>
+						<th>联系人</th>
+						<td><input
+							id="text_sender_contacts_<?php echo $sender->sender_id ?>"
+							type="text" value="<?php echo $sender->sender_contacts ?>"
+							maxlength="10" /></td>
+						<th>电话</th>
+						<td><input id="text_sender_tel_<?php echo $sender->sender_id ?>"
+							type="text" value="<?php echo $sender->sender_tel ?>"
+							maxlength="20" /></td>
+					</tr>
+					<tr>
+						<th>经营单位编码</th>
+						<td colspan="3"><input type="text"
+							id="text_sender_business_units_code_<?php echo $sender->sender_id ?>"
+							value="<?php echo $sender->sender_business_units_code ?>"
+							pattern="[\w\d]{10}" title="请输入10位经营单位编码" maxlenth="10"
+							style="width: 100%, ime-mode:disabled" placeholder="请输入10位经营单位编码" /></td>
+					</tr>
+					<tr>
+						<th>经营单位名称</th>
+						<td colspan="3"><input
+							id="text_sender_business_units_name_<?php echo $sender->sender_id ?>"
+							type="text"
+							value="<?php echo $sender->sender_business_units_name ?>"
+							maxlength="100" style="width: 70%;" /></td>
+					</tr>
+					<tr>
+						<th>公司名称-中文</th>
+						<td colspan="3"><input
+							id="text_sender_company_name_cn_<?php echo $sender->sender_id ?>"
+							type="text" value="<?php echo $sender->sender_company_name_cn ?>"
+							maxlength="100" style="width: 70%;" /></td>
+					</tr>
+					<tr>
+						<th>公司名称-英文</th>
+						<td colspan="3"><input
+							id="text_sender_company_name_en_<?php echo $sender->sender_id ?>"
+							type="text" value="<?php echo $sender->sender_company_name_en ?>"
+							maxlength="100" style="width: 70%; ime-mode: disabled" /></td>
+					</tr>
+					<tr>
+						<th>发件公司地址</th>
+						<td colspan="3"><input
+							id="text_sender_company_address_<?php echo $sender->sender_id ?>"
+							type="text" value="<?php echo $sender->sender_company_address ?>"
+							maxlength="100" style="width: 70%;" /></td>
+					</tr>
+					<tr>
+						<th>月承诺量</th>
+						<td><input
+							id="text_mounth_promise_<?php echo $sender->sender_id ?>"
+							type="number" value="<?php echo $sender->mounth_promise ?>"
+							maxlength="10" min="0" step="0.01" /></td>
+						<th>到期日期</th>
+						<td>
+						<?php
+						echo Q::control ( 'datebox', 'datebox_expiration_date_' . $sender->sender_id, array (
+							'name' => '',
+							'value' => Helper_Util::strDate ( 'Y-m-d', $sender->expiration_date ) 
+						) )?>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<?php endforeach;?> 
+		<div title="新建发件信息" style="padding: 5px 5px 5px 5px">
+			<div class="FarSearch">
+				<table id="0" class="tabs_table">
+					<tr>
+						<th width=100 class="required-title">分账号</th>
+						<td><input id="text_sender_account_0" type="text" maxlength="6" onchange="CheckSenderAccount(this);" />
+						</td>
+						<th>主账号</th>
+						<td>
+							<?php
+							echo Q::control ( "dropdownbox", "dropdown_sender_master_account_0", array (
+								"items" => Helper_Array::toHashmap ( $proxys, "main_account", "main_account" ),
+								"style" => "width: 130px" 
+							) )?>
+						</td>
+					</tr>
+					<tr>
+						<th>联系人</th>
+						<td><input id="text_sender_contacts_0" type="text" maxlength="10" />
+						</td>
+						<th>电话</th>
+						<td><input id="text_sender_tel_0" type="text" maxlength="20" /></td>
+					</tr>
+					<tr>
+						<th>经营单位编码</th>
+						<td colspan="3"><input id="text_sender_business_units_code_0"
+							type="text" pattern="[\w\d]{10}" title="请输入10位经营单位编码"
+							maxlength="10" style="width: 100%, ime-mode:disabled"
+							placeholder="请输入10位经营单位编码" /></td>
+					</tr>
+					<tr>
+						<th>经营单位名称</th>
+						<td colspan="3"><input id="text_sender_business_units_name_0"
+							type="text" maxlength="100" style="width: 70%;" /></td>
+					</tr>
+					<tr>
+						<th>公司名称-中文</th>
+						<td colspan="3"><input id="text_sender_company_name_cn_0"
+							type="text" maxlength="100" style="width: 70%;" /></td>
+					</tr>
+					<tr>
+						<th>公司名称-英文</th>
+						<td colspan="3"><input id="text_sender_company_name_en_0"
+							type="text" maxlength="100"
+							style="width: 70%; ime-mode: disabled" /></td>
+					</tr>
+					<tr>
+						<th>发件公司地址</th>
+						<td colspan="3"><input id="text_sender_company_address_0"
+							type="text" maxlength="100" style="width: 70%;" /></td>
+					</tr>
+					<tr>
+						<th>月承诺量</th>
+						<td><input id="text_mounth_promise_0" type="number" maxlength="10"
+							min="0" step="0.01" /></td>
+						<th>到期日期</th>
+						<td>
+						<?php echo Q::control ( 'datebox', 'datebox_expiration_date_0', array () )?>
+					</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="FarTool">
+		<a class="btn btn-inverse" href="<?php echo url('channel/search')?>">
+			<i class="icon-reply"></i> 返回
+		</a>
+		<?php if (MyApp::checkVisible("save-channel")):?>
+		<button type="submit" class="btn btn-primary">
+			<i class="icon-save"></i> 保存
+		</button>
+		<?php endif;?>
+	</div>
+	<input type="hidden" id="hidden_sender" name="sender" />
+	<input type="hidden" id="hidden_waybilltitle" name="waybilltitle_name" />
+	<input type="hidden" id="hidden_channels_name" value="<?php echo $channels_name?>" />
+	<input type="hidden" id="hidden_senderaccount" value="<?php echo $senderaccounts?>" />
+</form>
+
+<script type="text/javascript">
+	/**
+	 * 删除
+	 */
+	$("#tabs_sender").tabs({
+		onBeforeClose: function(title){
+			return confirm("确定删除"+title);
+		}
+	});
+
+	/**
+	 * 检查渠道名和发件人分账号是否重复
+	 */
+	function Check(){
+		//渠道名称
+		var temp=$("#hidden_channels_name").val();
+		var channels=temp.split(",");
+		for(var i=0;i<channels.length;i++){
+		    if( $.trim($("#channel_name").val())==channels[i]){
+		    	alert("渠道名称["+$("#channel_name").val()+"]已存在于数据库中，请重新输入");
+	        	$("#channel_name").val("");
+	        	 return false;
+		    }
+		}
+		//页面上输入的分账号是否重复
+		var senderaccounts=new Array();
+		$(".tabs_table").each(function(){
+			var id=$(this).attr("id");
+			var sender_account= $.trim($("#text_sender_account_"+id).val());
+			if(sender_account!=""){
+				senderaccounts.push(sender_account);
+			}
+		});
+		if(IsRepeat(senderaccounts)){
+			alert("发件人分账号在页面上有重复,请重新输入");
+		    return false;
+		}
+	    //分账号已存在于数据库中
+	    var others=$("#hidden_senderaccount").val();
+	    var senderaccounts_other=others.split(",");
+	    for(var i=0;i<senderaccounts_other.length;i++){
+	        for(var j=0;j<senderaccounts.length;j++){
+	            if(senderaccounts_other[i]==senderaccounts[j]){
+	                alert("发件人分账号["+senderaccounts[j]+"]已存在于数据库中，请重新输入");
+	                return false;
+	            }
+	        }
+	    }
+		Save();
+		return true;
+    }
+	
+	/**
+	 * 保存
+	 */
+	function Save(){
+		var json="";
+		$(".tabs_table").each(function(){
+			var id=$(this).attr("id");
+			var sender_account=$("#text_sender_account_"+id).val();
+			var sender_master_account=$("#dropdown_sender_master_account_"+id).val();
+			var sender_contacts=$("#text_sender_contacts_"+id).val();
+			var sender_tel=$("#text_sender_tel_"+id).val();
+			var sender_business_units_code=$("#text_sender_business_units_code_"+id).val();
+			var sender_business_units_name=$("#text_sender_business_units_name_"+id).val();
+			var sender_company_name_cn=$("#text_sender_company_name_cn_"+id).val();
+			var sender_company_name_en=$("#text_sender_company_name_en_"+id).val();
+			var sender_company_address=$("#text_sender_company_address_"+id).val();
+			var mounth_promise=$("#text_mounth_promise_"+id).val();
+			var expiration_date=$("#datebox_expiration_date_"+id).val();
+			if(id==0 && sender_account=="") return true;
+			json+='{"sender_account":"'+sender_account
+				+'","sender_master_account":"'+sender_master_account
+				+'","sender_contacts":"'+sender_contacts
+				+'","sender_tel":"'+sender_tel
+				+'","sender_business_units_code":"'+sender_business_units_code
+				+'","sender_business_units_name":"'+sender_business_units_name
+				+'","sender_company_name_cn":"'+sender_company_name_cn
+				+'","sender_company_name_en":"'+sender_company_name_en
+				+'","sender_company_address":"'+sender_company_address
+				+'","mounth_promise":"'+mounth_promise
+				+'","expiration_date":"'+expiration_date+'"},';
+		});
+		json="["+json.substring(0,json.length-1)+"]";
+		$("#hidden_sender").val(json);
+		
+	    //账单抬头
+	    var json_waybilltitle="";
+	    $("#waybilltitle tr:gt(0):lt("+($("#waybilltitle").find("tr").length-2)+")").each(function(){
+	    	json_waybilltitle += '{"name":"'+$(this).children().eq(0).text()+'"},';
+		});
+	    json_waybilltitle = "[" + json_waybilltitle.substring(0,json_waybilltitle.length-1)+"]";
+		$("#hidden_waybilltitle").val(json_waybilltitle);
+	}
+
+	/**
+	 * 判断数组是否有重复元素
+	 */
+	function IsRepeat(arr){
+	     var hash = {};
+	     for(var i in arr) {
+	         if(hash[arr[i]])
+	             return true;
+	         hash[arr[i]] = true;
+	     }
+	     return false;
+	}
+</script>
+
+<?PHP $this->_endblock();?>

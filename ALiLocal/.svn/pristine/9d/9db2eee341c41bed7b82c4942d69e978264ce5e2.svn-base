@@ -1,0 +1,5 @@
+wss.alias=qz-tray
+wss.keystore=E:\\app\\xampp\\htdocs\\Far800Express\\qz\\auth\\qz-tray.jks
+wss.keypass=ii0ph9nswr
+wss.storepass=ii0ph9nswr
+wss.host=0.0.0.0

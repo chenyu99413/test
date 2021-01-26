@@ -1,0 +1,99 @@
+<?php
+class Controller_Statistics extends Controller_Abstract {
+	/**
+	 * 收付统计
+	 */
+	function actionPayment() {
+		if (request ( 'fee_type', '1' ) == '1') {
+			$order_select = Order::find ();
+			$order_select = $this->paymentOrderSelect ( $order_select );
+			$order_accounts = $order_select->where ( 'ifnull(account,"")!=""' )
+				->distinct ()
+				->setColumns ( 'account' )
+				->getAll ()
+				->getCols ( 'account' );
+
+			$filters = array ();
+			foreach ( $order_accounts as $order_account ) {
+				$filters [] = array (
+					'filter_id' => $order_account,
+					'filter_name' => $order_account
+				);
+			}
+		} else {
+			$filters = array (
+				array (
+					'filter_id' => '',
+					'filter_name' => '阿里巴巴'
+				)
+			);
+		}
+		$this->_view ['filters'] = $filters;
+	}
+	function paymentOrderSelect(QDB_Select $order_select) {
+		$order_select->where ( "tb_order.create_time >= ?", strtotime ( request ( 'start_date', date ( 'Y-' ) . '01-01' ) . ' 00:00:00' ) );
+		$order_select->where ( "tb_order.create_time <= ?", strtotime ( request ( "end_date", date ( 'Y-m-d' ) ) . ' 23:59:59' ) );
+		if (request ( 'ali_order_no' )) {
+			$order_select->where ( 'tb_order.ali_order_no = ?', request ( 'ali_order_no' ) );
+		}
+		if (request ( 'far_no' )) {
+			$order_select->where ( 'tb_order.far_no = ?', request ( 'far_no' ) );
+		}
+		return $order_select;
+	}
+	/**
+	 * Payment Detail
+	 */
+	function actionPaymentDetail() {
+		$page = request_is_post () ? 1 : intval ( request ( 'page', 1 ) );
+		$page_size = intval ( request ( 'page_size', 30 ) );
+		$pagination = null;
+
+		$order_select = Order::find ();
+		$order_select = $this->paymentOrderSelect ( $order_select );
+		$order_select->joinLeft ( 'tb_fee', 'tb_fee.fee_item_code,tb_fee.quantity,tb_fee.amount,tb_fee.create_time as fee_create_time', 'tb_fee.order_id = tb_order.order_id' );
+		$order_select->where ( 'tb_fee.fee_type = ?', request ( 'fee_type', '1' ) );
+		if (request ( 'filter_id' )) {
+			if (request ( 'fee_type', '1' ) == '1') {
+				$order_select->where ( 'tb_order.account = ?', request ( 'filter_id' ) );
+			}
+		}
+
+		$fees = $order_select->limitPage ( $page, $page_size )
+			->fetchPagination ( $pagination )
+			->order ( 'tb_order.order_id desc,tb_fee.create_time desc' )
+			->asArray ()
+			->getAll ();
+
+		$this->_view ['fees'] = $fees;
+		$this->_view ['pagination'] = $pagination;
+
+		$fee_item = Helper_Array::toHashmap ( FeeItem::find ()->setColumns ( 'sub_code,item_name,item_code' )
+			->asArray ()
+			->getAll (), 'sub_code' );
+		$this->_view ['fee_item'] = $fee_item;
+		$channel = Channel::find ()->setColumns ( 'channel_id,channel_name' )
+			->getAll ()
+			->toHashMap ( 'channel_id', 'channel_name' );
+		$this->_view ['channel'] = $channel;
+	}
+	/**
+	 * Payment Total
+	 */
+	function actionPaymentTotal() {
+		$order_select = Order::find ();
+		$order_select = $this->paymentOrderSelect ( $order_select );
+		$order_select->joinLeft ( 'tb_fee', 'tb_fee.fee_item_code,tb_fee.quantity,tb_fee.amount,tb_fee.create_time as fee_create_time', 'tb_fee.order_id = tb_order.order_id' );
+		$order_select->where ( 'tb_fee.fee_type = ?', request ( 'fee_type', '1' ) );
+		if (request ( 'fee_type', '1' ) == '1') {
+			$totals = $order_select->group ( 'account' )
+				->sum ( 'tb_fee.amount', 'sum_amount' )
+				->setColumns ( 'account' )
+				->getAll ();
+		} else {
+			$totals = $order_select->getSum ( 'tb_fee.amount' );
+		}
+
+		$this->_view ['totals'] = $totals;
+	}
+}

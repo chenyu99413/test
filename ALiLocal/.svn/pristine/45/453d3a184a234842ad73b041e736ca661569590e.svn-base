@@ -1,0 +1,244 @@
+<?php
+class Controller_Product extends Controller_Abstract {
+	/**
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 产品一览
+	 */
+	function actionSearch() {
+		$select = Product::find ()->order ( 'product_name' );
+		$this->_view ['products'] = $select->getAll ();
+	}
+	
+	/**
+	 * 产品显示
+	 */
+	function actionEdit() {
+		//产品信息
+		$product = Product::find ( 'product_id = ?', request ( "id" ) )->getOne ();
+		
+		//产品保存
+		if (request_is_post ()) {
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			
+			//产品
+			if (request ( "product" ) != null || strlen ( request ( "product" ) ) > 0) {
+				$product->changeProps ( request ( "product" ) );
+				$product->save ();
+			}
+			//产品-价格-分区-偏派列表
+			if (request ( "productppr" ) != null || strlen ( request ( "productppr" ) ) > 0) {
+				Productppr::meta ()->destroyWhere ( "product_id = ?", $product->product_id );
+				foreach ( json_decode ( request ( "productppr" ) ) as $value ) {
+					$productprp = new Productppr ();
+					$value->effective_time=strtotime($value->effective_time."00:00:00");
+					$value->invalid_time=strtotime($value->invalid_time."23:59:59");
+					$productprp->changeProps ( $value );
+					$productprp->product_id=$product->product_id;
+					$productprp->save ();
+				}
+			}
+			
+			$conn->completeTrans ();
+			return $this->_redirectMessage ( "产品信息", "保存成功", url ( "product/edit", array (
+				"id" => $product->id ()
+			) ) );
+		}
+		$this->_view ["tabs"] = $this::createTabs ( $product );
+		$this->_view ["networks"] = Network::networks ();
+		$this->_view ["product"] = $product;
+	}
+	
+	
+	/**
+	 * 创建标签
+	 *
+	 * @param 产品 $product        	
+	 * @return 标签列
+	 */
+	static function createTabs($product) {
+		if ($product->isNewRecord ()) {
+			return array (
+				array (
+					"id" => "0",
+					"title" => "基本信息",
+					"href" => "" 
+				) 
+			);
+		} else {
+			return array (
+				array (
+					"id" => "0",
+					"title" => "基本信息",
+					"href" => url ( "product/edit", array (
+						"id" => $product->product_id 
+					) ) 
+				),
+				array (
+					"id" => "4",
+					"title" => "渠道成本",
+					"href" => url ( "channelcost/search", array (
+						"id" => $product->product_id 
+					) ) 
+				) 
+			);
+		}
+	}
+	/**
+	 * 保存燃油
+	 */
+	function actionProductfuelsave(){
+	    //燃油附加费
+	    if (request('productfuel')){
+	        $p = request ( "productfuel" );
+	        $productfuel = Productfuel::find ( "product_fuel_id = ?", $p ["product_fuel_id"] )->getOne ();
+	        $productfuel->product_id = request('product_id');
+	        $p['effective_date']=strtotime($p['effective_date']."00:00:00");
+	        $p['fail_date']=strtotime($p['fail_date']."23:59:59");
+	        $productfuel->changeProps ( $p );
+	        $productfuel->save ();
+	        echo ($productfuel->product_fuel_id);
+	    }
+	    exit();
+	}
+	
+	/**
+	 * 燃油删除
+	 */
+	function actionFueldelete() {
+	    if (request ( "product_fuel_id" )) {
+	        $productfuel = Productfuel::find ( "product_fuel_id = ?", request ( "product_fuel_id" ) )->getOne ();
+	        $productfuel->destroy ();
+	    }
+	    exit();
+	}
+	/**
+	 * 无服务邮编
+	 */
+	function actionNoserivcezipcode() {
+	    $noserivce=Noserivcezipcode::find();
+	    //邮编,精确查询
+	    if(request('zip_code')){
+	        $noserivce->where('zip_code = ?',request('zip_code'));
+	    }
+	    //城市,模糊查询
+	    if(request('city')){
+	        $noserivce->where('city like ?','%'.request('city').'%');
+	    }
+	    //国家，精确查询
+	    if(request('country_code')){
+	        $noserivce->where('country_code = ?',request('country_code'));
+	    }
+	    //产品查询
+	    if(request('service_code')){
+	        $noserivce->where('service_code = ?',request('service_code'));
+	    }
+	    $pagination = null;
+	    $noserivcelist=$noserivce->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), 30 )
+	    ->fetchPagination ( $pagination )->order('zip_code_id desc')->getAll();
+	    $this->_view['noserivcelist']=$noserivcelist;
+	    $this->_view['pagination']=$pagination;
+	}
+	/**
+	 * 无服务邮编导入
+	 */
+	function actionImport() {
+	    set_time_limit(0);
+	    if(request_is_post ()){
+	        $errors = array ();
+	        $uploader = new Helper_Uploader();
+	        //检查指定名字的上传对象是否存在
+	        if (! $uploader->existsFile ( 'file' )) {
+	            return $this->_redirectMessage('未上传文件','',url('product/import'));
+	        }
+	        $file = $uploader->file ( 'file' );//获得文件对象
+	        if (! $file->isValid ( 'xls,xlsx' )) {
+	            return $this->_redirectMessage('文件格式不正确：xls、xlsx','',url('product/import'));
+	        }
+	        
+	        $des_dir = Q::ini('upload_tmp_dir');//缓存路径
+	        $filename = $des_dir.DS.date ( 'YmdHis' ).'ExpenseImport.'.$file->extname ();
+	        $file->move ( $filename );
+	        ini_set ( "memory_limit", "3072M" );
+	        $xls = Helper_Excel::readFile ( $filename,true);
+	        $sheet =$xls->toHeaderMap ();
+	        
+	        //删除空单元
+// 	        Helper_Array::removeEmpty ( $sheet );
+	        //导入的表中有数据
+            foreach ($sheet as &$row){
+                if(isset($row ['邮编'])&&isset($row ['城市'])&&isset($row ['国家'])&&isset($row ['产品'])){
+                   if(strlen($row ['产品'])==0){
+                      $row ['状态']='失败';
+                      $row ['信息']='未填写产品';
+                      continue;
+                   }else{
+                      $product = Product::find("product_name = ?",$row ['产品'])->getOne();
+                      if($product->isNewRecord()){
+                         $row ['状态']='失败';
+                         $row ['信息']='产品不存在';
+                         continue;
+                      }
+                      if(strlen($row ['邮编'])==0&&strlen($row ['城市'])==0&&strlen($row ['国家'])==0){
+                         $row ['状态']='失败';
+                         $row ['信息']='邮编、城市、国家必填一个';
+                         continue;
+                      }else{
+                         if(strlen($row ['邮编'])>0){
+                            if(strlen($row ['邮编'])!=5 && strlen($row ['邮编'])!=9){
+                               $row ['状态']='失败';
+                               $row ['信息']='邮编错误';
+                               continue;
+                            }
+                         }
+                         if(strlen($row ['国家'])>0){
+                            $country = Country::find("code_word_two = ?",$row ['国家'])->getOne();
+                            if($country->isNewRecord()){
+                               $row ['状态']='失败';
+                               $row ['信息']='国家二字码错误';
+                               continue;
+                            }
+                         }
+                         $noservice = Noserivcezipcode::find("zip_code = ? and city = ? and country_code = ? and service_code = ?",$row ['邮编'],$row ['城市'],$row ['国家'],$row ['产品'])->getOne();
+                         if(!$noservice->isNewRecord()){
+                            $row ['状态']='失败';
+                            $row ['信息']='已存在';
+                            continue;
+                         }else{
+                            $noservice_code = new Noserivcezipcode();
+                            $noservice_code->zip_code = $row ['邮编'];
+                            $noservice_code->city  = $row ['城市'];
+                            $noservice_code->country_code = $row ['国家'];
+                            $noservice_code->service_code = $row ['产品'];
+                            $noservice_code->save();
+                            $row['状态']='成功';
+                            $row['信息']='';
+                         }
+                      }
+                   }
+                }else{
+                   return $this->_redirectMessage('缺少字段','',url('product/import'));
+                }
+            }
+            $this->_view['sheet']=$sheet;
+	    }
+	}
+	/**
+	 * 删除
+	 */
+	function actionDelete(){
+	    $zip_code_id = request('zip_code_id');
+	    $del_zip_code = Noserivcezipcode::find('zip_code_id = ?',$zip_code_id)->getOne()->destroy();
+	    return $this->_redirect(url('product/noserivcezipcode'));
+	}
+	/**
+	 * 下载
+	 */
+	function actiondownload(){
+	    return $this->_redirect(QContext::instance()->baseDir(). 'public/download/无服务邮编、城市、国家导入模板.xlsx');
+	}
+}

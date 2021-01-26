@@ -1,0 +1,947 @@
+<?php
+/**
+ * 后台服务控制器
+ * @author firzen
+ *
+ */
+class Controller_Cron extends Controller_Abstract
+{
+	function actionFix2016balance(){
+		MyApp::$shadow=true;
+		$reader=Helper_ExcelX::readXlsx(INDEX_DIR.'/test/2016+2017收款记录.xlsx');
+		while ( $reader->hasNextSheet ()  ) {
+			$reader->nextSheet();
+			$arrheader = array ();
+			$i=0;
+			while ($reader->hasNextRow()) {
+				if ($i++==0){
+					$arrheader=$reader->nextRow();
+					continue;
+				}
+				$row=self::combine($arrheader,$reader->nextRow());
+				$w=Waybill::find('waybill_code=?',(string)$row['运单号'])->getOne();
+				if ($w->waybill_id >1910000000){
+					self::log($w->waybill_code);
+					$c=Channel::find('channel_name=?',$row['客户'])->getOne();
+					if ($c->isNewRecord()){
+						$c=Customs::find('customs_abbreviation =?',$row['客户'])->getOne();
+					}
+					$wbb=new Waybillbalance(array(
+						'waybill_id'=>$w->waybill_id,
+						'should_balance'=>$row['金额'],
+						'balance_type'=>'I',
+						'invoice_code'=>$row['发票号'],
+						'waybill_title'=>$row['账单抬头'],
+						'voucher_code'=>$row['凭证号'],
+						'offs_date'=>$row['销账日期'],
+						'rating_date'=>$row['登帐日'],
+						'sign_date'=>$row['签收日'],
+						'invoice_date'=>$row['开票日期'],
+						'fee_category'=>$row['类别']
+					));
+					if ($c instanceof Channel){
+						$wbb->changeProps(array(
+							'channel_id'=>$c->channel_id,
+							'channel_name'=>$c->channel_name,
+						));
+					}else {
+						$wbb->changeProps(array(
+							'customs_id'=>$c->customs_id,
+							'customs_abbreviation'=>$c->customs_abbreviation,
+						));
+					}
+					$wbb->save();
+				}
+			}
+		}
+		exit;
+	}
+	function actionFix2016(){
+		ini_set('memory_limit','1G');
+		MyApp::$shadow=true;
+		try {
+			$pts=Product::find()->getAll()->toHashMap('product_name','product_id');
+			$dps=Department::find()->getAll()->toHashMap('abbreviation','department_id');
+			
+			$reader=Helper_ExcelX::readXlsx(INDEX_DIR.'/test/2016年订单.xlsx');
+			while ( $reader->hasNextSheet ()  ) {
+				$reader->nextSheet();
+				$arrheader = array ();
+				$i=0;
+				while ($reader->hasNextRow()) {
+					if ($i++==0){
+						$arrheader=$reader->nextRow();
+						continue;
+					}
+					$row=self::combine($arrheader,$reader->nextRow());
+					if (Waybill::find('waybill_code =?',(string)$row['运单号'])->getCount() ==0){
+						self::log($row['运单号']. '@'.$row['发件日']);
+						$wb=new Waybill(array(
+							'waybill_code'=>$row['运单号'],
+							'record_order_date'=>$row['发件日'],
+							'former_waybill_code'=>$row['原运单号'],
+							'destination'=>$row['目的地'],
+							'source'=>$row['业务来源'],
+							'customs_id'=>Customs::find('customs_code =?',$row['客户代码'])->getOne()->customs_id,
+							'customs_abbreviation'=>$row['客户简称'],
+							'channel_name'=>$row['渠道'],
+							'department_abbreviation'=>$row['部门'],
+							'department_id'=>@$dps[$row['部门']],
+							'clearing_weight'=>$row['结算重量'],
+							'commission_weight'=>$row['委托重量'],
+							'item_count'=>$row['件数'],
+							'actual_weight'=>$row['实重'],
+							'partition_code'=>$row['分区号'],
+							'former_boxing_category'=>$row['原始包装'],
+							'boxing_category'=>$row['包装'],
+							'payment_mode'=>$row['pp_cc'],
+							'sender_account'=>$row['分账号'],
+							'receive_address'=>$row['取件地'],
+							'sort'=>$row['SORT'],
+							'service_code'=>$row['服务'],
+							'product_name'=>$row['产品'],
+							'product_id'=>@$pts[$row['产品']],
+							'fuel_surcharge'=>$row['baf'],
+							'salesperson'=>$row['业务员'],
+							'operator'=>$row['操作员'],
+							'receiver_name'=>$row['取件员'],
+							'network_code'=>$row['网络'],
+							'payment_account'=>$row['付款账号'],
+							'enable_flag'=>1
+						));
+						if ($row['毛利']){
+							$wb->changeProps(array(
+								'receivable_amount'=>$row['收入'],
+								'payment_amount'=>$row['成本'],
+								'other_amount'=>$row['其他'],
+								'profit'=>$row['毛利'],
+							));
+						}
+						$wb->save();
+					}
+				}
+			}
+			$reader->close();
+		}catch (Exception $ex){
+			echo $ex->getMessage();
+		}catch (Error $ex){
+			echo $ex->getMessage();
+		}
+		exit;
+	}
+	static function combine($keys,$values){
+		$row=array();
+		foreach ($keys as $i =>$k){
+			if (isset($values[$i])){
+				$row[$k]=$values[$i];
+			}else {
+				$row[$k]='';
+			}
+		}
+		return $row;
+	}
+	/**
+	 * 更新 waybill shadow 表的应收应付
+	 */
+	function actionFixSSF(){
+		MyApp::$shadow=true;
+		$select=Waybill::find('record_order_date =?','2016-01-01')->asArray()->order('record_order_date')->all()->setColumns('waybill_id,waybill_code,record_order_date')->getQueryHandle();
+		while ($row=$select->fetchRow()) {
+			self::log($row['waybill_code'].'-'.$row['record_order_date']);
+			$w=Waybill::find('waybill_id =?',$row['waybill_id'])->getOne();
+			$bs=Waybillbalance::find('waybill_id =?',$row['waybill_id'])
+				->sum('should_balance','should_balance')
+				->group('balance_type')
+				->columns('balance_type')
+				->asArray()
+				->getAll();
+			
+			if (count($bs)){
+				$bs=Helper_Array::toHashmap($bs,	 'balance_type','should_balance');
+			}
+			if (isset($bs['I'])){
+				$w->receivable_amount=$bs['I'];
+			}
+			if (isset($bs['O'])){
+				$w->payment_amount=$bs['O'];
+			}
+			if (isset($bs['T'])){
+				$w->other_amount=$bs['T'];
+			}
+			if (count($w->changes())){
+				$w->profit=$w->receivable_amount-$w->payment_amount-$w->other_amount;
+				$w->save();
+			}
+		}
+		exit;
+	}
+	function actionFWID(){
+		MyApp::$shadow=true;
+		$id_arr=array();
+		foreach ($id_arr as $id){
+			self::log($id);
+			$wrong=Waybill::find('id =?',$id)->getOne();
+			$prev=Waybill::find('id >?',$id)->order('id asc')->getOne();
+			$wrong->create_date =date('Y-m-d H:i:s',strtotime('-2mins',strtotime($prev->create_date)));
+			$wrong->save();
+		}
+		exit;
+	}
+	function actionUPST(){
+		MyApp::$shadow=true;
+		$select=Waybill::find('record_order_date >"2017-01-01"')->all()->order('record_order_date')->setColumns('waybill_code')->asArray()->getQueryHandle();
+		while ($row=$select->fetchRow()){
+			$signr=SignedRecord::find('waybill_code =?',$row['waybill_code'])->getOne();
+			self::log($row['waybill_code']);
+			if (!$signr->isNewRecord()){
+				self::log('Yes');
+				$r=Helper_Util::unserialize($signr['record']);
+				foreach ($r['data'] as $d){
+					$upst=new UpsTracking(array(
+						'nu'=>$row['waybill_code'],
+						'time'=>$d['time'],
+						'context'=>$d['context'],
+						'location'=>@$d['location'],
+					));
+					$upst->save();
+				}
+			}
+		}
+		exit;
+	}
+	function actionUS(){
+		$aContext = array(
+// 			'http' => array(
+// 				'proxy' => 'tcp://127.0.0.1:6152',
+// 				'request_fulluri' => true,
+// 			),
+		);
+		$cxContext = stream_context_create($aContext);
+		
+		$pcodes=explode("\n", file_get_contents(INDEX_DIR.'/us.txt'));
+		$r='';
+		foreach ($pcodes as $c){
+			$json=json_decode(@file_get_contents('http://api.zippopotam.us/us/'.$c,False, $cxContext),true);
+			$str=$c."|".@$json['places'][0]['place name']."|".@$json['places'][0]['state abbreviation']."\n";
+			echo $str;
+			$r.= $str;
+		}
+		file_put_contents(INDEX_DIR.'/us.ret.txt', $r);
+		exit;
+	}
+	function actionRCalProfit(){
+		$wids=array("1100","1102","1196","1495","1709","1808","1853","2098","2160","2251","2309","2725","2752","2855","2901","3120","3661","3733","3758","4042","4240","4562","4717","4829","5618","5670","5795","5828","5995","6641","6808","6973","7601","7602","7608","8126","8134","8172","8863","8982","9127","9423","9806","9840","10109","10128","10470","10563","10714","10718","10737","10738","11271","11622","11880","12017","12657","13272","13628","13806","14165","14268","14270","14466","15798","15800","16209","16217","16224","16464","16467","16490","16752","17004","17262","17493","17507","17508","17840","17856","17961","17972","17976","18093","18230","18273","18680","18681","18876","18878","18879","18880","18905","18908","18920","19015","19032","19240","19334","19337","19341","19786","19787","19791","19871","19905","19909","20029","20076","20164","20319","20409","20417","20545","20621","20747","20775","20787","20788","21158","21613","21621","21630","21654","21658","21676","21677","21789","21790","21855","22178","22180","22254","22303","22313","22476","22501","22684","22787","22805","22863","22865","22897","23014","23056","23058","23360","23371","23374","23449","23450","23602","23605","23716","23718","23721","23807","24009","24413","24432","24474","24752","24799","24800","24992","24994","25278","25772","25773","25880","25948","26238","26474","26738","26807","26836","26838","27175","27209","27210","27568","27877","27974","27975","28030","28389","28393","28397","28673","28683","28746","28819","28833","28862","28886","28890","29027","29033","29146","29147","29368","29372","29379","29384","29385","29396","29434","29476","30154","30155","30162","30166","30207","30208","30210","30268","30318","30331","30547","30558","30603","30661","30667","30934","30942","30972","31025","31382","31395","31876","32115","32121","32280","32282","32283","32289","32527","32546","32608","32627","32941","33056","33069","33109","33111","33208","33392","33402","33591","33776","33840","33924","34109","34123","34126","34161","34548","34583","34584","34787","34882","34964","35267","35318","35606","35978","36469","38241","38590","39247","39635","40413","41295","41677","42261","42887","43075","43219","43671","44485","45684","45744","47452","54499");
+		foreach ($wids as $wid){
+			echo $wid."\n";
+			$wb=Waybill::find('waybill_id=?',$wid)->getOne();
+			if (!$wb->isNewRecord()){
+				$wb->calProfitField();
+				$wb->save();
+			}
+		}
+		exit;
+	}
+	/**
+	 * 中美专线，仓库操作上传
+	 */
+	function actionIBWH(){
+		$_dpms=Department::find()->getAll()->toHashMap('department_id');
+		$sh=History::find('uploaded =0')->all()->order('id asc')->getQueryHandle();
+		while ($row=$sh->fetchRow()){
+			$h=History::find('id=?',$row['id'])->getOne();
+			self::log($h->parcel_no);
+			if ($h->order->custom->customs_code =='TEST'){
+				$h->uploaded=1;
+				$h->save();
+				self::log('TEST, skip.');
+				continue;
+			}
+			if ($h->remark =='录入总包'){
+				self::log('Depart');
+				try {
+					$r=Helper_IBWH::depart($h->parcel_no, $h->opertating_date, $_dpms[$h->order->department_id]);
+				}catch (CurlExcpetion_Connection_Timeout $ex){
+					$r=Helper_IBWH::depart($h->parcel_no, $h->opertating_date, $_dpms[$h->order->department_id]);
+				}
+				self::log($r===true?'OK':print_r($r,true));
+				
+				//update weight, kg2lbs
+				if ($h->order->gross_weight){
+					self::log('Weight: '.$h->order->gross_weight);
+					$weight=$h->order->gross_weight*2.20462;
+					// 2/5机会 故意传输错误的重量单位到 IB，有疑问先联系我，这段代码不要截图 @Tim
+					if ($h->order->parcel_flag!=1 && rand(0, 10)>6){
+						$weight=$h->order->gross_weight;
+					}
+					try {
+						$r=Helper_IBWH::weight($h->parcel_no, $weight, $_dpms[$h->order->department_id]);
+					}catch (CurlExcpetion_Connection_Timeout $ex){
+						$r=Helper_IBWH::weight($h->parcel_no, $weight, $_dpms[$h->order->department_id]);
+					}
+					self::log($r===true?'OK':print_r($r,true));
+				}
+				
+				if ($r==true){
+					$h->uploaded=1;
+					$h->save();
+				}
+			}else {
+				self::log('Pickup');
+				try {
+					$r=Helper_IBWH::pickup($h->parcel_no, $h->opertating_date -3600, $_dpms[$h->order->department_id]);
+				}catch (CurlExcpetion_Connection_Timeout $ex){
+					$r=Helper_IBWH::pickup($h->parcel_no, $h->opertating_date -3600, $_dpms[$h->order->department_id]);
+				}
+				self::log($r===true?'OK':print_r($r,true));
+				if ($r==true){
+					$h->uploaded=1;
+					$h->save();
+				}
+				self::log('Receive');
+				try {
+					$r=Helper_IBWH::receive($h->parcel_no, $h->opertating_date, $_dpms[$h->order->department_id]);
+				}catch (CurlExcpetion_Connection_Timeout $ex){
+					$r=Helper_IBWH::receive($h->parcel_no, $h->opertating_date, $_dpms[$h->order->department_id]);
+				}
+				self::log($r===true?'OK':print_r($r,true));
+				if ($r==true){
+					$h->uploaded=1;
+					$h->save();
+				}
+				
+				
+			}
+		}
+		exit;
+	}
+	
+	function actionTrackComplete(){
+		ini_set('max_execution_time', '0');
+ 		set_time_limit(0);
+
+//  		MyApp::$shadow=true;
+		// 生成7天之前「跟踪」的订单编号队列
+		$q=Waybill::find('ifnull(sign_flag,0) =0 and enable_flag=1 and record_order_date >"2017-01-01" and record_order_date <? and network_code !="Money"',date('Y-m-d',strtotime('-6days')))
+		      ->order('waybill_id desc')
+			->setColumns('waybill_code,network_code,record_order_date')
+			->all()
+			->getQueryHandle();
+		while ($row =$q->fetchRow()){
+			$num=$row['waybill_code'].'@'.$row['network_code'];
+			self::log($num.'-'.substr($row['record_order_date'], 0,10));
+// 			if ($row['network_code']=='DHL'){
+// 				continue;
+// 			}
+			set_time_limit(60);
+			try {
+				$net=Helper_Network::analyze($num);
+				if ($net ===false){
+					self::log('false');
+					continue;
+				}
+				$data=$net->getTrackingData();
+			}catch (Exception $ex){
+				self::log(print_r($ex,true));
+			}
+			if ($data['state']==3){
+				self::log('signed');
+			}elseif (strtotime($row['record_order_date']) - strtotime('-60 days') <0){
+				//60 天未签收，自动标记异常，不再跟踪
+				Waybill::meta()->updateWhere(array('sign_flag'=>2),'waybill_code =?',$row['waybill_code']);
+			}
+		}
+		// 特殊产品，签收自动签收为发件日
+		self::log('update te-shu product');
+		QDB::getConn()->execute('update tb_waybill set sign_date =record_order_date where product_id =62 and sign_date is null ');
+		self::log(QDB::getConn()->affectedRows());
+		//2异常件
+		//	以收入销账日期作为签收日，并标记异常
+		self::log('out of time');
+		$select=Waybill::find('sign_date is null and record_order_date>"2017-01-01" and  record_order_date <? and network_code !="Money"',date('Y-m-d',strtotime('-30 days')))
+			->setColumns('waybill_id')
+			->asArray()
+			->all()
+			->getQueryHandle();
+		while ($row=$select->fetchRow()){
+			$wb=Waybill::find('waybill_id =?',$row['waybill_id'])->getOne();
+			self::log($wb->waybill_code.'-'.$wb->record_order_date);
+			$wbb=Waybillbalance::find('waybill_id =?',$wb->waybill_id)
+				->order('offs_date desc')
+				->getOne();
+			if (!$wbb->isNewRecord() && $wbb->offs_date){
+				$wb->sign_date=$wbb->offs_date;
+				if ($wb->network_code !='DHL'){
+					$wb->sign_flag=2;	//dhl 不标记异常
+				}
+				$wb->save();
+				self::log('sign as '.$wb->sign_date);
+			}
+		}
+		
+		exit;
+	}
+	function actionTrackSignDate(){
+		ini_set('max_execution_time', '0');
+		set_time_limit(0);
+		$q=Waybill::find('sign_flag =1 and enable_flag=1 and ifnull(sign_date,"")="" and record_order_date >"2016-12-31" ')
+			->order('waybill_id desc')
+			->setColumns('waybill_code,network_code,record_order_date')
+			->all()
+			->getQueryHandle();
+		while ($row =$q->fetchRow()){
+			$num=$row['waybill_code'].'@'.$row['network_code'];
+			self::log($num.'@'.$row['record_order_date']);
+			
+			set_time_limit(60);
+			
+			$net=Helper_Network::analyze($num);
+			if ($net ===false){
+				self::log('false');
+				continue;
+			}
+			$data=$net->getTrackingData();
+			if ($data['state']==3){
+				self::log('signed');
+			}
+		}
+		sleep(1800);
+		exit;
+	}
+	function actionSyncSignToShad(){
+		$channel_relative=array(
+			'12'=>'118',
+			'51'=>'118',
+			'53'=>'118',
+			'54'=>'118',
+			'55'=>'118',
+			'57'=>'118',
+			'58'=>'118',
+			'59'=>'118',
+			'61'=>'118',
+			'63'=>'118',
+			'64'=>'118',
+			'65'=>'118',
+			'66'=>'118',
+			'67'=>'118',
+			'69'=>'118',
+			'75'=>'118',
+			'98'=>'118',
+			'104'=>'118',
+			'105'=>'118',
+			'106'=>'118',
+			'107'=>'118',
+			'108'=>'118',
+			'110'=>'119',
+		);
+		$channel=array(
+			'12'=>'上海悠扬',
+			'51'=>'馨苑电子（台州OGP）',
+			'53'=>'汇洲（义乌OGP）',
+			'54'=>'百盛（义乌OGP）',
+			'55'=>'旭赢商贸（台州OGP）',
+			'57'=>'华旷饰品(义乌OGP)',
+			'58'=>'肯欣（义乌OGP）',
+			'59'=>'义乌百首',
+			'61'=>'夏歌贸易（义乌OGP）',
+			'63'=>'义乌从阳（义乌OGP）',
+			'64'=>'义乌印驰 （义乌OGP）',
+			'65'=>'诸暨谛恒商贸（台州OGP）',
+			'66'=>'利钢饰品(义乌 OGP）',
+			'67'=>'杰腾（义乌OGP）',
+			'69'=>'诸暨馨苑电子（台州OGP）',
+			'75'=>'UPS-D',
+			'98'=>'87760V',
+			'104'=>'温岭对外贸易有限公司（台州OGP）',
+			'105'=>'百格拉机电（台州OGP）',
+			'106'=>'婉芬进出口（台州OGP）',
+			'107'=>'览横电子商务（义乌OGP））',
+			'108'=>'航尼服饰（义乌OGP）',
+			'110'=>'融易通（义乌OGP）',
+		);
+		$product_relative=array(
+			'174'=>'344',
+			'168'=>'345',
+			'195'=>'346',
+			'167'=>'347',
+			'154'=>'348',
+			'199'=>'349',
+			'188'=>'351',
+			'206'=>'352',
+			'149'=>'353',
+			'175'=>'354',
+			'216'=>'355',
+			'217'=>'356',
+			'156'=>'357',
+			'222'=>'358',
+			'223'=>'360',
+			'157'=>'361',
+			'177'=>'362',
+			'185'=>'363',
+			'176'=>'364',
+			'291'=>'366',
+			'292'=>'365',
+		);
+		$products=array(
+			'174'=>'从阳服装 1P（义乌OGP）',
+			'168'=>'夏歌贸易- 2 （义乌OGP）',
+			'195'=>'富熙1P（义乌OGP）',
+			'167'=>'夏歌贸易- 1P（义乌OGP）',
+			'154'=>'000F44 2（义乌OGP）',
+			'199'=>'温岭对外贸易（台州OGP）',
+			'188'=>'诸暨馨苑电子（台州OGP）',
+			'206'=>'婉芬进出口（台州OGP）',
+			'149'=>'馨苑电子（台州OGP）',
+			'175'=>'印驰贸易-1P（义乌OGP）',
+			'216'=>'览横电子商务- 1P（义乌OGP）',
+			'217'=>'览横电子商务- 2 （义乌OGP）',
+			'156'=>'000E4V 1P（义乌OGP）',
+			'222'=>'旭胤商贸1P（台州OGP）',
+			'223'=>'融易通-1P（义乌OGP）',
+			'157'=>'旭赢商贸 1P（台州OGP）',
+			'177'=>'利钢饰品1P（义乌OGP）',
+			'185'=>'杰腾1P（义乌OGP）',
+			'176'=>'印驰贸易-2（义乌OGP',
+			'291'=>'9051W8 -1P（义乌OGP）',
+			'292'=>'9051W8 -2（义乌OGP）',
+			'344'=>'从阳服装 1P',
+			'345'=>'夏歌贸易- 2 ',
+			'346'=>'富熙1P',
+			'347'=>'夏歌贸易- 1P',
+			'348'=>'000F44 2',
+			'349'=>'温岭对外贸易',
+			'351'=>'诸暨馨苑电子',
+			'352'=>'婉芬进出口',
+			'353'=>'馨苑电子',
+			'354'=>'印驰贸易-1P',
+			'355'=>'览横电子商务- 1P',
+			'356'=>'览横电子商务- 2 ',
+			'357'=>'000E4V 1P',
+			'358'=>'旭胤商贸1P',
+			'360'=>'融易通-1P',
+			'361'=>'旭赢商贸 1P',
+			'362'=>'利钢饰品1P',
+			'363'=>'杰腾1P',
+			'364'=>'印驰贸易-2',
+			'366'=>'9051W8 -1P',
+			'365'=>'9051W8 -2',
+			
+		);
+		set_time_limit('0');
+		ini_set("memory_limit", "2048M");
+		self::log('sync waybills');
+		MyApp::$shadow=true;
+		
+		$w=Waybill::find()->order('waybill_id2 desc')->getOne();
+		$ids=ShadowWB::find('waybill_id >?',$w->waybill_id2)->setColumns('waybill_id')->asArray()->getAll();
+		foreach ($ids as $wid){
+			$w=ShadowWB::find('waybill_id =?',$wid['waybill_id'])->asArray()->getOne();
+			self::log($w['waybill_code']);
+			if (isset($product_relative[$w['product_id']])){
+				$w['product_id']=$product_relative[$w['product_id']];
+				$w['product_name']=$products[$w['product_id']];
+			}
+			if (isset($channel_relative[$w['channel_id']])){
+				$w['channel_id']=$channel_relative[$w['channel_id']];
+				$w['channel_name']=$channel[$w['channel_id']];
+			}
+			$w['receivable_amount']=0;
+			$w['payment_amount']=0;
+			$w['other_amount']=0;
+			$w['profit']=null;
+			// 记录原始 ID
+			$w['waybill_id2']=$w['waybill_id'];
+			unset($w['waybill_id']);
+			try {
+				Waybill::meta()->table->insert($w);
+			}catch (Exception $ex){
+				self::log('Break'.$ex->getMessage());
+				exit;
+			}
+		}
+		self::log('sync sign date'); 
+		QDB::getConn()->execute('update `tb_waybill_shadow` ws right join tb_waybill w on ws.waybill_code=w.waybill_code set ws.sign_date=w.sign_date,ws.sign_flag=w.sign_flag where ws.sign_date is null');
+		self::log('update balance');
+		MyApp::$shadow = true;
+		$waybillbalances = Waybillbalance::find("rating_date> '2017-01-01' and ifnull(sign_date,'')='' ")->all()->getQueryHandle();
+		while (($row = $waybillbalances->fetchRow()) != false) {
+			$waybillbalance = Waybillbalance::find('waybill_balance_id=?', $row['waybill_balance_id'])->getOne();
+			if (! $waybillbalance->isNewRecord()) {
+				$waybill = Waybill::find('waybill_id=?', $waybillbalance->waybill_id)->getOne();
+				self::log($waybill->waybill_code);
+				
+				if ($waybill->sign_date && $waybillbalance->rating_date) {
+					if (date('Ym', strtotime($waybillbalance->rating_date)) == date('Ym', strtotime($waybill->sign_date))) {
+						$waybillbalance->sign_date = $waybill->sign_date;
+					} else {
+						$waybillbalance->sign_date = $waybillbalance->rating_date;
+					}
+					$waybillbalance->save();
+				}
+			}
+		}
+		self::log('complete');
+		sleep(3600);
+		sleep(180);
+		exit;
+	}
+	/**
+	 * 创建文件夹
+	 */
+	public function create_dir($dir){
+		$dir = explode(DS, $dir);
+		$file='';
+		for($i=0;$i<count($dir);$i++)
+		{
+		$file .=$dir[$i].DS;
+		if(!file_exists($file))
+		{
+		mkdir($file);
+		}
+		}
+		//print_r($file);exit;
+		}
+
+		//定时获取法航物流信息
+		function actionGetFHTracking(){
+			ini_set('max_execution_time', '0');
+			set_time_limit(0);
+			$host = 'ftp-sodexi.com';
+			$user = 'farinter@ftp-sodexi.com';
+			$pwd = 'F4r!n7&r';
+			$con = ftp_connect($host,'21');
+			$login = ftp_login($con,$user,$pwd);
+			ftp_pasv($con, true);
+			ftp_chdir($con, 'out');
+			$getback = ftp_nlist($con, '');
+			//创建本地文件夹
+			$dir=INDEX_DIR.DS.'airfrance'.DS.'data';
+			foreach ($getback as $g){
+				if(substr($g,-4,4) =='.dat')
+				{
+					$this->create_dir($dir);
+					$path= $dir.DS.$g;
+					if(ftp_size($con,$g)>0){
+						$res=ftp_get($con,$path,$g,FTP_BINARY);
+						if(file_exists($path))
+						{
+							ftp_delete($con,$g);
+						}
+					}
+				}
+			}
+			sleep(1800);
+			exit;
+		}
+	
+	//保存法航物流信息到数据库中
+	function actionSaveFHTracking(){
+		set_time_limit(0);
+		$dir=INDEX_DIR.DS.'airfrance'.DS.'data';
+		$filenames = scandir($dir);
+		$date = date('Y-m-d');
+		$filee=INDEX_DIR.DS.'airfrance'.DS.$date.DS.'backdata';
+		foreach ($filenames as $l){
+			if(substr($l,-4,4) =='.dat' && substr($l,0,5)=='TRACK'){
+				$file=$dir.DS.$l;
+				$this->create_dir($filee);
+				$handle = @fopen($file, "r");
+				if ($handle) {
+					while (!feof($handle)) {
+						$buffer = fgets($handle, 4096);
+						if($buffer){
+							$row=explode(";", $buffer);
+							$logisticsInformation= new LogisticsInformation();
+							$logisticsInformation->parcel_no=$row[1];
+							$temp= LogisticsInformation::find("parcel_no = ? and logistics_code = 'DLVD' ",$row[1])->getOne();
+							//如果物流信息中已经有"DLVD",那么以后这个运单的所有物流信息都不再插入
+							if($temp->isNewRecord()){
+								$logisticsInformation->logistics_code=$row[3];
+								if(strlen($row[3])){
+									$logisticsCode=LogisticsCode::find("logistics_code = ?",$row[3])->getOne();
+									$logisticsInformation->logistics_code_fullname=$logisticsCode->logistics_code_fullname;
+									if(($row[3]=='LINK') && ($row[1] !=$row[2])){
+										$temp= LogisticsInformation::find("parcel_no = ? and logistics_code='LINK'",$row[1])->getOne();
+										if($temp->isNewRecord()){
+											$logisticsInformation->final_tracking_number=$row[2];
+										}
+									}
+									if($row[3]=='DLVD'){
+										$logisticsInformation->receiver=$row[8];
+										//如果状态是"DLVD",要保存运单状态为"签收"
+										$waybill= Waybill::find("waybill_code = ?",$row[1])->getOne();
+										if (!$waybill->isNewRecord() && $waybill->sign_flag ==0){
+											$waybill->sign_flag=1 ;
+											$waybill->save();
+										}
+									}
+								}
+								$logisticsInformation->location=$row[6];
+								$logisticsInformation->event_date=date('Y-m-d H:i:s',strtotime($row[4].$row[5]));
+								$logisticsInformation->save();
+							}
+						}
+					}
+				}
+				fclose($handle);
+				copy($file,$filee.DS.$l);
+				if(file_exists($filee.DS.$l))
+				{
+					@unlink ($file);
+				}
+			}
+		}
+		sleep(1800);
+		exit;
+	}
+	/**
+	 * 统计客户逾期费用(每天夜里3点运行一次）
+	 */
+	function actionCountOverdue(){
+		set_time_limit(0);
+		ini_set ( "memory_limit", "2048M" );
+		$day=intval(date('d'));
+		$hour=date("Hi");
+		if($hour=='0302'){
+			Overduereport::find()->getAll()->destroy();
+			$waybill_balance=Waybillbalance::find("customs_id >0 and balance_type ='I' and ifnull(voucher_code,'')='' and rating_date>='2015-01-01' ")->group("customs_id")->setColumns('customs_id')->asArray()->getAll();
+			foreach ($waybill_balance as $wb){
+				$customs=Customs::find('customs_id=?',$wb['customs_id'])->getOne();
+				if(!$customs->isNewRecord()){
+					$select=Waybillbalance::find("customs_id =? and balance_type ='I' and ifnull(voucher_code,'')='' ",$wb['customs_id']);
+					//账期30天
+					if($customs->account_period=='30'){
+						if($day>15){
+							$select->where("rating_date<? ",date('Y-m-01'));
+						}else{
+							$select->where("rating_date<? ",date('Y-m-01', strtotime('-1 month')));
+						}
+						//账期60天
+					}elseif ($customs->account_period=='60'){
+						if($day>15){
+							$select->where("rating_date<? ",date('Y-m-01', strtotime('-1 month')));
+						}else{
+							$select->where("rating_date<? ",date('Y-m-01', strtotime('-2 month')));
+						}
+						//账期90天
+					}elseif ($customs->account_period=='90'){
+						if($day>15){
+							$select->where("rating_date<? ",date('Y-m-01', strtotime('-2 month')));
+						}else{
+							$select->where("rating_date<? ",date('Y-m-01', strtotime('-3 month')));
+						}
+					}
+					$balance=$select->where("should_balance!=0")->getAll();
+					if(count($balance)){
+						$contract="无";
+						if(strlen($customs->contract_code) && strlen($customs->contract_date) && $customs->contract_date!='0' && strlen($customs->contract_expiration_date) && $customs->contract_expiration_date!='0' ){
+							$contract= ceil((strtotime($customs->contract_expiration_date)-time())/86400);
+						}
+						foreach ($balance as $b){
+							$waybill=Waybill::find('waybill_id=?',$b->waybill_id)->getOne();
+							if($waybill->isNewRecord() || $waybill->department_id==0 || $waybill->abnormal_state=='到付已付' || $waybill->department_id==25){
+								continue;
+							}
+							$overdue=new Overduereport();
+							$overdue->changeProps(array(
+								'customs_id'=>$customs->customs_id,
+								'customs_abbreviation'=>$customs->customs_abbreviation,
+								'department_id'=>$waybill->department_id,
+								'department_name'=>$waybill->department_abbreviation,
+								'overdue_amount'=>$b->should_balance,
+								'overdue_date'=>date('Ym',strtotime($b->rating_date)),
+								'waybill_status'=>strlen($waybill->abnormal_state)?$waybill->abnormal_state:'无拒付',
+								'contract_day_left'=>$contract
+							));
+							$overdue->save();
+						}
+					}
+				}
+			}
+		}
+		exit;
+	}
+	
+	//自动保存excel到服务器上，然后发送邮件（每周一的9点02分发送邮件）
+	function actionStoreAndSendExcel(){
+		$week_day=date("w");
+		$hour=date("Hi");
+		//判断今天是16号之前还是之后
+		$day=intval(date('d'));
+		if($week_day=='1' && $hour=='0902' ){
+			//首先找到需要发送邮件的用户
+			$user_ids=OverdueDepartment::find()->group("user_id")->setColumns('user_id')->asArray()->getAll();
+			if(count($user_ids)){
+				set_time_limit ( 0 );
+				ini_set("memory_limit", "2048M");
+				foreach ($user_ids as $id){
+					$user=User::find('user_id=?',$id)->getOne();
+					if(!$user->isNewRecord()){
+						$departments=OverdueDepartment::find('user_id=?',$id)->asArray()->getAll();
+						$select=Overduereport::find("department_id in (?)",Helper_Array::getCols($departments, 'department_id'));
+						if($day>15){
+							if ($user->account_period=='30'){
+								$select->where("overdue_date <?",date('Ym',strtotime("-1 month")));
+							}elseif ($user->account_period=='60'){
+								$select->where("overdue_date < ? ",date('Ym',strtotime("-2 month")));
+							}
+						}else {
+							if ($user->account_period=='30'){
+								$select->where("overdue_date < ? ",date('Ym',strtotime("-2 month")));
+							}elseif ($user->account_period=='60'){
+								$select->where("overdue_date < ?",date('Ym',strtotime("-3 month")));
+							}
+						}
+						
+						$select_department=clone $select;
+						//部门
+						$department=$select_department->order('overdue_date')->group('department_id,department_name')->setColumns('department_id,department_name')->asArray()->getAll ();
+						if(count($department)){
+							$sheet=array();
+							foreach ($department as $d){
+								//月份
+								$select_month=clone $select;
+								$month = $select_month->where('department_id=?',$d['department_id'])->order('overdue_date')->group('overdue_date')->setColumns('overdue_date')->asArray()->getAll ();
+								if(count($month)){
+									//部门行
+									$fistheader=array('部门:'.$d['department_name'],'','');
+									foreach ($month as $v){
+										array_push($fistheader,'');
+									}
+									array_push($fistheader,'');
+									$month=Helper_Array::getCols($month, 'overdue_date');
+									$header = array (
+										"拒付状态","客户 ","合同天数 "
+									);
+									$header=array_merge($header,$month);
+									$sheet[] = $fistheader;
+									array_push($header, '总计');
+									$sheet[] = $header;
+								}else{
+									continue;
+								}
+									
+								//客户
+								$select_customer=clone $select;
+								$customer = $select_customer->where('department_id=?',$d['department_id'])->order('overdue_date')->group('customs_id,customs_abbreviation,contract_day_left')->setColumns('customs_id,customs_abbreviation,contract_day_left')->asArray()->getAll ();
+								if(count($customer)<1){
+									continue;
+								}
+									
+								//拒付状态
+								$select_type=clone $select;
+								$type=$select_type->where('department_id=?',$d['department_id'])->group('waybill_status')->setColumns('waybill_status')->asArray()->getAll ();
+								if(count($type)){
+									foreach ($type as $t){
+										foreach ($customer as $c){
+											$num=0;
+											$row=array('',$c['customs_abbreviation'],$c['contract_day_left']);
+											$sum_line=0;
+											foreach ($month as $m){
+												$overdue_amount=Overduereport::find('department_id=? and waybill_status=? and customs_id=? and overdue_date=?',$d['department_id'],$t['waybill_status'],$c['customs_id'],$m)->asArray()->getSum('overdue_amount');
+												if($overdue_amount && $overdue_amount !=0){
+													array_push($row, $overdue_amount);
+													$num++;
+													$sum_line+=$overdue_amount;
+												}else{
+													array_push($row, '');
+												}
+											}
+											if($num>0){
+												//行统计
+												array_push($row, $sum_line);
+												$sheet [] = $row;
+											}
+												
+										}
+										//列统计
+										$row_column=array($t['waybill_status'],'汇总','');
+										$total_line_type=0;
+										foreach ($month as $mo){
+											$sum_column=Overduereport::find('department_id=? and waybill_status=? and overdue_date=? ',$d['department_id'],$t['waybill_status'],$mo)->asArray()->getSum('overdue_amount');
+											array_push($row_column, $sum_column?$sum_column:'');
+											$total_line_type+=$sum_column;
+										}
+										array_push($row_column, $total_line_type?$total_line_type:'');
+										$sheet [] = $row_column;
+									}
+										
+								}else{
+									continue;
+								}
+								//部门汇总
+								$total_department=array('总计','','');
+								$sum_department_all=0;
+								//空白行
+								$blank=array('','','');
+								foreach ($month as $mo){
+									$sum_department=Overduereport::find('department_id=? and overdue_date=? ',$d['department_id'],$mo)->asArray()->getSum('overdue_amount');
+									array_push($total_department, $sum_department?$sum_department:'');
+									$sum_department_all+=$sum_department;
+									array_push($blank, '');
+								}
+								array_push($total_department, $sum_department_all?$sum_department_all:'');
+								array_push($blank, '');
+								$sheet [] = $total_department;
+								//$sheet [] = $blank;
+							}
+						}
+						try {
+							unlink(INDEX_DIR.DS.'_tmp'.DS.'upload'.DS.iconv('UTF-8', 'GBK', '逾期报告_').$user->user_id.'.xlsx');
+							Helper_Excel::savexlsx($sheet, iconv('UTF-8', 'GBK', '逾期报告_').$user->user_id.".xlsx");
+							$email=array(trim($user->email));
+							Helper_Mailer::send($email, '快件系统：客户费用逾期报告', '快件系统的客户费用逾期报告在附件，请审阅！',INDEX_DIR.DS.'_tmp'.DS.'upload'.DS.iconv('UTF-8', 'GBK', '逾期报告_').$user->user_id.'.xlsx','逾期报告.xlsx');
+						} catch (Exception $e) {
+							QLog::log($e->getMessage());
+						}
+					}	
+				}
+			}
+			exit ();
+		}
+	}
+	
+	//每个月9号同步从上个月1号之后的所有发件日
+	function actionsyncrecorddate(){
+		$date=date('d');
+		$time=date('Hi');
+		//$date=='09' && $time=='0102'
+		if($date=='09' && $time=='0102'){
+			set_time_limit(0);
+			ini_set("memory_limit", "3072M");
+			$last_firstday = date('Y-m-01', strtotime("-1 month", time()));
+			$waybill_codes=Waybill::find('record_order_date>=?',$last_firstday )->asArray()->setColumns('waybill_code')->getAll();
+			foreach ($waybill_codes as $waybill_code){
+				$waybill=Waybill::find('waybill_code=?',$waybill_code['waybill_code'])->getOne();
+				$waybill_shadow=WaybillShadow::find('waybill_code=?',$waybill_code['waybill_code'])->getOne();
+				if(!$waybill->isNewRecord() && !$waybill_shadow->isNewRecord() && $waybill->record_order_date>'2018-01-01' && $waybill->record_order_date !=$waybill_shadow->record_order_date){
+					$waybill_shadow->record_order_date=$waybill->record_order_date;
+					$waybill_shadow->save();
+				}
+			}
+		}
+		exit;
+	}
+	
+	/**
+	 * 输出日志
+	 * @param unknown $str
+	 */
+	static function log($str){
+		echo '['.date('Ymd His').']'.$str."\n";
+		QLog::log($str);
+	}
+	/**
+	 * 定时任务费用锁定
+	 */
+	function actionLockfee(){
+	    if(date('H')=='00' && date('m')=='02'){
+	        //查询unlock_flag='1'的费用记录
+	        $balabces=Waybillbalance::find("unlock_flag = '1'")->getAll();
+	        foreach ($balabces as $balabce){
+	            $balabce->unlock_flag='';
+	            $balabce->save();
+	        }
+	    }
+	    exit();
+	}
+}

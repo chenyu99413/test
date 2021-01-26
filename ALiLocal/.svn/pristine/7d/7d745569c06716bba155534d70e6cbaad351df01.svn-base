@@ -1,0 +1,2282 @@
+<?php
+class Controller_Edi extends Controller_Abstract {
+	
+	/**
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * EDI汇总页面
+	 */
+	function actionSearch() {
+		//搜索操作
+		$select = Waybill::find ( "record_order_date >= ? AND record_order_date <= ? AND data_report_date IS NOT NULL AND network_code = ?", request ( 'recordorderdate', date ( 'Y-m-d' ) ) . ' 00:00:00', request ( 'recordorderdate', date ( 'Y-m-d' ) ) . ' 23:59:59', request ( 'network', 'UPS' ) );
+		$select->joinLeft ( "tb_department", "*", "tb_department.department_id =".Waybill::meta()->table->name.".department_id" );
+		$select->where ( "tb_department.ogp_flag != '1' and channel_id not in(38,39,50,51,53,54,55,57,58,61,63,64,65,66,67,69,101,104,106,107,108,110,116,120,121,122,125,126,127,128,130,131,132,133,134,136,137,141,142,151,160,171,172,174,175,178,181)" );
+		//未导出
+		if (request ( 'export_date', '0' ) == '0') {
+			$select->where ( 'export_date = "" or export_date is null' );
+		} else if (request ( 'export_date', '0' ) == '1') {
+			$select->where ( 'export_date <= ?', date ( 'Y-m-d H:i:s' ) );
+		}
+		//部门查询条件
+		if (request ( 'department_id' )) {
+			$select->where ( Waybill::meta()->table->name.'.department_id in (?) ', request ( 'department_id' ) );
+		}
+		
+		//航班
+		$select->where ( 'sort=?', request ( 'sort', 'D3' ) );
+		$select->order ( 'department_id' );
+		
+		//本班次货量统计
+		$selectDay=clone $select;
+		$this->_view['statDay']=$selectDay->group('department_id,channel_id')
+		->count('*')
+		->sum('item_count','item_count')->sum('actual_weight','actual_weight')->columns('department_id,department_abbreviation,channel_id,channel_name')
+		->asArray()->getAll();
+		
+		//高低价 or 包装类别ESF
+		if (request ( 'high_low_price_flag', '0' ) == "0" || request ( 'high_low_price_flag', '0' ) == "1") {
+			//如果是高低价
+			$select->where ( 'high_low_price_flag=?', request ( 'high_low_price_flag', '0' ) );
+		} else if (request ( 'high_low_price_flag', '0' ) == "2") {
+			//包装类别ESF
+			$select->where ( 'boxing_category=?', 'ESF' );
+		} else if (request ( 'high_low_price_flag', '0' ) == "3") {
+			$select->where ( "destination in ('AU','NZ','RU')" );
+		}
+		
+		//本班次货量统计
+		$selectSort=clone $select;
+		$this->_view['statSort']=$selectSort->group('department_id')
+			->count('*')
+			->sum('item_count','item_count')->sum('actual_weight','actual_weight')->columns('department_id,department_abbreviation')
+			->asArray()->getAll();
+// 		dump($all,1,11);
+		
+		$waybill = $select->getAll ();
+		$this->_view ['waybills'] = $waybill;
+		
+		$temp_select = clone $select;
+		$temp_select->joinInner ( "tb_sub_box", null, Waybill::meta()->table->name.".waybill_id = tb_sub_box.waybill_id" );
+		$temp_select->sum ( "tb_sub_box.volume_weight" );
+		$this->_view ["volume_weight"] = $temp_select->getAll ();
+		/*
+		$select->group ( "department_abbreviation" );
+		$sql = " SELECT temp_waybill.department_abbreviation AS department_abbreviation";
+		$sql .= "      ,SUM(temp_waybill.count_count) AS count_count";
+		$sql .= "      ,SUM(temp_waybill.item_count) AS item_count";
+		$sql .= "      ,SUM(temp_waybill.actual_weight) AS actual_weight";
+		$sql .= "  FROM (";
+		$sql .= "       SELECT CASE WHEN department_abbreviation LIKE '%义乌%' THEN '义乌分公司' ";
+		$sql .= "                   ELSE department_abbreviation END AS department_abbreviation";
+		$sql .= "             ,COUNT(*) AS count_count";
+		$sql .= "             ,SUM(item_count) AS item_count ";
+		$sql .= "             ,SUM(actual_weight) AS actual_weight ";
+		$sql .= substr ( $select, strpos ( $select, "FROM" ) );
+		$sql .= "       ) AS temp_waybill ";
+		$sql .= " GROUP BY temp_waybill.department_abbreviation";
+		$this->_view ["gather"] = QDB::getConn ()->execute ( $sql )
+			->fetchAll ();
+		
+		$group_select = Waybill::find ( "record_order_date >= ? AND record_order_date <= ? AND data_report_date IS NOT NULL AND network_code = ?", request ( 'recordorderdate', date ( 'Y-m-d' ) ) . ' 00:00:00', request ( 'recordorderdate', date ( 'Y-m-d' ) ) . ' 23:59:59', request ( 'network', 'UPS' ) );
+		$group_select->joinLeft ( "tb_department", "*", "tb_department.department_id = tb_waybill.department_id" );
+		$group_select->where ( "tb_department.ogp_flag != '1'" );
+		$where = substr ( $group_select, strpos ( $group_select, "FROM" ) );
+		$sql = "";
+		$sql .= " SELECT '嘉兴/上海/苏州' AS department_abbreviation";
+		$sql .= "       ,COUNT(*) AS count_count";
+		$sql .= "       ,SUM(item_count) AS item_count ";
+		$sql .= "       ,SUM(actual_weight) AS actual_weight ";
+		$sql .= $where;
+		$sql .= "    AND (department_abbreviation LIKE '%嘉兴%' OR department_abbreviation LIKE '%上海%' OR department_abbreviation LIKE '%苏州%')";
+		$sql .= "UNION";
+		$sql .= " SELECT '绍兴/嵊州/诸暨' AS department_abbreviation";
+		$sql .= "       ,COUNT(*) AS count_count";
+		$sql .= "       ,SUM(item_count) AS item_count ";
+		$sql .= "       ,SUM(actual_weight) AS actual_weight ";
+		$sql .= $where;
+		$sql .= "    AND (department_abbreviation LIKE '%绍兴%' OR department_abbreviation LIKE '%嵊州%' OR department_abbreviation LIKE '%诸暨%')";
+		$sql .= "UNION";
+		$sql .= " SELECT '杭州/义乌/永康/金华' AS department_abbreviation";
+		$sql .= "       ,COUNT(*) AS count_count";
+		$sql .= "       ,SUM(item_count) AS item_count ";
+		$sql .= "       ,SUM(actual_weight) AS actual_weight ";
+		$sql .= $where;
+		$sql .= "    AND (department_abbreviation LIKE '%杭州%' OR department_abbreviation LIKE '%义乌%' OR department_abbreviation LIKE '%永康%' OR department_abbreviation LIKE '%金华%')";
+		$this->_view ["group_gather"] = QDB::getConn ()->execute ( $sql )
+			->fetchAll ();
+		
+		$this->_view ["group_channel"] = $group_select->group ( "channel_name" )
+			->count ( "*", "count_count" )
+			->sum ( "item_count", "item_count" )
+			->sum ( "actual_weight", "actual_weight" )
+			->columns ( "channel_name" )
+			->asArray ()
+			->getAll ();
+			*/
+	}
+	
+	/**
+	 * 部门EDI
+	 */
+	function actionDepartment() {
+		//搜索操作
+		$select = Waybill::find ( "record_order_date >= ? AND record_order_date <= ? AND data_report_date IS NOT NULL AND network_code = ?", request ( 'recordorderdate', date ( 'Y-m-d' ) ) . ' 00:00:00', request ( 'recordorderdate', date ( 'Y-m-d' ) ) . ' 23:59:59', request ( 'network', 'UPS' ) );
+		//录单员
+		if(request("operator_id")){
+			$select->where("operator_id=?",request("operator_id"));
+		}
+		//未导出
+		if (request ( 'export_date', '0' ) == '0') {
+			$select->where ( 'export_date = "" or export_date is null' );
+		} else if (request ( 'export_date', '0' ) == '1') {
+			$select->where ( 'export_date <= ?', date ( 'Y-m-d H:i:s' ) );
+		}
+		if (count(request ( 'department_id' ))){
+			$departmentIDs=request('department_id');
+		}else {
+			$departmentIDs=RelevantDepartment::departmentids () ;
+		}
+		//部门查询条件
+		if (in_array(29,$departmentIDs)){
+			//138T4T，义乌ogp渠道
+			$select->where ( 'department_id in (?) or channel_id in(38,50,53,54,57,58,61,63,64,66,67,101,107,108,110,116,122,125,126,134,137,141,142,151,160,171,172,178,181)', $departmentIDs );
+		}elseif (in_array(32, $departmentIDs)){
+			//台州ogp渠道
+			$select->where ( 'department_id in (?) or channel_id in(39,51,55,65,69,104,106,174,175)', $departmentIDs );
+		}elseif (in_array(45, $departmentIDs)){
+			//余姚ogp渠道
+			$select->where ( 'department_id in (?) or channel_id in (120,121,127,128,130,131,132,133,136)', $departmentIDs );
+		}elseif (in_array(46, $departmentIDs)){
+			//奉化ogp渠道
+			$select->where ( 'department_id in (?) or channel_id in (120,121,131,132,133)', $departmentIDs );
+		}else{
+			$select->where ( 'department_id in (?) and channel_id not in(38,39,50,51,53,54,55,57,58,61,63,64,65,66,67,69,101,104,106,107,108,110,116,120,121,122,125,126,127,128,130,131,132,133,134,136,137,141,142,151,160,171,172,174,175,178,181)', $departmentIDs);
+		}
+		$select->order ( 'operator_id,waybill_id' );
+		
+		//全天货量统计
+		$selectDay=clone $select;
+		$this->_view['statDay']=$selectDay->group('department_id,channel_id')
+		->count('*')
+		->sum('item_count','item_count')->sum('actual_weight','actual_weight')->columns('department_id,department_abbreviation,channel_id,channel_name')
+		->asArray()->getAll();
+		//高低价 or 包装类别ESF
+		if (request ( 'high_low_price_flag', '0' ) == "0" || request ( 'high_low_price_flag', '0' ) == "1") {
+			//如果是高低价
+			$select->where ( 'high_low_price_flag=?', request ( 'high_low_price_flag', '0' ) );
+		} else if (request ( 'high_low_price_flag', '0' ) == "2") {
+			//包装类别ESF
+			$select->where ( 'boxing_category=?', 'ESF' );
+		} else if (request ( 'high_low_price_flag', '0' ) == "3") {
+			$select->where ( "destination in ('AU','NZ','RU')" );
+		}
+		//航班
+		$select->where ( 'sort=?', request ( 'sort', 'D3' ) );
+		//本班次货量统计
+		$selectSort=clone $select;
+		$this->_view['statSort']=$selectSort->group('department_id')
+		->count('*')
+		->sum('item_count','item_count')->sum('actual_weight','actual_weight')->columns('department_id,department_abbreviation')
+		->asArray()->getAll();
+		//袋子和箱子统计
+		$select_t=clone $select;
+		$this->_view['total_boxing']=$select_t->setColumns(Waybill::meta()->table->name.".boxing_category,".Waybill::meta()->table->name.".item_count")->asArray()->getAll();
+		
+		//RS件汇总
+		$select_RS=clone $select;
+		$this->_view['RSDay']=$select_RS->where('rs_flag="1"')->count('*')->sum('item_count','item_count')->sum('actual_weight','actual_weight')->asArray()->getAll();
+		$waybill = $select->order('create_date asc')->getAll ();
+		$this->_view ['waybills'] = $waybill;
+		
+		$temp_select = clone $select;
+		$temp_select->joinInner ( "tb_sub_box", null, Waybill::meta()->table->name.".waybill_id = tb_sub_box.waybill_id" );
+		$temp_select->sum ( "tb_sub_box.volume_weight" );
+		$this->_view ["volume_weight"] = $temp_select->getAll ();
+		/*
+		$select->group ( "department_abbreviation" );
+		$sql = " SELECT temp_waybill.department_abbreviation AS department_abbreviation";
+		$sql .= "      ,SUM(temp_waybill.count_count) AS count_count";
+		$sql .= "      ,SUM(temp_waybill.item_count) AS item_count";
+		$sql .= "      ,SUM(temp_waybill.actual_weight) AS actual_weight";
+		$sql .= "  FROM (";
+		$sql .= "       SELECT CASE WHEN department_abbreviation LIKE '%义乌%' THEN '义乌分公司' ";
+		$sql .= "                   ELSE department_abbreviation END AS department_abbreviation";
+		$sql .= "             ,COUNT(*) AS count_count";
+		$sql .= "             ,SUM(item_count) AS item_count ";
+		$sql .= "             ,SUM(actual_weight) AS actual_weight ";
+		$sql .= substr ( $select, strpos ( $select, "FROM" ) );
+		$sql .= "       ) AS temp_waybill ";
+		$sql .= " GROUP BY temp_waybill.department_abbreviation";
+		$this->_view ["gather"] = QDB::getConn ()->execute ( $sql )
+			->fetchAll ();
+		
+		$group_select = Waybill::find ( "record_order_date >= ? AND record_order_date <= ? AND data_report_date IS NOT NULL AND network_code = ?", request ( 'recordorderdate', date ( 'Y-m-d' ) ) . ' 00:00:00', request ( 'recordorderdate', date ( 'Y-m-d' ) ) . ' 23:59:59', request ( 'network', 'UPS' ) );
+		$group_select->where ( "department_id in (?)", RelevantDepartment::departmentids () );
+		$where = substr ( $group_select, strpos ( $group_select, "FROM" ) );
+		$sql = "  SELECT '杭州/台州' AS department_abbreviation";
+		$sql .= "       ,COUNT(*) AS count_count";
+		$sql .= "       ,SUM(item_count) AS item_count ";
+		$sql .= "       ,SUM(actual_weight) AS actual_weight ";
+		$sql .= $where;
+		$sql .= "    AND (department_abbreviation LIKE '%杭州%' OR department_abbreviation LIKE '%台州%')";
+		$sql .= "UNION";
+		$sql .= " SELECT '嘉兴/上海/苏州' AS department_abbreviation";
+		$sql .= "       ,COUNT(*) AS count_count";
+		$sql .= "       ,SUM(item_count) AS item_count ";
+		$sql .= "       ,SUM(actual_weight) AS actual_weight ";
+		$sql .= $where;
+		$sql .= "    AND (department_abbreviation LIKE '%嘉兴%' OR department_abbreviation LIKE '%上海%' OR department_abbreviation LIKE '%苏州%')";
+		$sql .= "UNION";
+		$sql .= " SELECT '绍兴/诸暨' AS department_abbreviation";
+		$sql .= "       ,COUNT(*) AS count_count";
+		$sql .= "       ,SUM(item_count) AS item_count ";
+		$sql .= "       ,SUM(actual_weight) AS actual_weight ";
+		$sql .= $where;
+		$sql .= "    AND (department_abbreviation LIKE '%绍兴%' OR department_abbreviation LIKE '%诸暨%')";
+		$sql .= "UNION";
+		$sql .= " SELECT '义乌/永康/金华' AS department_abbreviation";
+		$sql .= "       ,COUNT(*) AS count_count";
+		$sql .= "       ,SUM(item_count) AS item_count ";
+		$sql .= "       ,SUM(actual_weight) AS actual_weight ";
+		$sql .= $where;
+		$sql .= "    AND (department_abbreviation LIKE '%义乌%' OR department_abbreviation LIKE '%永康%' OR department_abbreviation LIKE '%金华%')";
+		$this->_view ["group_gather"] = QDB::getConn ()->execute ( $sql )
+			->fetchAll ();
+		
+		$this->_view ["group_channel"] = $group_select->group ( "channel_name" )
+			->count ( "*", "count_count" )
+			->sum ( "item_count", "item_count" )
+			->sum ( "actual_weight", "actual_weight" )
+			->columns ( "channel_name" )
+			->asArray ()
+			->getAll ();
+			*/
+	}
+	
+	/**
+	 * EDI导出
+	 */
+	function actionExport() {
+		if (request_is_post ()) {
+			//开启事物
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			$checkbox = request ( 'checkbox' );
+			$select = Waybill::find ();
+			$select->where ( 'waybill_id in (?)', $checkbox );
+			$select->order ( 'department_id' );
+			$waybills = $select->getAll ();
+			//低价  
+			if (request ( 'format' ) == 'UPS 三免EDI') {
+				$type = Helper_Array::getCols ( $waybills, 'boxing_category' );
+				if (array_search ( 'ESF', $type ) === 0) {
+// 					return $this->_redirectMessage ( '导出失败', '导出运单中存在ESF件','#' );
+// 					exit ();
+				}
+				$outXML=array();
+				foreach ($waybills as $wb){
+					$isDoc=in_array($wb->boxing_category, array('L','D'));
+					$destination=$wb->destination;
+					//港澳台
+					$gat=in_array($destination, array('HK','TW','MO'));
+					$row=array(
+						'EntryHead'=>array(
+							'DelType'=>$isDoc?'A':'C',
+							'DestCountry'=>$wb->destination,
+							'PostCode'=>$wb->consignee_postal_code,
+							'PackageID'=>$wb->waybill_code,
+							'ShipmentID'=>$wb->ship_id,
+							'PCS'=>$wb->item_count,
+							'TransMode'=>3,
+							'WrapType'=>($isDoc || $wb->boxing_category=='P1') ? 6:2,
+							'GrossWt'=>$wb->actual_weight,
+							'NetWt'=>$wb->net_weight,
+							'Fee'=>0,
+							'FeeInsur'=>0,
+							'FeeOther'=>0,
+							'ShipperAccount'=>$wb->sender_account,
+							'CompanyCode'=>$wb->sender_business_units_code,
+							'ShipperNameCN'=>$wb->sender_company_name_cn,
+							'ShipperNameEN'=>$wb->sender_company_name_en,
+							'ShipperCity'=>$wb->sender_city_cn,
+							'ShipperAddress'=>$wb->sender_company_address,
+							'ShipperContact'=>$wb->sender_contacts,
+							'ShipperTel'=>$wb->sender_tel,
+							'Consignee'=>$wb->consignee_company_name_en,
+							'ConsigneeAddress'=>$wb->consignee_company_address_en,
+							'ConsigneeContact'=>$wb->consignee_contacts,
+							'ConsigneeTel'=>$wb->consignee_tel,
+							'CtiNO'=>$wb->certificate_of_authenticity_code,
+							'TradeSCC'=>$wb->trade_scc,
+							'Service'=>$wb->service_code==2?'5':'1',
+							'WoodWrap'=>$wb->woody_flag,
+							'GoodsUsed'=>$wb->used_flag,
+							'LowTemTrans'=>$wb->low_temperature_flag,
+							'ShipperCityEN'=>$wb->sender_city,
+							'ShipperAddressCN'=>$wb->sender_company_address_cn,
+							'ConsigneeCN'=>$gat?$wb->consignee_company_name_cn:$wb->consignee_company_name_en,
+							'ConsigneeCityCN'=>$wb->consignee_city,
+							'ConsigneeAddressCN'=>$gat?$wb->consignee_company_address_cn:$wb->consignee_company_address_en
+						),
+						'EntryList'=>array(),
+						'Packages'=>array()
+					);
+					if ($isDoc){
+						$row['EntryList']=array(
+							'HSCode'=>'',
+							'GName'=>'文件',
+							'GModel'=>'',
+							'GWeight'=>$wb->clearing_weight,
+							'OriginCountry'=>'',
+							'Value'=>0,
+							'TradeCurr'=>'USD',
+							'GQty'=>1,
+							'GUnit'=>'011',
+							'Qty1'=>'',
+							'Unit1'=>'',
+							'OriginCity'=>'',
+							'Manufacture'=>'',
+							'GoodsEN'=>''
+						);
+					}else {
+						$invoice=WaybillInvoice::find('waybill_id=?',$wb->waybill_id)->getOne();
+						$invoice=json_decode($invoice->invoice,true);
+						foreach ($invoice as $irow){
+							$row['EntryList'][]=array(
+								'HSCode'=>$irow['commodity_hs_code'],
+								'GName'=>$irow['commodity_name_cn'],
+								'GModel'=>$irow['factors'],
+								'GWeight'=>$irow['gross_weight'],
+								'OriginCountry'=>$irow['origin_country'],
+								'Value'=>$irow['value'],
+								'TradeCurr'=>$irow['value_unit'],
+								'GQty'=>$irow['count'],
+								'GUnit'=>WaybillInvoice::$unit[$irow['count_unit']],
+								'Qty1'=>$irow['count1'],
+								'Unit1'=>WaybillInvoice::$unit[$irow['count_unit1']],
+								'OriginCity'=>'',
+								'Manufacture'=>'',
+								'GoodsEN'=>''
+							);
+						}
+						if (count($wb->subbox)){
+							foreach ($wb->subbox as $sb){
+								if ($sb->sub_waybill_code ==$wb->waybill_code){
+									continue;
+								}
+								$row['Packages']['PackageID'][]=$sb->sub_waybill_code;
+							}
+						}
+					}
+					$outXML['DataInfo']['Data'][]=$row;
+					//导出操作修改导出状态
+					$wb->export_date = date ( 'Y-m-d H:i:s' );
+					$wb->save ();
+				}
+				header('Content-type: text/xml'); 
+				//下载显示的名字
+				header('Content-Disposition: attachment; filename="'.date('Ymd').request('sort').'.xml"');
+				
+				echo Helper_xml::simpleArr2xml($outXML,true,false);
+			}
+			//高价    
+			if (request ( 'format' ) == 'UPS 报关EDI') {
+				$type = Helper_Array::getCols ( $waybills, 'boxing_category' );
+				if (array_search ( 'ESF', $type ) === 0) {
+// 					return $this->_redirectMessage ( '导出失败', '导出运单中存在ESF件', url ( 'edi/search' ) );
+// 					exit ();
+				}
+				$sheet1 = array (
+					array (
+						'date','hawb','trackno','country','service','pcs',
+						'weight','truckno','declaretype','center','ctino',
+						'sortcode','cneid','cnename','cneaddress','cnecityname','cnepostcode','cnete','cntname','shpid','shpaccount','shpname','shpcontactname','shpaddress','shpcityname','shppostcode','shpte'  
+					) 
+				);
+				$sheet2 = array (
+					array (
+						'declareno','hawb','companycode','pcs','weight','goods',
+						'hexiaono' 
+					) 
+				);
+				$sheet3 = array (array('main_hawb','sub_hawb','sub_trackno','pcs','weight','ctino','goods'));
+				$declareno = 111111111;
+				//根据导出者所在部门来区分操作中心代码
+				$depart=Department::find("department_id =?",MyApp::currentUser("department_id"))->getOne();
+				$operating_center_code="";
+				if(strstr($depart->abbreviation, "义乌")){
+					$operating_center_code="'" .'0387';
+				}else if(strstr($depart->abbreviation, "台州")){
+					$operating_center_code="'" .'0385';
+				}else if(strstr($depart->abbreviation, "余姚") || strstr($depart->abbreviation, "奉化")){
+					$operating_center_code="'" .'2113';
+				}else{
+					$operating_center_code="'" .'2141';
+				}
+				//车牌号
+				$license_plate='';
+				if(trim(request("license_plate"))){
+				    $license_plate=trim(request("license_plate"));
+				}
+				$sort_count=1;
+				foreach ( $waybills as $waybill ) {
+				    if($license_plate!=''&& $waybill->high_low_price_flag=='1'){
+				        $waybill->license_plate=$license_plate;
+				        $waybill->save();
+				    }
+					//统计服务类别
+					if (strpos ( $waybill->service_code, '1' ) === 0) {
+						$services = 1;
+					} else {
+						$services = 5;
+					}
+					$shipid="";
+					if(!strlen($waybill->ship_id)){
+						$shipid=self::creatShipid($waybill->waybill_code);
+					}else{
+						$shipid=$waybill->ship_id;
+					}
+					$license_plate=$waybill->license_plate;
+					if(MyApp::currentUser("department_id")==10){
+						if($waybill->sort=='D3'){
+							$license_plate='浙AC67Q6';
+						}elseif ($waybill->sort=='S1'){
+							$license_plate='浙A2E072';
+						}
+					}
+					array_push ( $sheet1, array (
+						date ( 'm/d/Y', strtotime ( $waybill->record_order_date ) ),
+						$shipid,$waybill->waybill_code,
+						$waybill->destination,"'" . $services,
+						$waybill->item_count,$waybill->actual_weight,
+						$license_plate,"'0", //.$waybill->declared_type,
+						$operating_center_code,
+						$waybill->certificate_of_authenticity_code,
+						'',
+						'',
+						$waybill->consignee_company_name_en,
+						$waybill->consignee_company_address_en,
+						$waybill->consignee_city,
+						"'" .$waybill->consignee_postal_code,
+						"'" .$waybill->consignee_tel,
+						$waybill->consignee_contacts,
+						"'" .$waybill->credit_code,
+						"'" .$waybill->sender_account,
+						$waybill->sender_company_name_cn,
+						$waybill->sender_contacts,
+						$waybill->sender_company_address_cn,
+						$waybill->sender_city_cn,
+						"'" .$waybill->sender_postal_code,
+						"'" .$waybill->sender_tel
+					) );
+					
+					array_push ( $sheet2, array (
+						"'" . $declareno ++,$shipid,
+						"'" . $waybill->sender_business_units_code,
+						$waybill->item_count,
+						sprintf ( '%.2f', $waybill->actual_weight ),
+						"'" . $waybill->commodity_name_cn,
+						"'" . $waybill->commission_code 
+					) );
+					foreach ($waybill->subbox as $sub){
+						if($waybill->waybill_code==$sub->sub_waybill_code){
+							continue;
+						}
+						if(!strstr($depart->abbreviation, "义乌") && !strstr($depart->abbreviation, "台州") &&  !strstr($depart->abbreviation, "余姚") &&  !strstr($depart->abbreviation, "奉化")){
+							array_push($sheet3, array($waybill->waybill_code,$sub->sub_waybill_code,'','','','',''));
+						}
+					}
+					//导出操作修改导出状态
+					$waybill->export_date = date ( 'Y-m-d H:i:s' );
+					$waybill->save ();
+				}
+				Helper_Excel::array2xls_sheet ( $sheet1, '泛远 ' . date ( 'Y-m-d' ) . ' EDI高价'.'_'.request("sort").'.xls', 'hawb', $sheet2, 'declare',$sheet3,'subhawb' );
+			}
+			//高价 主账号V928X8
+			if (request ( 'format' ) == 'V928X8 高价') {
+				$type = Helper_Array::getCols ( $waybills, 'boxing_category' );
+				if (array_search ( 'ESF', $type ) === 0) {
+					// 					return $this->_redirectMessage ( '导出失败', '导出运单中存在ESF件', url ( 'edi/search' ) );
+					// 					exit ();
+				}
+				$sheet1 = array (
+					array (
+						'date','hawb','trackno','country','service','pcs',
+						'weight','truckno','declaretype','center','ctino'
+					)
+				);
+				$sheet2 = array (
+					array (
+						'declareno','hawb','companycode','pcs','weight','goods',
+						'hexiaono'
+					)
+				);
+				$sheet3 = array ();
+				$declareno = 111111111;
+				//根据导出者所在部门来区分操作中心代码
+				$depart=Department::find("department_id =?",MyApp::currentUser("department_id"))->getOne();
+				$operating_center_code="";
+				if(strstr($depart->abbreviation, "义乌")){
+					$operating_center_code="'" .'0387';
+				}else if(strstr($depart->abbreviation, "台州")){
+					$operating_center_code="'" .'0385';
+				}else{
+					$operating_center_code="'" .'2141';
+				}
+				foreach ( $waybills as $waybill ) {
+					$sender = Sender::find ( "channel_id = ?", $waybill->channel_id )->getOne ();
+					$flag=false;
+					//没有对应的主账号
+					if($sender->isNewRecord()){
+						if($waybill->sender_account=="V928X8"){
+							$flag=true;
+						}
+					}else{
+						if($sender->sender_master_account=="V928X8"){
+							$flag=true;
+						}
+					}
+					if($flag){
+						//统计服务类别
+						if (strpos ( $waybill->service_code, '1' ) === 0) {
+							$services = 1;
+						} else {
+							$services = 5;
+						}
+						$shipid="";
+						if(!strlen($waybill->ship_id)){
+							$shipid=self::creatShipid($waybill->waybill_code);
+						}else{
+							$shipid=$waybill->ship_id;
+						}
+						array_push ( $sheet1, array (
+						date ( 'm/d/Y', strtotime ( $waybill->record_order_date ) ),
+						$shipid,$waybill->waybill_code,
+						$waybill->destination,"'" . $services,
+						$waybill->item_count,$waybill->actual_weight,
+						$waybill->license_plate,"'0", //.$waybill->declared_type,
+						$operating_center_code,
+						$waybill->certificate_of_authenticity_code
+						) );
+						
+						array_push ( $sheet2, array (
+						"'" . $declareno ++,$shipid,
+						"'" . $waybill->sender_business_units_code,
+						$waybill->item_count,
+						sprintf ( '%.2f', $waybill->actual_weight ),
+						"'" . $waybill->commodity_name_cn,
+						"'" . $waybill->commission_code
+						) );
+					}
+				}
+				Helper_Excel::array2xls_sheet ( $sheet1, '泛远_V928X8_' . date ( 'Y-m-d' ) . ' EDI高价'.'_'.request("sort").'.xls', 'hawb', $sheet2, 'declare',$sheet3,'subhawb' );
+			}
+			//高价 主账号：V928X6
+			if (request ( 'format' ) == 'V928X6 高价') {
+				$type = Helper_Array::getCols ( $waybills, 'boxing_category' );
+				if (array_search ( 'ESF', $type ) === 0) {
+					// 					return $this->_redirectMessage ( '导出失败', '导出运单中存在ESF件', url ( 'edi/search' ) );
+					// 					exit ();
+				}
+				$sheet1 = array (
+					array (
+						'date','hawb','trackno','country','service','pcs',
+						'weight','truckno','declaretype','center','ctino'
+					)
+				);
+				$sheet2 = array (
+					array (
+						'declareno','hawb','companycode','pcs','weight','goods',
+						'hexiaono'
+					)
+				);
+				$sheet3 = array ();
+				$declareno = 111111111;
+				//根据导出者所在部门来区分操作中心代码
+				$depart=Department::find("department_id =?",MyApp::currentUser("department_id"))->getOne();
+				$operating_center_code="";
+				if(strstr($depart->abbreviation, "义乌")){
+					$operating_center_code="'" .'0387';
+				}else if(strstr($depart->abbreviation, "台州")){
+					$operating_center_code="'" .'0385';
+				}else{
+					$operating_center_code="'" .'2141';
+				}
+				foreach ( $waybills as $waybill ) {
+					$sender = Sender::find ( "channel_id = ?", $waybill->channel_id )->getOne ();
+					$flag=false;
+					//没有对应的主账号
+					if($sender->isNewRecord()){
+						if($waybill->sender_account=="V928X6" || $waybill->sender_account=="YY4782"){
+							$flag=true;
+						}
+					}else{
+						if($sender->sender_master_account=="V928X6"){
+							$flag=true;
+						}
+					}
+					if($flag){
+						//统计服务类别
+						if (strpos ( $waybill->service_code, '1' ) === 0) {
+							$services = 1;
+						} else {
+							$services = 5;
+						}
+						$shipid="";
+						if(!strlen($waybill->ship_id)){
+							$shipid=self::creatShipid($waybill->waybill_code);
+						}else{
+							$shipid=$waybill->ship_id;
+						}
+						array_push ( $sheet1, array (
+						date ( 'm/d/Y', strtotime ( $waybill->record_order_date ) ),
+						$shipid,$waybill->waybill_code,
+						$waybill->destination,"'" . $services,
+						$waybill->item_count,$waybill->actual_weight,
+						$waybill->license_plate,"'0", //.$waybill->declared_type,
+						$operating_center_code,
+						$waybill->certificate_of_authenticity_code
+						) );
+						
+						array_push ( $sheet2, array (
+						"'" . $declareno ++,$shipid,
+						"'" . $waybill->sender_business_units_code,
+						$waybill->item_count,
+						sprintf ( '%.2f', $waybill->actual_weight ),
+						"'" . $waybill->commodity_name_cn,
+						"'" . $waybill->commission_code
+						) );
+					}
+				}
+				Helper_Excel::array2xls_sheet ( $sheet1, '泛远_V928X6_' . date ( 'Y-m-d' ) . ' EDI高价'.'_'.request("sort").'.xls', 'hawb', $sheet2, 'declare',$sheet3,'subhawb' );
+			}
+			//高价:主账号：V5187X
+			if (request ( 'format' ) == 'V5187X 高价') {
+				$type = Helper_Array::getCols ( $waybills, 'boxing_category' );
+				if (array_search ( 'ESF', $type ) === 0) {
+					// 					return $this->_redirectMessage ( '导出失败', '导出运单中存在ESF件', url ( 'edi/search' ) );
+					// 					exit ();
+				}
+				$sheet1 = array (
+					array (
+						'date','hawb','trackno','country','service','pcs',
+						'weight','truckno','declaretype','center','ctino'
+					)
+				);
+				$sheet2 = array (
+					array (
+						'declareno','hawb','companycode','pcs','weight','goods',
+						'hexiaono'
+					)
+				);
+				$sheet3 = array ();
+				$declareno = 111111111;
+				//根据导出者所在部门来区分操作中心代码
+				$depart=Department::find("department_id =?",MyApp::currentUser("department_id"))->getOne();
+				$operating_center_code="";
+				if(strstr($depart->abbreviation, "义乌")){
+					$operating_center_code="'" .'0387';
+				}else if(strstr($depart->abbreviation, "台州")){
+					$operating_center_code="'" .'0385';
+				}else{
+					$operating_center_code="'" .'2141';
+				}
+				foreach ( $waybills as $waybill ) {
+					$sender = Sender::find ( "channel_id = ?", $waybill->channel_id )->getOne ();
+					$flag=false;
+					//没有对应的主账号
+					if($sender->isNewRecord()){
+						if($waybill->sender_account=="V5187X"){
+							$flag=true;
+						}
+					}else{
+						if($sender->sender_master_account=="V5187X"){
+							$flag=true;
+						}
+					}
+					if($flag){
+						//统计服务类别
+						if (strpos ( $waybill->service_code, '1' ) === 0) {
+							$services = 1;
+						} else {
+							$services = 5;
+						}
+						$shipid="";
+						if(!strlen($waybill->ship_id)){
+							$shipid=self::creatShipid($waybill->waybill_code);
+						}else{
+							$shipid=$waybill->ship_id;
+						}
+						array_push ( $sheet1, array (
+						date ( 'm/d/Y', strtotime ( $waybill->record_order_date ) ),
+						$shipid,$waybill->waybill_code,
+						$waybill->destination,"'" . $services,
+						$waybill->item_count,$waybill->actual_weight,
+						$waybill->license_plate,"'0", //.$waybill->declared_type,
+						$operating_center_code,
+						$waybill->certificate_of_authenticity_code
+						) );
+						
+						array_push ( $sheet2, array (
+						"'" . $declareno ++,$shipid,
+						"'" . $waybill->sender_business_units_code,
+						$waybill->item_count,
+						sprintf ( '%.2f', $waybill->actual_weight ),
+						"'" . $waybill->commodity_name_cn,
+						"'" . $waybill->commission_code
+						) );
+					}
+				}
+				Helper_Excel::array2xls_sheet ( $sheet1, '泛远_V5187X_' . date ( 'Y-m-d' ) . ' EDI高价'.'_'.request("sort").'.xls', 'hawb', $sheet2, 'declare',$sheet3,'subhawb' );
+			}
+			if (request ( 'format' ) == '托盘货交接清单') {
+				$type = Helper_Array::getCols ( $waybills, 'boxing_category' );
+				if (array_search ( 'ESF', $type ) === false) {
+					return $this->_redirectMessage ( '导出失败', '导出运单中不存在ESF件', url ( 'edi/search' ) );
+					exit ();
+				}
+				require_once _INDEX_DIR_ . '/_library/phpexcel/PHPExcel.php';
+				
+				$filePath = _INDEX_DIR_ . '/public/download/tuopanjiaojieqingdan.xls';
+				$PHPReader = new PHPExcel_Reader_Excel2007 ();
+				if (! $PHPReader->canRead ( $filePath )) {
+					$PHPReader = new PHPExcel_Reader_Excel5 ();
+					if (! $PHPReader->canRead ( $filePath )) {
+						echo 'no Excel';
+						return;
+					}
+				}
+				//建立excel对象，此时你即可以通过excel对象读取文件，也可以通过它写入文件
+				$PHPExcel = $PHPReader->load ( $filePath );
+				//设置单元格的值
+				$PHPExcel->getActiveSheet ()
+					->setCellValue ( 'C3', date ( 'Y/m/d' ) );
+				$i = 1;
+				$j = 5;
+				foreach ( $waybills as $waybill ) {
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'A' . $j, $i ++ );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'B' . $j, $waybill->waybill_code );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'D' . $j, $waybill->item_count );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'E' . $j, $waybill->item_count );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'F' . $j, $waybill->remark );
+					$j ++;
+				}
+				$outputFileName = '托盘交接清单.xls';
+				
+				$xlsWriter = new PHPExcel_Writer_Excel5 ( $PHPExcel );
+				header ( "Content-Type: application/force-download" );
+				header ( "Content-Type: application/octet-stream" );
+				header ( "Content-Type: application/download" );
+				header ( 'Content-Disposition:inline;filename="' . $outputFileName . '"' );
+				header ( "Content-Transfer-Encoding: binary" );
+				header ( "Pragma: no-cache" );
+				$xlsWriter->save ( "php://output" );
+				exit ();
+			}
+			if (request ( 'format' ) == '重要出口国家预报') {
+				require_once _INDEX_DIR_ . '/_library/phpexcel/PHPExcel.php';
+				$filePath = _INDEX_DIR_ . '/public/download/formula.xls';
+				$PHPReader = new PHPExcel_Reader_Excel2007 ();
+				if (! $PHPReader->canRead ( $filePath )) {
+					$PHPReader = new PHPExcel_Reader_Excel5 ();
+					if (! $PHPReader->canRead ( $filePath )) {
+						echo 'no Excel';
+						return;
+					}
+				}
+				//建立excel对象，此时你即可以通过excel对象读取文件，也可以通过它写入文件
+				$PHPExcel = $PHPReader->load ( $filePath );
+				$select->where ( "destination in ('AU','NZ','RU')" );
+				$waybills = $select->getAll ();
+				//设置单元格的值
+				$i = 1;
+				$j = 3;
+				foreach ( $waybills as $waybill ) {
+					//申报类型
+					$declared_type = "D";
+					if ($waybill->declared_type != "1") {
+						if ($waybill->boxing_category == "L" || $waybill->boxing_category == "D") {
+							$declared_type = "A";
+						} else if ($waybill->boxing_category == "P1" || $waybill->boxing_category == "P2") {
+							$declared_type = "B";
+						}
+					}
+					//发件账号
+					$account = $waybill->main_account;
+					if (strlen ( $account ) <= 0) {
+						$sender = Sender::find ( "channel_id = ?", $waybill->channel_id )->getOne ();
+						$account = $sender->sender_account;
+					}
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'A' . $j, $i ++ );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'B' . $j, Helper_Util::strDate ( "Y.m.d", $waybill->record_order_date ) );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'C' . $j, $waybill->waybill_code );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'D' . $j, $declared_type );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'E' . $j, $waybill->country_name );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'F' . $j, $waybill->commodity_name_cn );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'G' . $j, $waybill->count );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'H' . $j, $waybill->actual_weight );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'I' . $j, $waybill->value );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'J' . $j, $waybill->value_unit );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'K' . $j, $account );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'L' . $j, $waybill->sender_contacts );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'M' . $j, $waybill->sender_company_name_en );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'N' . $j, $waybill->sender_tel );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'O' . $j, $waybill->sender_business_units_name );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'P' . $j, $waybill->sender_company_address );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'Q' . $j, $waybill->consignee_contacts );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'R' . $j, $waybill->consignee_company_name_en );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'S' . $j, $waybill->consignee_tel );
+					$PHPExcel->getActiveSheet ()
+						->setCellValue ( 'T' . $j, $waybill->consignee_company_address_en );
+					
+					$j ++;
+				}
+				$xlsWriter = new PHPExcel_Writer_Excel5 ( $PHPExcel );
+				header ( "Content-Type: application/force-download" );
+				header ( "Content-Type: application/octet-stream" );
+				header ( "Content-Type: application/download" );
+				header ( 'Content-Disposition:inline;filename="重要出口国家.xls"' );
+				header ( "Content-Transfer-Encoding: binary" );
+				header ( "Pragma: no-cache" );
+				$xlsWriter->save ( "php://output" );
+				exit ();
+			}
+			//主账号交接明细单
+			if (request ( 'format' ) == '主账号交接清单') {
+				$type = Helper_Array::getCols ( $waybills, 'boxing_category' );
+				$sheet1 = array (
+					array (
+						'主账号','国家二字码','运单号','件数','实重'
+					)
+				);
+				$sheet2 = array (
+					array (
+						'主账号','国家二字码','运单号','件数','实重'
+					)
+				);
+				$sheet3 = array (
+					array (
+						'主账号','国家二字码','运单号','件数','实重'
+					)
+				);
+				$i=0;$j=0;$t=0;
+				$c1=0;$c2=0;$c3=0;
+				$w1=0;$w2=0;$w3=0;
+				foreach ( $waybills as $waybill ) {
+					$sender = Sender::find ( "channel_id = ?", $waybill->channel_id )->getOne ();
+					if($sender->isNewRecord()){
+						if($waybill->sender_account=="V928X8"){
+							array_push ( $sheet1, array (
+							"V928X8",
+							$waybill->destination,
+							$waybill->waybill_code,
+							$waybill->item_count,
+							sprintf ( '%.2f', $waybill->actual_weight ),
+							) );
+							$i++;
+							$c1+=$waybill->item_count;
+							$w1+=sprintf ( '%.2f', $waybill->actual_weight );
+						}elseif($waybill->sender_account=="V928X6" || $waybill->sender_account=="YY4782"){
+							array_push ( $sheet2, array (
+							"V928X6",
+							$waybill->destination,
+							$waybill->waybill_code,
+							$waybill->item_count,
+							sprintf ( '%.2f', $waybill->actual_weight ),
+							) );
+							$j++;
+							$c2+=$waybill->item_count;
+							$w2+=sprintf ( '%.2f', $waybill->actual_weight );
+						}elseif($waybill->sender_account=="V5187X"){
+							array_push ( $sheet3, array (
+							"V5187X",
+							$waybill->destination,
+							$waybill->waybill_code,
+							$waybill->item_count,
+							sprintf ( '%.2f', $waybill->actual_weight ),
+							) );
+							$t++;
+							$c3+=$waybill->item_count;
+							$w3+=sprintf ( '%.2f', $waybill->actual_weight );
+						}
+					}else{
+						if($sender->sender_master_account=="V928X8"){
+							array_push ( $sheet1, array (
+							"V928X8",
+							$waybill->destination,
+							$waybill->waybill_code,
+							$waybill->item_count,
+							sprintf ( '%.2f', $waybill->actual_weight ),
+							) );
+							$i++;
+							$c1+=$waybill->item_count;
+							$w1+=sprintf ( '%.2f', $waybill->actual_weight );
+						}elseif($sender->sender_master_account=="V928X6"){
+							array_push ( $sheet2, array (
+							"V928X6",
+							$waybill->destination,
+							$waybill->waybill_code,
+							$waybill->item_count,
+							sprintf ( '%.2f', $waybill->actual_weight ),
+							) );
+							$j++;
+							$c2+=$waybill->item_count;
+							$w2+=sprintf ( '%.2f', $waybill->actual_weight );
+						}elseif($sender->sender_master_account=="V5187X"){
+							array_push ( $sheet3, array (
+							"V5187X",
+							$waybill->destination,
+							$waybill->waybill_code,
+							$waybill->item_count,
+							sprintf ( '%.2f', $waybill->actual_weight ),
+							) );
+							$t++;
+							$c3+=$waybill->item_count;
+							$w3+=sprintf ( '%.2f', $waybill->actual_weight );
+						}
+					}
+				}
+				array_push ( $sheet1, array (
+				"",
+				"合计",
+				$i,
+				$c1,
+				$w1,
+				) );
+				array_push ( $sheet2, array (
+				"",
+				"合计",
+				$j,
+				$c2,
+				$w2,
+				) );
+				array_push ( $sheet3, array (
+				"",
+				"合计",
+				$t,
+				$c3,
+				$w3,
+				) );
+				Helper_Excel::array2xls_sheet ( $sheet1, '泛远 ' . date ( 'Y-m-d' ) . ' 主账号交接清单'.'_'.request("sort").'.xls', 'V928X8', $sheet2, 'V928X6', $sheet3, 'V5187X' );
+			}
+			
+			//主账号：V928X8 导出XML文件
+			if (request ( 'format' ) == 'V928X8 三免') {
+				$type = Helper_Array::getCols ( $waybills, 'boxing_category' );
+				if (array_search ( 'ESF', $type ) === 0) {
+					return $this->_redirectMessage ( '导出失败', '导出运单中存在ESF件','#' );
+					exit ();
+				}
+				$outXML=array();
+				foreach ($waybills as $wb){
+					$sender = Sender::find ( "channel_id = ?", $wb->channel_id )->getOne ();
+					$flag=false;
+					//没有对应的主账号
+					if($sender->isNewRecord()){
+						if($wb->sender_account=="V928X8"){
+							$flag=true;
+						}
+					}else{
+						if($sender->sender_master_account=="V928X8"){
+							$flag=true;
+						}
+					}
+					if($flag){
+						$isDoc=in_array($wb->boxing_category, array('L','D'));
+						$row=array(
+							'EntryHead'=>array(
+								'DelType'=>$isDoc?'A':'C',
+								'DestCountry'=>$wb->destination,
+								'PostCode'=>$wb->consignee_postal_code,
+								'PackageID'=>$wb->waybill_code,
+								'ShipmentID'=>$wb->ship_id,
+								'PCS'=>$wb->item_count,
+								'TransMode'=>3,
+								'WrapType'=>($isDoc || $wb->boxing_category=='P1') ? 6:2,
+								'GrossWt'=>$wb->actual_weight,
+								'NetWt'=>$wb->net_weight,
+								'Fee'=>0,
+								'FeeInsur'=>0,
+								'FeeOther'=>0,
+								'ShipperAccount'=>$wb->sender_account,
+								'CompanyCode'=>$wb->sender_business_units_code,
+								'ShipperNameCN'=>$wb->sender_company_name_cn,
+								'ShipperNameEN'=>$wb->sender_company_name_en,
+								'ShipperCity'=>$wb->sender_city,
+								'ShipperAddress'=>$wb->sender_company_address,
+								'ShipperContact'=>$wb->sender_contacts,
+								'ShipperTel'=>$wb->sender_tel,
+								'Consignee'=>$wb->consignee_company_name_en,
+								'ConsigneeAddress'=>$wb->consignee_company_address_en,
+								'ConsigneeContact'=>$wb->consignee_contacts,
+								'ConsigneeTel'=>$wb->consignee_tel,
+								'CtiNO'=>$wb->certificate_of_authenticity_code,
+								'Service'=>$wb->service_code==2?'5':'1',
+							),
+							'EntryList'=>array(),
+							'Packages'=>array()
+						);
+						if ($isDoc){
+							$row['EntryList']=array(
+								'HSCode'=>'',
+								'GName'=>'文件',
+								'GModel'=>'',
+								'GWeight'=>$wb->clearing_weight,
+								'OriginCountry'=>'',
+								'Value'=>0,
+								'TradeCurr'=>'USD',
+								'GQty'=>1,
+								'GUnit'=>'011',
+								'Qty1'=>'',
+								'Unit1'=>'',
+							);
+						}else {
+							$invoice=WaybillInvoice::find('waybill_id=?',$wb->waybill_id)->getOne();
+							$invoice=json_decode($invoice->invoice,true);
+							foreach ($invoice as $irow){
+								$row['EntryList'][]=array(
+									'HSCode'=>$irow['commodity_hs_code'],
+									'GName'=>$irow['commodity_name_cn'],
+									'GModel'=>$irow['factors'],
+									'GWeight'=>$irow['gross_weight'],
+									'OriginCountry'=>$irow['origin_country'],
+									'Value'=>$irow['value'],
+									'TradeCurr'=>$irow['value_unit'],
+									'GQty'=>$irow['count'],
+									'GUnit'=>WaybillInvoice::$unit[$irow['count_unit']],
+									'Qty1'=>$irow['count1'],
+									'Unit1'=>WaybillInvoice::$unit[$irow['count_unit1']],
+								);
+							}
+							if (count($wb->subbox)){
+								foreach ($wb->subbox as $sb){
+									if ($sb->sub_waybill_code ==$wb->waybill_code){
+										continue;
+									}
+									$row['Packages']['PackageID'][]=$sb->sub_waybill_code;
+								}
+							}
+						}
+						$outXML['DataInfo']['Data'][]=$row;
+					}
+				}
+				header('Content-type: text/xml');
+				//下载显示的名字
+				header('Content-Disposition: attachment; filename="'."V928X8-".date('Ymd').request('sort').'.xml"');
+			
+				echo Helper_xml::simpleArr2xml($outXML,true,false);
+			}
+			//主账号：V928X6 导出XML文件
+			if (request ( 'format' ) == 'V928X6 三免') {
+				$type = Helper_Array::getCols ( $waybills, 'boxing_category' );
+				if (array_search ( 'ESF', $type ) === 0) {
+					return $this->_redirectMessage ( '导出失败', '导出运单中存在ESF件','#' );
+					exit ();
+				}
+				$outXML=array();
+				foreach ($waybills as $wb){
+					$sender = Sender::find ( "channel_id = ?", $wb->channel_id )->getOne ();
+					$flag=false;
+					//没有对应的主账号
+					if($sender->isNewRecord()){
+						if($wb->sender_account=="V928X6" || $wb->sender_account=="YY4782"){
+							$flag=true;
+						}
+					}else{
+						if($sender->sender_master_account=="V928X6"){
+							$flag=true;
+						}
+					}
+					if($flag){
+						$isDoc=in_array($wb->boxing_category, array('L','D'));
+						$row=array(
+							'EntryHead'=>array(
+								'DelType'=>$isDoc?'A':'C',
+								'DestCountry'=>$wb->destination,
+								'PostCode'=>$wb->consignee_postal_code,
+								'PackageID'=>$wb->waybill_code,
+								'ShipmentID'=>$wb->ship_id,
+								'PCS'=>$wb->item_count,
+								'TransMode'=>3,
+								'WrapType'=>($isDoc || $wb->boxing_category=='P1') ? 6:2,
+								'GrossWt'=>$wb->actual_weight,
+								'NetWt'=>$wb->net_weight,
+								'Fee'=>0,
+								'FeeInsur'=>0,
+								'FeeOther'=>0,
+								'ShipperAccount'=>$wb->sender_account,
+								'CompanyCode'=>$wb->sender_business_units_code,
+								'ShipperNameCN'=>$wb->sender_company_name_cn,
+								'ShipperNameEN'=>$wb->sender_company_name_en,
+								'ShipperCity'=>$wb->sender_city,
+								'ShipperAddress'=>$wb->sender_company_address,
+								'ShipperContact'=>$wb->sender_contacts,
+								'ShipperTel'=>$wb->sender_tel,
+								'Consignee'=>$wb->consignee_company_name_en,
+								'ConsigneeAddress'=>$wb->consignee_company_address_en,
+								'ConsigneeContact'=>$wb->consignee_contacts,
+								'ConsigneeTel'=>$wb->consignee_tel,
+								'CtiNO'=>$wb->certificate_of_authenticity_code,
+								'Service'=>$wb->service_code==2?'5':'1',
+							),
+							'EntryList'=>array(),
+							'Packages'=>array()
+						);
+						if ($isDoc){
+							$row['EntryList']=array(
+								'HSCode'=>'',
+								'GName'=>'文件',
+								'GModel'=>'',
+								'GWeight'=>$wb->clearing_weight,
+								'OriginCountry'=>'',
+								'Value'=>0,
+								'TradeCurr'=>'USD',
+								'GQty'=>1,
+								'GUnit'=>'011',
+								'Qty1'=>'',
+								'Unit1'=>'',
+							);
+						}else {
+							$invoice=WaybillInvoice::find('waybill_id=?',$wb->waybill_id)->getOne();
+							$invoice=json_decode($invoice->invoice,true);
+							foreach ($invoice as $irow){
+								$row['EntryList'][]=array(
+									'HSCode'=>$irow['commodity_hs_code'],
+									'GName'=>$irow['commodity_name_cn'],
+									'GModel'=>$irow['factors'],
+									'GWeight'=>$irow['gross_weight'],
+									'OriginCountry'=>$irow['origin_country'],
+									'Value'=>$irow['value'],
+									'TradeCurr'=>$irow['value_unit'],
+									'GQty'=>$irow['count'],
+									'GUnit'=>WaybillInvoice::$unit[$irow['count_unit']],
+									'Qty1'=>$irow['count1'],
+									'Unit1'=>WaybillInvoice::$unit[$irow['count_unit1']],
+								);
+							}
+							if (count($wb->subbox)){
+								foreach ($wb->subbox as $sb){
+									if ($sb->sub_waybill_code ==$wb->waybill_code){
+										continue;
+									}
+									$row['Packages']['PackageID'][]=$sb->sub_waybill_code;
+								}
+							}
+						}
+						$outXML['DataInfo']['Data'][]=$row;
+					}
+				}
+				header('Content-type: text/xml');
+				//下载显示的名字
+				header('Content-Disposition: attachment; filename="'."V928X6-".date('Ymd').request('sort').'.xml"');
+					
+				echo Helper_xml::simpleArr2xml($outXML,true,false);
+			}
+			//主账号：V5187X 导出XML文件
+			if (request ( 'format' ) == 'V5187X 三免') {
+				$type = Helper_Array::getCols ( $waybills, 'boxing_category' );
+				if (array_search ( 'ESF', $type ) === 0) {
+					return $this->_redirectMessage ( '导出失败', '导出运单中存在ESF件','#' );
+					exit ();
+				}
+				$outXML=array();
+				foreach ($waybills as $wb){
+					$sender = Sender::find ( "channel_id = ?", $wb->channel_id )->getOne ();
+					$flag=false;
+					//没有对应的主账号
+					if($sender->isNewRecord()){
+						if($wb->sender_account=="V5187X"){
+							$flag=true;
+						}
+					}else{
+						if($sender->sender_master_account=="V5187X"){
+							$flag=true;
+						}
+					}
+					if($flag){
+						$isDoc=in_array($wb->boxing_category, array('L','D'));
+						$row=array(
+							'EntryHead'=>array(
+								'DelType'=>$isDoc?'A':'C',
+								'DestCountry'=>$wb->destination,
+								'PostCode'=>$wb->consignee_postal_code,
+								'PackageID'=>$wb->waybill_code,
+								'ShipmentID'=>$wb->ship_id,
+								'PCS'=>$wb->item_count,
+								'TransMode'=>3,
+								'WrapType'=>($isDoc || $wb->boxing_category=='P1') ? 6:2,
+								'GrossWt'=>$wb->actual_weight,
+								'NetWt'=>$wb->net_weight,
+								'Fee'=>0,
+								'FeeInsur'=>0,
+								'FeeOther'=>0,
+								'ShipperAccount'=>$wb->sender_account,
+								'CompanyCode'=>$wb->sender_business_units_code,
+								'ShipperNameCN'=>$wb->sender_company_name_cn,
+								'ShipperNameEN'=>$wb->sender_company_name_en,
+								'ShipperCity'=>$wb->sender_city,
+								'ShipperAddress'=>$wb->sender_company_address,
+								'ShipperContact'=>$wb->sender_contacts,
+								'ShipperTel'=>$wb->sender_tel,
+								'Consignee'=>$wb->consignee_company_name_en,
+								'ConsigneeAddress'=>$wb->consignee_company_address_en,
+								'ConsigneeContact'=>$wb->consignee_contacts,
+								'ConsigneeTel'=>$wb->consignee_tel,
+								'CtiNO'=>$wb->certificate_of_authenticity_code,
+								'Service'=>$wb->service_code==2?'5':'1',
+							),
+							'EntryList'=>array(),
+							'Packages'=>array()
+						);
+						if ($isDoc){
+							$row['EntryList']=array(
+								'HSCode'=>'',
+								'GName'=>'文件',
+								'GModel'=>'',
+								'GWeight'=>$wb->clearing_weight,
+								'OriginCountry'=>'',
+								'Value'=>0,
+								'TradeCurr'=>'USD',
+								'GQty'=>1,
+								'GUnit'=>'011',
+								'Qty1'=>'',
+								'Unit1'=>'',
+							);
+						}else {
+							$invoice=WaybillInvoice::find('waybill_id=?',$wb->waybill_id)->getOne();
+							$invoice=json_decode($invoice->invoice,true);
+							foreach ($invoice as $irow){
+								$row['EntryList'][]=array(
+									'HSCode'=>$irow['commodity_hs_code'],
+									'GName'=>$irow['commodity_name_cn'],
+									'GModel'=>$irow['factors'],
+									'GWeight'=>$irow['gross_weight'],
+									'OriginCountry'=>$irow['origin_country'],
+									'Value'=>$irow['value'],
+									'TradeCurr'=>$irow['value_unit'],
+									'GQty'=>$irow['count'],
+									'GUnit'=>WaybillInvoice::$unit[$irow['count_unit']],
+									'Qty1'=>$irow['count1'],
+									'Unit1'=>WaybillInvoice::$unit[$irow['count_unit1']],
+								);
+							}
+							if (count($wb->subbox)){
+								foreach ($wb->subbox as $sb){
+									if ($sb->sub_waybill_code ==$wb->waybill_code){
+										continue;
+									}
+									$row['Packages']['PackageID'][]=$sb->sub_waybill_code;
+								}
+							}
+						}
+						$outXML['DataInfo']['Data'][]=$row;
+					}
+				}
+				header('Content-type: text/xml');
+				//下载显示的名字
+				header('Content-Disposition: attachment; filename="'."V5187X-".date('Ymd').request('sort').'.xml"');
+					
+				echo Helper_xml::simpleArr2xml($outXML,true,false);
+			}
+			//YHMY交接清单
+			if (request ( 'format' ) == 'YHMY交接清单') {
+				$header = array (
+						'center','Hawb','service','type','pcs','weight','shipperAccount','shipper','shipper_eng','shipperadd',
+						'shipperContact','shippertel','Consignee','consigneeadd','consigneecontact','consigneetel','country','goods','quantity',
+						'unit','value','currency','postcode','hs','company','package','ctino'
+				);
+				$sheet = array (
+					$header
+				);
+				foreach ( $waybills as $waybill ) {
+					$invoice=WaybillInvoice::find('waybill_id=?',$waybill->waybill_id)->getOne();
+					$invoiceData=array();
+					if ($invoice->invoice){
+						$invoiceData=json_decode($invoice->invoice,true);
+					}
+					$sub_codes='';
+					if (count($waybill->subbox)){
+						foreach ($waybill->subbox as $sb){
+							if ($sb->sub_waybill_code ==$waybill->waybill_code){
+								continue;
+							}
+							$sub_codes.=$sb->sub_waybill_code.',';
+						}
+					}
+					$sub_codes=rtrim($sub_codes,",");
+					$sheet [] = array (
+						'JXG',"'" .$waybill->waybill_code,'1','C',$waybill->item_count,$waybill->actual_weight,'5315WW','嘉兴莹和贸易有限公司',$waybill->sender_company_name_en,$waybill->sender_company_address,
+						$waybill->sender_contacts,"'" .$waybill->sender_tel,$waybill->consignee_company_name_en,$waybill->consignee_company_address_en,$waybill->consignee_contacts,"'" .$waybill->consignee_tel,$waybill->destination,isset($invoiceData[0]['commodity_name_cn'])?$invoiceData[0]['commodity_name_cn']:'',isset($invoiceData[0]['count'])?$invoiceData[0]['count']:'',
+						isset($invoiceData[0]['count_unit'])?intval(WaybillInvoice::$unit[$invoiceData[0]['count_unit']]):'',isset($invoiceData[0]['value'])?$invoiceData[0]['value']:'',isset($invoiceData[0]['value_unit'])?$invoiceData[0]['value_unit']:'',"'" .$waybill->consignee_postal_code,isset($invoiceData[0]['commodity_hs_code'])?"'" .$invoiceData[0]['commodity_hs_code']:'',"'" .$waybill->sender_business_units_code,
+						$sub_codes,''
+					);
+				}
+				Helper_Excel::array2xls($sheet, '交接清单 ' . date ( 'Y-m-d' ).".xls");
+			}
+			//ZHLKJ交接清单
+			if (request ( 'format' ) == 'ZHLKJ交接清单') {
+				$header = array (
+					'Center','Hawb','ServiceType','ServiceType','Type','ShipperAcc','Shipper','Shipper_eng','Shipperadd','Shipperadd_cn',
+					'ShipCity_en','ShipCity_cn','ShipperContact','Shippertel','Acc','ShipName','ShipAddr','ShipCity_CN','ShipPh#','CNEE_EN',
+					'CNEEAdd_EN','CNEECity','CNEETel','DesCountry','Postcode','CNEE_CN','CNEEAdd_CN','Pcs','Weight','Goods_EN','Goods_CN',
+					'ItemWei.','HS','Value','Curr.','Qty','QtyUnit(CN)','Package','ctino','Unit','第1法定单位','第1法定数量','CR_CODE','SCC'
+				);
+				$sheet = array (
+					$header
+				);
+				foreach ( $waybills as $waybill ) {
+					$invoice=WaybillInvoice::find('waybill_id=?',$waybill->waybill_id)->getOne();
+					$invoiceData=array();
+					if ($invoice->invoice){
+						$invoiceData=json_decode($invoice->invoice,true);
+					}
+					$sub_codes='';
+					if (count($waybill->subbox)){
+						foreach ($waybill->subbox as $sb){
+							if ($sb->sub_waybill_code ==$waybill->waybill_code){
+								continue;
+							}
+							$sub_codes.=$sb->sub_waybill_code.',';
+						}
+					}
+					$sub_codes=rtrim($sub_codes,",");
+					$sheet [] = array (
+						'JXG',"'" .$waybill->waybill_code,$waybill->service_code=='1P'?'1':'5','','','','','','','','','','','','73X574',
+						'SHCSC technology co.,ltd.','No 201 cang ping road jingbian chanye park haining city zhejiang province China','嘉兴',
+						"'".'19817733126',$waybill->consignee_company_name_en,$waybill->consignee_company_address_en,$waybill->consignee_city,"'" .$waybill->consignee_tel,
+						$waybill->destination,"'".$waybill->consignee_postal_code,'','',$waybill->item_count,$waybill->clearing_weight,isset($invoiceData[0]['commodity_name_en'])?$invoiceData[0]['commodity_name_en']:'DOC',
+						isset($invoiceData[0]['commodity_name_cn'])?$invoiceData[0]['commodity_name_cn']:'文件','','',isset($invoiceData[0]['value'])?$invoiceData[0]['value']:'0',
+						isset($invoiceData[0]['value_unit'])?$invoiceData[0]['value_unit']:'USD',isset($invoiceData[0]['count'])?$invoiceData[0]['count']:'1',
+						isset($invoiceData[0]['count_unit'])?'件':'份',isset($invoiceData[0]['commodity_hs_code'])?"'" .$invoiceData[0]['commodity_hs_code']:'',
+						$sub_codes,'','','','','',''
+					);
+				}
+				Helper_Excel::array2xls($sheet, '交接清单 ' . date ( 'Y-m-d' ).".xls");
+			}
+			//结束事物
+			$conn->completeTrans ();
+			exit ();
+		}
+	}
+	
+	/**
+	 * 查单
+	 */
+	function actionCheck() {
+		$pagination = null;
+		$flag = false;
+		$waybills = array ();
+		$select = Waybill::find ();
+		if (request ( "waybill_code" )) {
+			$flag = true;
+			$select->where ( "waybill_code like ?", "%" . strtoupper(request ( "waybill_code" )) . "%" );
+		}
+		if (request ( "former_waybill_code" )) {
+			$flag = true;
+			$select->where ( "former_waybill_code = ?", request ( "former_waybill_code" ) );
+		}
+		if (request ( "client_waybill_code" )) {
+			$flag = true;
+			$select->where ( "client_waybill_code = ?", request ( "client_waybill_code" ) );
+		}
+		if (request ( "start_date" )) {
+			$flag = true;
+			$select->where ( "record_order_date >= ?", request ( "start_date" ) . " 00:00:00" );
+		}
+		if (request ( "end_date" )) {
+			$flag = true;
+			$select->where ( "record_order_date <= ?", request ( "end_date" ) . " 23:59:59" );
+		}
+		if ($flag) {
+			$waybills = $select->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), request ( "amount", MyApp::getPageSize () ) )
+				->fetchPagination ( $pagination )
+				->getAll ();
+		}
+		if (count ( $waybills ) == 0 && $flag && request('waybill_code')) {
+			$subboxs = Subbox::find ( 'sub_waybill_code =?', request ( 'waybill_code' ) )->asArray ()
+				->setColumns ( 'waybill_id' )
+				->getAll ();
+			if (count ( $subboxs )) {
+				$waybills = Waybill::find ( 'waybill_id in(?)', Helper_Array::getCols ( $subboxs, 'waybill_id' ) )->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), request ( "amount", MyApp::getPageSize () ) )
+					->fetchPagination ( $pagination )
+					->getAll ();
+			}
+		}
+		$this->_view ["waybills"] = $waybills;
+		$this->_view ["pagination"] = $pagination;
+	}
+	
+	/**
+	 * 批量查单
+	 */
+	function actionBatch() {
+		//运单列表
+		$waybills = array ();
+		//运单号列表
+		$waybill_codes = array ();
+		
+		if (request_is_post () && request ( "waybill_codes" )) {
+			$waybill_codes = str_replace ( array (
+				"\r"," " 
+			), "", request ( "waybill_codes" ) );
+			$waybill_codes = explode ( "\n", $waybill_codes );
+			$waybill_codes = array_unique ( $waybill_codes );
+			$select = Waybill::find ();
+			foreach ( $waybill_codes as $value ) {
+				$select->orWhere ( "waybill_code = ?", $value );
+			}
+			$waybills = Helper_Array::groupBy ( $select->getAll (), "waybill_code" );
+		}
+		//导出三免清单
+		if(request('export')=='export'){
+		    $export_waybills=Waybill::find ();
+	        $export_waybills->where('waybill_code in (?)',$waybill_codes);
+		    $export_waybills=$export_waybills->order ( 'operator_id,waybill_id' )->getAll();
+		    $outXML=array();
+		    foreach ($export_waybills as $wb){
+		        if($wb->high_low_price_flag=='1'){
+		            continue;
+		        }
+		        $isDoc=in_array($wb->boxing_category, array('L','D'));
+		        $destination=$wb->destination;
+		        //港澳台
+		        $gat=in_array($destination, array('HK','TW','MO'));
+		        $row=array(
+		            'EntryHead'=>array(
+		                'DelType'=>$isDoc?'A':'C',
+		                'DestCountry'=>$wb->destination,
+		                'PostCode'=>$wb->consignee_postal_code,
+		                'PackageID'=>$wb->waybill_code,
+		                'ShipmentID'=>$wb->ship_id,
+		                'PCS'=>$wb->item_count,
+		                'TransMode'=>3,
+		                'WrapType'=>($isDoc || $wb->boxing_category=='P1') ? 6:2,
+		                'GrossWt'=>$wb->actual_weight,
+		                'NetWt'=>$wb->net_weight,
+		                'Fee'=>0,
+		                'FeeInsur'=>0,
+		                'FeeOther'=>0,
+		                'ShipperAccount'=>$wb->sender_account,
+		                'CompanyCode'=>$wb->sender_business_units_code,
+		                'ShipperNameCN'=>$wb->sender_company_name_cn,
+		                'ShipperNameEN'=>$wb->sender_company_name_en,
+		                'ShipperCity'=>$wb->sender_city_cn,
+		                'ShipperAddress'=>$wb->sender_company_address,
+		                'ShipperContact'=>$wb->sender_contacts,
+		                'ShipperTel'=>$wb->sender_tel,
+		                'Consignee'=>$wb->consignee_company_name_en,
+		                'ConsigneeAddress'=>$wb->consignee_company_address_en,
+		                'ConsigneeContact'=>$wb->consignee_contacts,
+		                'ConsigneeTel'=>$wb->consignee_tel,
+		                'CtiNO'=>$wb->certificate_of_authenticity_code,
+		                'TradeSCC'=>$wb->trade_scc,
+		                'Service'=>$wb->service_code==2?'5':'1',
+		                'WoodWrap'=>$wb->woody_flag,
+		                'GoodsUsed'=>$wb->used_flag,
+		                'LowTemTrans'=>$wb->low_temperature_flag,
+		                'ShipperCityEN'=>$wb->sender_city,
+		                'ShipperAddressCN'=>$wb->sender_company_address_cn,
+		                'ConsigneeCN'=>$gat?$wb->consignee_company_name_cn:$wb->consignee_company_name_en,
+		                'ConsigneeCityCN'=>$wb->consignee_city,
+		                'ConsigneeAddressCN'=>$gat?$wb->consignee_company_address_cn:$wb->consignee_company_address_en
+		            ),
+		            'EntryList'=>array(),
+		            'Packages'=>array()
+		        );
+		        if ($isDoc){
+		            $row['EntryList']=array(
+		                'HSCode'=>'',
+		                'GName'=>'文件',
+		                'GModel'=>'',
+		                'GWeight'=>$wb->clearing_weight,
+		                'OriginCountry'=>'',
+		                'Value'=>0,
+		                'TradeCurr'=>'USD',
+		                'GQty'=>1,
+		                'GUnit'=>'011',
+		                'Qty1'=>'',
+		                'Unit1'=>'',
+		                'OriginCity'=>'',
+		                'Manufacture'=>'',
+		                'GoodsEN'=>''
+		            );
+		        }else {
+		            $invoice=WaybillInvoice::find('waybill_id=?',$wb->waybill_id)->getOne();
+		            $invoice=json_decode($invoice->invoice,true);
+		            foreach ($invoice as $irow){
+		                $row['EntryList'][]=array(
+		                    'HSCode'=>$irow['commodity_hs_code'],
+		                    'GName'=>$irow['commodity_name_cn'],
+		                    'GModel'=>$irow['factors'],
+		                    'GWeight'=>$irow['gross_weight'],
+		                    'OriginCountry'=>$irow['origin_country'],
+		                    'Value'=>$irow['value'],
+		                    'TradeCurr'=>$irow['value_unit'],
+		                    'GQty'=>$irow['count'],
+		                    'GUnit'=>WaybillInvoice::$unit[$irow['count_unit']],
+		                    'Qty1'=>$irow['count1'],
+		                    'Unit1'=>WaybillInvoice::$unit[$irow['count_unit1']],
+		                    'OriginCity'=>'',
+		                    'Manufacture'=>'',
+		                    'GoodsEN'=>''
+		                );
+		            }
+		            if (count($wb->subbox)){
+		                foreach ($wb->subbox as $sb){
+		                    if ($sb->sub_waybill_code ==$wb->waybill_code){
+		                        continue;
+		                    }
+		                    $row['Packages']['PackageID'][]=$sb->sub_waybill_code;
+		                }
+		            }
+		        }
+		        $outXML['DataInfo']['Data'][]=$row;
+		        //导出操作修改导出状态
+		        $wb->export_date = date ( 'Y-m-d H:i:s' );
+		        $wb->save ();
+		    }
+		    header('Content-type: text/xml');
+		    //下载显示的名字
+		    header('Content-Disposition: attachment; filename="'.date('Ymd').request('sort').'.xml"');
+		    
+		    echo Helper_xml::simpleArr2xml($outXML,true,false);
+		    die();
+		}
+		$this->_view ["waybill_codes"] = $waybill_codes;
+		$this->_view ["waybills"] = $waybills;
+	}
+	
+	/**
+	 * 查看
+	 */
+	function actionView() {
+		$this->_view ["waybill"] = Waybill::find ( "waybill_id = ?", request ( "id" ) )->getOne ();
+		$this->_view ["channel_confirm_types"] = array (
+			"0" => "未对账","2" => "未完成","3" => "进行中","1" => "已完成" 
+		);
+		if (request_is_post ()) {
+			if (request ( 'waybill_id' )) {
+				$waybill = Waybill::find ( "waybill_id = ?", request ( "waybill_id" ) )->getOne ();
+				$waybill->changeProps ( $_POST );
+				$waybill->save ();
+				return $this->_redirectMessage ( '查单', '保存成功', url ( 'edi/view', array (
+					'id' => request ( "waybill_id" ) 
+				) ) );
+			}
+		}
+	}
+	
+	/**
+	 * 渠道业务 2016-08-25
+	 */
+	function actionChannel(){
+		//公共时间
+		if (request ( 'start_date', MyApp::getDate ( 'start_date' ) ) != MyApp::getDate ( 'start_date' )) {
+			MyApp::setDate ( 'start_date', request ( 'start_date' ) );
+		}
+		if (request ( 'end_date', MyApp::getDate ( 'end_date' ) ) != MyApp::getDate ( 'end_date' )) {
+			MyApp::setDate ( 'end_date', request ( 'end_date' ) );
+		}
+		//搜索
+		$cond = new QDB_Cond ();
+		//发件日
+		$cond->andCond ( Waybill::meta()->table->name.".record_order_date >= ? and ".Waybill::meta()->table->name.".record_order_date <= ?", MyApp::getDate ( 'start_date' ), MyApp::getDate ( 'end_date' ) );
+		//渠道
+		if (request ( "channel_id" )) {
+			$cond->andCond ( Waybill::meta()->table->name.".channel_id = ?", request ( "channel_id" ) );
+		}
+		// 产品
+		if (request ( "product_id" )) {
+			$product_id = request ( "product_id" );
+			Helper_Array::removeEmpty ( $product_id );
+			if ($product_id) {
+				$cond->andCond ( Waybill::meta()->table->name.".product_id in (?)", Q::normalize ( request ( "product_id" ) ) );
+			}
+		}
+		// 分公司
+		if (request ( "department_id" )) {
+			$department_ids = request ( 'department_id' );
+			Helper_Array::removeEmpty ( $department_ids );
+			if ($department_ids) {
+				$cond->andCond ( Waybill::meta()->table->name.".department_id in (?)", Q::normalize ( request ( "department_id" ) ) );
+			}
+		} 
+		$this->_view ["page"] = (request_is_post () ? 1 : request ( "page", 1 ));
+		$this->_view ["page_size"] = request ( "amount", MyApp::getPageSize () );
+		// 默认选中全部
+		$active_id = 0;
+		// 进行分页查询，并取得分页信息
+		$pagination = null;
+		// 无产品
+		if (request ( "parameters" ) == "product_id") {
+			$conditions = "(".Waybill::meta()->table->name.".product_id is null OR ".Waybill::meta()->table->name.".product_id ='') AND (enable_flag != '0' OR enable_flag is null )";
+			$active_id = 1;
+		}
+		// 未上报
+		if (request ( "parameters" ) == "data_report_date") {
+			$conditions = "(data_report_date is null or data_report_date ='') AND (enable_flag != '0' OR enable_flag is null )";
+			$active_id = 3;
+		}
+		// 无取件地
+		if (request ( "parameters" ) == "receive_address") {
+			$conditions = "(".Waybill::meta()->table->name.".receive_address is null or ".Waybill::meta()->table->name.".receive_address ='') AND (enable_flag != '0' OR enable_flag is null )";
+			$active_id = 4;
+		}
+		// 无销售员
+		if (request ( "parameters" ) == "salesperson") {
+			$conditions = "(".Waybill::meta()->table->name.".salesperson is null or ".Waybill::meta()->table->name.".salesperson ='') AND (enable_flag != '0' OR enable_flag is null )";
+			$active_id = 5;
+		}
+		// 无取件员
+		if (request ( "parameters" ) == "receiver") {
+			$conditions = "(receiver_id is null or receiver_id ='') AND (enable_flag != '0' OR enable_flag is null )";
+			$active_id = 6;
+		}
+		// 应收未对账
+		if (request ( "parameters" ) == "customs_confirm") {
+			$conditions = "customs_confirm = 0 AND (enable_flag != '0' OR enable_flag is null )";
+			$active_id = 7;
+		}
+		// 作废
+		if (request ( "parameters" ) == "enable_flag") {
+			$conditions = "enable_flag = '0'";
+			$active_id = 8;
+		}
+		// 到付拒付
+		if (request ( "parameters" ) == "abnormal_state") {
+			$conditions = "abnormal_state != '无拒付' AND (enable_flag != '0' OR enable_flag is null )";
+			$active_id = 9;
+		}
+		// 利润分析未完成
+		if (request ( "parameters" ) == "profitCal") {
+			$conditions = "profit_complete != '1' and ifnull(enable_flag,1) !=0";
+			$active_id = 10;
+		}
+		
+		// 检索运单表
+		$parameters = request ( "parameters" );
+		$sort = 'desc';
+		if ($parameters == 'profitCal' && request ( 'abnormal_state' )) {
+			$sort = 'asc';
+		}
+		$total = 0;
+		if (empty ( $parameters )) {
+			$total = Waybill::find ( $cond )->where ( "enable_flag != '0' OR enable_flag is null" )
+			->sum ( "item_count", "item_count" )
+			->sum ( "clearing_weight", "clearing_weight" )
+			->sum ( "commission_weight", "commission_weight" )
+			->sum ( "actual_weight", "actual_weight" )
+			->sum ( "profit", "profit" )
+			->sum ( "product_public_price", "product_public_price" )
+			->getAll ();
+			$select = Waybill::find ( $cond )->where ( "enable_flag != '0' OR enable_flag is null" )
+			->order ( "record_order_date {$sort},create_date desc" );
+		} else {
+			$total = Waybill::find ( $cond )->where ( $conditions )
+			->sum ( "item_count", "item_count" )
+			->sum ( "item_count", "item_count" )
+			->sum ( "clearing_weight", "clearing_weight" )
+			->sum ( "commission_weight", "commission_weight" )
+			->sum ( "actual_weight", "actual_weight" )
+			->sum ( "profit", "profit" )
+			->sum ( "product_public_price", "product_public_price" )
+			->getAll ();
+			$select = Waybill::find ( $cond )->where ( $conditions )
+			->order ( "record_order_date {$sort},create_date desc" );
+		}
+		//导出
+		if (request ( "do" ) == "export") {
+			$waybills = $select->getAll ();
+			//因为要触发公开价自动填写的功能，所以一定要改为模型获取数据
+			$header = array (
+				"发件日","运单号","原运单号","目的地","业务来源","客户代码","客户简称","渠道","部门",
+				"承运人对帐完成","委托人对账完成","利润分析已完成","结算重量","委托重量","产品公开运价","客户公开运价",
+				"件数","实重","分区号","原始包装","包装","pp_cc","分账号","取件地","SORT","高低价",
+				"服务","产品","大货价费率","baf","RS","业务员","操作员",
+				"取件员","到付拒付","网络","付款账号"
+			);
+			$sheet = array (
+				$header
+			);
+			foreach ( $waybills as $wb ) {
+				$sheet [] = array (
+					Helper_Util::strDate ( 'Y-m-d', $wb->record_order_date ),
+					"'" . $wb->waybill_code,"'" . $wb->former_waybill_code,
+					$wb->destination,$wb->source,$wb->customs->customs_code,
+					$wb->customs_abbreviation,$wb->channel_name,
+					$wb->department_abbreviation,
+					$wb->channel_confirm ? 'T' : 'F',
+					$wb->customs_confirm ? 'T' : 'F',
+					$wb->profit_complete ? 'T' : 'F',$wb->clearing_weight,
+					$wb->commission_weight,$wb->product_public_price,
+					$wb->customs_public_price,$wb->item_count,$wb->actual_weight,
+					$wb->partition_code,$wb->former_boxing_category,
+					$wb->boxing_category,$wb->payment_mode,$wb->sender_account,
+					$wb->receive_address,$wb->sort,
+					$wb->high_low_price_flag ? '高价' : '低价',$wb->service_code,
+					$wb->product_name,
+					$wb->large_commodity_price_rates,$wb->fuel_surcharge,
+					$wb->rs_flag ? '是' : '否',$wb->salesperson,$wb->operator,
+					$wb->receiver_name,$wb->abnormal_state,$wb->network_code,$wb->payment_account
+				);
+			}
+				
+			Helper_ExcelX::array2xlsx ( $sheet, "渠道业务导出" );
+			exit ();
+		}
+		$select->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), request ( "amount", MyApp::getPageSize () ) )
+		->fetchPagination ( $pagination );
+		$waybills = $select->getAll ();
+		
+		$counts = array ();
+		// 全部总数
+		$counts [0] = Waybill::find ( $cond )->where ( "enable_flag != '0' OR enable_flag is null" )
+		->getCount ();
+		// 无产品
+		$counts [1] = Waybill::find ( $cond )->where ( "product_id is null OR product_id =''" )
+		->where ( "enable_flag != '0' OR enable_flag is null" )
+		->getCount ();
+		// 未上报
+		$counts [3] = Waybill::find ( $cond )->where ( "data_report_date is null or data_report_date =''" )
+		->where ( "enable_flag != '0' OR enable_flag is null" )
+		->getCount ();
+		// 无取件地
+		$counts [4] = Waybill::find ( $cond )->where ( "receive_address is null or receive_address =''" )
+		->where ( "enable_flag != '0' OR enable_flag is null" )
+		->getCount ();
+		// 无销售员
+		$counts [5] = Waybill::find ( $cond )->where ( "salesperson is null or salesperson =''" )
+		->where ( "enable_flag != '0' OR enable_flag is null" )
+		->getCount ();
+		// 无取件员总数
+		$counts [6] = Waybill::find ( $cond )->where ( "receiver_id is null or receiver_id =''" )
+		->where ( "enable_flag != '0' OR enable_flag is null" )
+		->getCount ();
+		// 应收未对账总数
+		$counts [7] = Waybill::find ( $cond )->where ( "customs_confirm = '0'" )
+		->where ( "enable_flag != '0' OR enable_flag is null " )
+		->getCount ();
+		// 作废总数
+		$counts [8] = Waybill::find ( $cond )->where ( "enable_flag = '0'" )
+		->getCount ();
+		// 到付拒付
+		$counts [9] = Waybill::find ( $cond )->where ( "abnormal_state != '无拒付'" )
+		->where ( "enable_flag != '0' OR enable_flag is null" )
+		->getCount ();
+		// 利润分析未完成
+		$counts [10] = Waybill::find ( $cond )->where ( "profit_complete != '1' and ifnull(enable_flag,1) !=0" )
+		->getCount ();
+		
+		$this->_view ["pagination"] = $pagination;
+		$this->_view ["waybills"] = $waybills;
+		$this->_view ["total"] = $total;
+		$this->_view ["counts"] = $counts;
+		$this->_view ["active_id"] = $active_id;
+		$this->_view ["tabs"] = $this->createTabs ( $counts );
+	}
+	
+	/**
+	 * 创建标签
+	 */
+	function createTabs($counts) {
+		return array (
+			array (
+				"id" => "0","title" => "全部","count" => $counts [0],
+				"href" => "javascript:TabSwitch()"
+			),
+			array (
+				"id" => "1","title" => "无产品","count" => $counts [1],
+				"href" => "javascript:TabSwitch('product_id')"
+			),
+			array (
+				"id" => "3","title" => "未上报","count" => $counts [3],
+				"href" => "javascript:TabSwitch('data_report_date')"
+			),
+			array (
+				"id" => "4","title" => "无取件地","count" => $counts [4],
+				"href" => "javascript:TabSwitch('receive_address')"
+			),
+				
+			array (
+				"id" => "5","title" => "无销售员","count" => $counts [5],
+				"href" => "javascript:TabSwitch('salesperson')"
+			),
+			array (
+				"id" => "6","title" => "无取件员","count" => $counts [6],
+				"href" => "javascript:TabSwitch('receiver')"
+			),
+			array (
+				"id" => "10","title" => "利润未完成","count" => $counts [10],
+				"href" => "javascript:TabSwitch('profitCal')"
+			),
+			array (
+				"id" => "8","title" => "作废","count" => $counts [8],
+				"href" => "javascript:TabSwitch('enable_flag')"
+			),
+			array (
+				"id" => "9","title" => "到付拒付","count" => $counts [9],
+				"href" => "javascript:TabSwitch('abnormal_state')"
+			),
+			array (
+				"id" => "7","title" => "应收未对账","count" => $counts [7],
+				"href" => "javascript:TabSwitch('customs_confirm')"
+			)
+		);
+	}
+	
+	/**
+	 * 导出高价数据时生成shipid
+	 */
+	static function creatShipid($waybillcode){
+		$waybillcode=trim($waybillcode);
+		if(strlen($waybillcode)<17){
+			return $waybillcode;
+		}
+		$acc=substr($waybillcode,2,6);
+		$num=substr($waybillcode,10,7);
+		$num26=strtoupper(base_convert((int)$num, 10, 26));
+		$dict1=array(
+			"0"=>"0","1"=>"1","2"=>"2","3"=>"3","4"=>"4","5"=>"5","6"=>"6","7"=>"7","8"=>"8","9"=>"9","A"=>"10","B"=>"11","C"=>"12","D"=>"13","E"=>"14","F"=>"15","G"=>"16","H"=>"17","I"=>"18","J"=>"19","K"=>"20","L"=>"21","M"=>"22","N"=>"23","O"=>"24","P"=>"25"
+		);
+		$dict2=array("3","4","7","8","9","B","C","D","F","G","H","J","K","L","M","N","P","Q","R","S","T","V","W","X","Y","Z");
+		$r='';
+		if(strlen($num26)<5){
+			for($k=0;$k<5-strlen($num26);$k++){
+				$r.='3';
+			}
+		}
+		$re=null;
+		for ($i=0;$i<strlen($num26);$i++){
+			$re[]=substr($num26,$i,1);
+			
+		}
+		for ($j=0;$j<count($re);$j++){
+			if(isset($num26[$j])){
+				$r.=$dict2[$dict1[$num26[$j]]];
+			}
+		}
+		return $acc.$r;
+	}
+	
+	/**
+	 * 希凯易业务
+	 */
+	function actionXikaiyi() {
+		//搜索操作
+		$select = Waybill::find ( " product_name in ('希凯易1P(义乌OGP）','希凯易2(义乌OGP）')  AND data_report_date IS NOT NULL AND network_code = 'UPS'" );
+		$select=$select->where("record_order_date >= ? AND record_order_date <= ?",request ( 'recordorderdate',date("Y-m-d",time()) ) . ' 00:00:00', request ( 'recordorderdate',date("Y-m-d",time())) . ' 23:59:59');
+		if(request("export")){
+			$select_clone=clone $select;
+			$waybills_export=$select_clone->order('department_abbreviation asc')->getAll ();
+			set_time_limit(0);
+			ini_set("memory_limit", "2048M");
+			$waybills = $select->getAll ();
+			$header = array (
+				"日期","类型","运单号","件数","重量","目的地","箱规","订单号"
+			);
+			$sheet = array (
+				$header
+			);
+			foreach ($waybills_export as $v){
+				$boxing='';
+				if($v->boxing_category=='P1'){
+					$boxing='包裹';
+				}elseif ($v->boxing_category=='P2'){
+					$boxing='箱子';
+				}elseif ($v->boxing_category=='D'){
+					$boxing='文件';
+				}elseif ($v->boxing_category=='L'){
+					$boxing='文件封';
+				}
+				$sheet[]=array(
+					Helper_Util::strDate ( 'Y-m-d', $v->record_order_date ),
+					$v->service_code,
+					"'" . $v->waybill_code,
+					$v->item_count,
+					$v->clearing_weight,
+					$v->destination,
+					$boxing,
+					$v->client_waybill_code
+				);
+			}
+			Helper_ExcelX::array2xlsx ( $sheet, "希凯易出货清单_".date('Y-m-d') );
+			exit ();
+		}
+		$waybills = $select->order('department_abbreviation asc')->getAll ();
+		$this->_view ['waybills'] = $waybills;
+	}
+	/**
+	 * 正步业务
+	 */
+	function actionXiehou() {
+	    //搜索操作
+	    $select = Waybill::find ( " product_name in ('正步-1P（义乌OGP）','正步-2（义乌OGP）')  AND data_report_date IS NOT NULL AND network_code = 'UPS'" );
+        $select=$select->where("record_order_date >= ? AND record_order_date <= ?",request ( 'recordorderdate',date("Y-m-d",time()) ) . ' 00:00:00', request ( 'recordorderdate',date("Y-m-d",time()) ) . ' 23:59:59');
+        if(request("export")){
+            $select_clone=clone $select;
+            $waybills_export=$select_clone->order('department_abbreviation asc')->getAll ();
+            set_time_limit(0);
+            ini_set("memory_limit", "2048M");
+            $waybills = $select->getAll ();
+            $header = array (
+                "日期","类型","运单号","件数","重量","目的地","箱规"
+            );
+            $sheet = array (
+                $header
+            );
+            foreach ($waybills_export as $v){
+                $boxing='';
+                if($v->boxing_category=='P1'){
+                    $boxing='包裹';
+                }elseif ($v->boxing_category=='P2'){
+                    $boxing='箱子';
+                }elseif ($v->boxing_category=='D'){
+                    $boxing='文件';
+                }elseif ($v->boxing_category=='L'){
+                    $boxing='文件封';
+                }
+                $sheet[]=array(
+                    Helper_Util::strDate ( 'Y-m-d', $v->record_order_date ),
+                    $v->service_code,
+                    "'" . $v->waybill_code,
+                    $v->item_count,
+                    $v->clearing_weight,
+                    $v->destination,
+                    $boxing,
+                );
+            }
+            Helper_ExcelX::array2xlsx ( $sheet, "正步出货清单_".date('Y-m-d') );
+            exit ();
+        }
+	    $waybills = $select->order('department_abbreviation asc')->getAll ();
+	    $this->_view ['waybills'] = $waybills;
+	}
+	
+	/**
+	 * 永舟业务
+	 */
+	function actionYongzhou() {
+		//搜索操作
+		$select = Waybill::find ( " product_name in ('永舟三方-1P（义乌OGP）','永舟三方-2（义乌OGP）')  AND data_report_date IS NOT NULL AND network_code = 'UPS'" );
+		$select=$select->where("record_order_date >= ? AND record_order_date <= ?",request ( 'recordorderdate',date("Y-m-d",time()) ) . ' 00:00:00', request ( 'recordorderdate',date("Y-m-d",time()) ) . ' 23:59:59');
+		if(request("export")){
+			$select_clone=clone $select;
+			$waybills_export=$select_clone->order('department_abbreviation asc')->getAll ();
+			set_time_limit(0);
+			ini_set("memory_limit", "2048M");
+			$waybills = $select->getAll ();
+			$header = array (
+				'日期',"运单号","目的地","结算重量","件数","实重","包装","服务","部门"
+			);
+			$sheet = array (
+				$header
+			);
+			foreach ($waybills_export as $v){
+				$boxing='';
+				$service='';
+				if($v->boxing_category=='P1' || $v->boxing_category=='P2'){
+					$boxing='P';
+				}elseif ($v->boxing_category=='D'){
+					$boxing='D';
+				}elseif ($v->boxing_category=='L'){
+					$boxing='L';
+				}
+				if($v->service_code=='1P'){
+					$service='红单';
+				}elseif ($v->service_code=='2'){
+					$service='蓝单';
+				}
+				$sheet[]=array(
+					 Helper_Util::strDate ( 'Y-m-d', $v->record_order_date ),
+					"'" . $v->waybill_code,
+					$v->destination,
+					$v->clearing_weight,
+					$v->item_count,
+					$v->actual_weight,
+					$boxing,
+					$service,
+					$v->department_abbreviation
+				);
+			}
+			Helper_ExcelX::array2xlsx ( $sheet, "永舟出货清单_".date('Y-m-d') );
+			exit ();
+		}
+		$waybills = $select->order('department_abbreviation asc')->getAll ();
+		$this->_view ['waybills'] = $waybills;
+	}
+	
+	/**
+	 * 创懿业务
+	 */
+	function actionchuangyi() {
+		//搜索操作
+		$select = Waybill::find ( " product_name in ('宁波创懿-1P（宁波OGP）','宁波创懿-2（宁波OGP）')  AND data_report_date IS NOT NULL AND network_code = 'UPS'" );
+		$select=$select->where("record_order_date >= ? AND record_order_date <= ?",request ( 'recordorderdate',date("Y-m-d",time()) ) . ' 00:00:00', request ( 'recordorderdate',date("Y-m-d",time()) ) . ' 23:59:59');
+		if(request("export")){
+			$select_clone=clone $select;
+			$waybills_export=$select_clone->order('department_abbreviation asc')->getAll ();
+			set_time_limit(0);
+			ini_set("memory_limit", "2048M");
+			$waybills = $select->getAll ();
+		    $header = array (
+                "日期","运单号",'分单号',"类型","件数","计费重量","目的地","红/蓝单"
+            );
+            $sheet = array (
+                $header
+            );
+            foreach ($waybills_export as $v){
+                $boxing='';
+                $service='';
+                if($v->boxing_category=='P1'){
+                    $boxing='PAK';
+                }elseif ($v->boxing_category=='P2'){
+                    $boxing='箱子';
+                }
+            	if($v->service_code=='1P'){
+					$service='红单';
+				}elseif ($v->service_code=='2'){
+					$service='蓝单';
+				}
+                $sheet[]=array(
+                    Helper_Util::strDate ( 'Y-m-d', $v->record_order_date ),
+                	"'" . $v->waybill_code,
+                	'',
+                	$boxing,
+                    $v->item_count,
+                    $v->clearing_weight,
+                    $v->destination,
+                	$service
+                );
+            }
+			Helper_ExcelX::array2xlsx ( $sheet, "创懿三方出货清单_".date('Y-m-d') );
+			exit ();
+		}
+		$waybills = $select->order('department_abbreviation asc')->getAll ();
+		$this->_view ['waybills'] = $waybills;
+	}
+	
+	/*
+	 * 润峯业务
+	 */
+	function actionRunfeng(){
+		$pagination = null;
+		$select = Waybill::find ( " product_name in ('润峯-1P（义乌OGP）','润峯-2（义乌OGP）')  AND data_report_date IS NOT NULL AND network_code = 'UPS'" );
+		$select=$select->where("record_order_date >= ? AND record_order_date <= ?",request ( 'start_time',date("Y-m-d",time()) ) . ' 00:00:00', request ( 'end_time',date("Y-m-d",time()) ) . ' 23:59:59');
+		if(request("export")){
+			$select_clone=clone $select;
+			$waybills_export=$select_clone->order('department_abbreviation asc')->getAll ();
+			set_time_limit(0);
+			ini_set("memory_limit", "2048M");
+			$waybills = $select->getAll ();
+			$header = array (
+				"center","hawb",'service',"type","pcs","weight","shipperaccount","shipper","shipper_eng",'shipperadd',"shippercontact",
+				"shippertel","consignee","consigneeadd","consigneecontact","consigneetel","country","goods","quantity","unit","value",
+				"currency","postcode","hs","company","package","ctino","unit1"
+			);
+			$sheet = array (
+				$header
+			);
+			foreach ($waybills_export as $v){
+				$type='';
+                $service='';
+				if($v->boxing_category=='P1' || $v->boxing_category=='P2'){
+					$type='C';
+				}elseif ($v->boxing_category=='D' || $v->boxing_category=='L'){
+					$type='A';
+				}
+				if($v->service_code=='1P'){
+					$service='1';
+				}elseif ($v->service_code=='2'){
+					$service='5';
+				}
+				$invoice=WaybillInvoice::find('waybill_id=?',$v->waybill_id)->getOne();
+				$goods='';
+				$quantity='';
+				$value='';
+				$hscode='';
+				$invoice_arr=array();
+				if(!$invoice->isNewRecord()){
+					$invoice_arr=json_decode($invoice->invoice,true);
+				}
+				if(count($invoice_arr)){
+					foreach ($invoice_arr as $a){
+						$goods.=$a['commodity_name_cn'].'，共'.$a['count'].$a['count_unit'].';';
+						$quantity.=$a['count'].';';
+						$value.=$a['value'].';';
+						$hscode.=$a['commodity_hs_code'].';';
+					}	
+				}
+				$sub='';
+				foreach ($v->subbox as $s){
+					if($s->sub_waybill_code==$v->waybill_code){
+						continue;
+					}else{
+						$sub.=$s->sub_waybill_code.';';
+					}
+				}
+				$sheet[]=array(
+					'yiw',
+					"'" . $v->waybill_code,
+					$service,
+					$type,
+					$v->item_count,
+					$v->actual_weight,
+					'4F1R24',
+					'苏州润峯网络科技有限公司义乌分公司',
+					'Suzhou run Net Technology Co., Ltd. Yiwu branch',
+					'NO.41 HANCHUN TWO AREA BEIYUAN STREET YIWU CITY,ZHEJIANG,YIWUCITY,ZHEJIANG PROVINCE,CHINA',
+					'YINHENGXIANG',
+					'17802119771',
+					$v->consignee_company_name_en,
+					$v->consignee_company_address_en,
+					$v->consignee_contacts,
+					"'" .$v->consignee_tel,
+					$v->destination,
+					rtrim($goods,';'),
+					rtrim($quantity,';'),
+					'011',
+					rtrim($value,';'),
+					'USD',
+					$v->consignee_postal_code,
+					rtrim($hscode,';'),
+					'3116965450',
+					count($v->item_count)>1?rtrim($sub,';'):'',
+					'',
+					'035'
+				);
+			}
+			Helper_ExcelX::array2xlsx ( $sheet, date('md')."润莑义乌UPS数据");
+			exit ();
+		}
+		$select_totals=clone $select;
+		$total=$select_totals->count('*')->sum('item_count','item_count')->sum('clearing_weight','clearing_weight')->asArray()->getAll();
+		$waybills = $select->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), request ( "amount", 200 ) )->order('record_order_date ')->fetchPagination ( $pagination )->getAll();
+		$this->_view ['waybills'] = $waybills;
+		$this->_view ['total'] = $total;
+		$this->_view ["pagination"] = $pagination;
+	}
+	/*
+	 * 余姚业务
+	 */
+	function actionYuyao(){
+	    $pagination = null;
+	    $select = Waybill::find ( " department_abbreviation = '余姚OGP'" )->joinRight('tb_waybill_invoice', '*','tb_waybill.waybill_id=tb_waybill_invoice.waybill_id');
+	    $select->where("record_order_date >= ? AND record_order_date <= ?",request ( 'start_time',date("Y-m-d",time()) ) . ' 00:00:00', request ( 'end_time',date("Y-m-d",time()) ) . ' 23:59:59');
+	    if(request("export")){
+	        $select_clone=clone $select;
+	        $waybills_export=$select_clone->asArray()->getAll ();
+	        set_time_limit(0);
+	        ini_set("memory_limit", "2048M");
+	        $data=array();
+	        foreach ($waybills_export as $temp){
+	            $invoice=json_decode($temp['invoice'],true);
+	            $info=array();
+	            foreach ($invoice as $inv){
+	                $info['sender_company_name_cn']=$temp['sender_company_name_cn'];
+	                $info['sender_company_name_en']=$temp['sender_company_name_en'];
+	                $info['commodity_name_en']=isset($inv['commodity_name_en'])?$inv['commodity_name_en']:'';
+    	            $info['commodity_name_cn']=isset($inv['commodity_name_cn'])?$inv['commodity_name_cn']:'';
+    	            $info['commodity_hs_code']=isset($inv['commodity_hs_code'])?$inv['commodity_hs_code']:'';
+	                $data[]=$info;
+	            }
+	        }
+	        $header = array (
+	            "发件人公司中文","发件人公司英文",'中文品名',"英文品名","HS编码"
+	        );
+	        $sheet = array (
+	            $header
+	        );
+	        foreach ($data as $v){
+	            $sheet[]=array(
+	                $v['sender_company_name_cn'],
+	                $v['sender_company_name_en'],
+	                $v['commodity_name_cn'],
+	                $v['commodity_name_en'],
+	                "'".$v['commodity_hs_code'],
+	            );
+	        }
+	        Helper_ExcelX::array2xlsx ( $sheet, date('Y-m-d')."余姚OGP");
+	        exit ();
+	    }
+	    $waybills = $select->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), 30 )->order('record_order_date ')->fetchPagination ( $pagination )->getAll();
+	    $this->_view ['waybills'] = $waybills;
+	    $this->_view ["pagination"] = $pagination;
+	}
+	/*
+	 * 富轩业务
+	 */
+	function actionFuxuan(){
+	    //搜索操作
+		$select = Waybill::find ( " product_name ='富轩科技-1P（义乌OGP）'  AND data_report_date IS NOT NULL AND network_code = 'UPS'" );
+		$select=$select->where("record_order_date >= ? AND record_order_date <= ?",request ( 'recordorderdate',date("Y-m-d",time()) ) . ' 00:00:00', request ( 'recordorderdate',date("Y-m-d",time()) ) . ' 23:59:59');
+		if(request("export")){
+			$select_clone=clone $select;
+			$waybills_export=$select_clone->order('department_abbreviation asc')->getAll ();
+			set_time_limit(0);
+			ini_set("memory_limit", "2048M");
+			$waybills = $select->getAll ();
+		    $header = array (
+                "日期","运单号",'分单号',"类型","件数","计费重量","目的地","红/蓝单","部门"
+            );
+            $sheet = array (
+                $header
+            );
+            foreach ($waybills_export as $v){
+                $boxing='';
+                $service='';
+                if($v->boxing_category=='P1'){
+                    $boxing='PAK';
+                }elseif ($v->boxing_category=='P2'){
+                    $boxing='箱子';
+                }
+            	if($v->service_code=='1P'){
+					$service='红单';
+				}elseif ($v->service_code=='2'){
+					$service='蓝单';
+				}
+                $sheet[]=array(
+                    Helper_Util::strDate ( 'Y-m-d', $v->record_order_date ),
+                	"'" . $v->waybill_code,
+                	'',
+                	$boxing,
+                    $v->item_count,
+                    $v->clearing_weight,
+                    $v->destination,
+                	$service,
+                	$v->department_abbreviation
+                );
+            }
+			Helper_ExcelX::array2xlsx ( $sheet, "富轩科技_".date('Y-m-d') );
+			exit ();
+		}
+		$waybills = $select->order('department_abbreviation asc')->getAll ();
+		$this->_view ['waybills'] = $waybills;
+	}
+}

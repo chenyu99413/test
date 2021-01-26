@@ -1,0 +1,84 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <style type="text/css">
+        .table>tbody>tr>td{
+            border:0px;
+        }
+    .table>tbody>tr>th{
+            border:0px;
+        }
+    .panel>.row{
+	   margin-left:0px;   
+    }
+    </style>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'业务管理' => '','订单查询' => url ( 'order/search' ),'订单编辑' => '' 
+	) 
+) )?>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+					<th>阿里订单号</th>
+					<td>
+						<?php echo $order->ali_order_no?>
+					</td>
+					<th>末端运单号</th>
+					<td>
+						<input name="tracking_no" type="text" style="width: 200px"
+							value="<?php echo $order->tracking_no?>">
+					</td>
+					<th> <button class="btn btn-small btn-success" id="search">
+			                                        保存
+			       		</button>
+			       		<?php if($order->order_status=='12'):?>
+	       				 <button class="btn btn-small btn-info" name="release" value="release" style="margin-left: 10px;">
+				                                        解扣
+				       		</button>
+	       				<?php endif;?>
+	       				</th>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<input type="hidden" name="order_id" value="<?php echo $order->order_id?>">
+	<div class="easyui-tabs" id="wTab" style="min-height: 350px;margin-top:-15px;">
+        <div class="row" title="订单详情"
+			data-options="href:'<?php echo url('order/editdetail',array('order_id'=>$order->order_id))?>'"
+			style="padding: 1px 5px 5px 5px"></div>
+		<div title="应收应付"
+			data-options="href:'<?php echo url('order/editbalance',array('order_id'=>$order->order_id))?>'"
+			style="padding: 1px 5px 5px 5px"></div>
+		<div title="操作日志"
+			style="padding: 1px 5px 5px 5px">
+			<table class="FarTable" >
+			<thead>
+			<tr>
+				<th>操作人</th>
+				<th>时间</th>
+				<th>日志</th>
+			</tr>
+			</thead>
+			<tbody>
+			<?php foreach ($order->logs as $log):?>
+			<tr>
+				<td><?php echo strlen($log->staff_name)?$log->staff_name:'系统'?></td>
+				<td><?php echo date('Y-m-d H:i:s',$log->create_time)?></td>
+				<td><?php echo $log->comment?></td>
+			</tr>
+			<?php endforeach;?>
+			</tbody>
+			</table>
+		</div>
+	</div>
+</form>
+<?PHP $this->_endblock();?>
+

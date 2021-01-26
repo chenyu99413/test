@@ -1,0 +1,80 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+    <?php //主体部分 ?>
+<div class="FarSearch" >
+	<table id="package">
+		<tbody>
+			<tr>
+				<th>阿里订单号和重量</th>
+				<td>
+					<input name="kwaiquick_text" type="text" id="kwaiquick_text"  value="" 
+					placeholder="请先按Alt+R键锁定焦点，再开始扫描条码"
+					style="width: 600px; height: 40px; font-size: 30px; line-height: 30px;">
+					<span id="explain" style="margin-left:10px;"></span>
+				</td>
+				<td>
+					<a class="copy hide" style="cursor:pointer;" title="复制错误消息" data-clipboard-target="#explain"><i class="icon icon-copy"></i></a>
+				    <input type="hidden" id="flag" value="1">
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>    
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.sound.js"></script>
+<script type="text/javascript">
+$(function(){
+	document.getElementById("kwaiquick_text").select();
+	$('#kwaiquick_text').bind('keyup', function (e) {
+		if(e.keyCode ==13){
+			$("#kwaiquick_text").blur();
+			if($('#flag').val()==$("#kwaiquick_text").val()){
+                alert('数据处理中，请不要重复提交');
+                document.getElementById("kwaiquick_text").select();
+            }else{ 
+    			
+    			$("#explain").html('');
+    			var kwaiquick_text=$("#kwaiquick_text").val();
+    			$('#flag').val(kwaiquick_text);
+    			$.ajax({
+    				url:'<?php echo url('kwaiquick/ajaxin')?>',
+    				type:'POST',
+					dataType:'json',
+					data:{kwaiquick_text : kwaiquick_text},
+					success:function(data){
+						console.log(data)	
+						if(data.message == 'success'){
+							$("#explain").html('入库成功').css('color','green');
+							document.getElementById("kwaiquick_text").select();
+							$.sound.play('<?php echo $_BASE_DIR?>public/sound/rukuchenggong.mp3');
+						}else if(data.message == 'orderstatuserror'){
+							$("#explain").html('订单状态必须是未入库').css('color','red');
+							//语音：订单状态必须是未入库
+							$.sound.play('<?php echo $_BASE_DIR?>public/sound/dingdanzhungtaiweiruku.mp3');
+							document.getElementById("kwaiquick_text").select();
+						}else if(data.message == 'noorder'){
+							$("#explain").html('订单不存在').css('color','red');
+							//语音：订单不存在
+							$.sound.play('<?php echo $_BASE_DIR?>public/sound/dingdanbucunzai.mp3');
+							document.getElementById("kwaiquick_text").select();
+						}else{
+							$("#explain").html('传入数据错误，请检查数据').css('color','red');
+							//语音：请检查数据
+							$.sound.play('<?php echo $_BASE_DIR?>public/sound/qingjianchashuju.mp3');
+							document.getElementById("kwaiquick_text").select();
+						}
+					}
+    			})
+            }
+		}
+	})
+})
+</script>
+<?PHP $this->_endblock();?>
+

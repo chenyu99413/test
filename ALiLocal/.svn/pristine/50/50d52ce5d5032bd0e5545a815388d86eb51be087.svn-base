@@ -1,0 +1,46 @@
+<?php
+class Controller_Supplier extends Controller_Abstract{
+    /**
+     * 检索
+     */
+    function actionSearch() {
+        $this->_view ['suppliers'] = Supplier::find ()->getAll ();
+    }
+    /**
+     * 编辑
+     */
+    function actionEdit(){
+	    $supplier = Supplier::find('supplier_id = ?',request('supplier_id'))->getOne();
+	    $title=array();
+	    if(request('supplier_id')){
+	        $title=Title::find('supplier_id = ?',request('supplier_id'))->asArray()->getAll();
+	    }
+	    if(request_is_post()){
+	        //判断供应商名称是否存在
+	        $supplier_check=Supplier::find('supplier = ?',request('supplier'))->getOne();
+	        if(!$supplier_check->isNewRecord() && ($supplier_check->supplier_id!=request('supplier_id'))){
+	            return $this->_redirectMessage('供应商编辑失败', '供应商名称已存在', url('/edit',array('supplier_id'=>$supplier->supplier_id)),2);
+	        }else{
+	            if(!request('title_name')){
+	                return $this->_redirectMessage('供应商编辑失败', '账号抬头不能为空', url('/edit',array('supplier_id'=>$supplier->supplier_id)),2);
+	            }
+	            $supplier=Supplier::find('supplier_id = ?',request('supplier_id'))->getOne();
+	            $supplier->supplier = request('supplier');
+	            $supplier->save();
+	            Title::meta()->destroyWhere('supplier_id =?',$supplier->supplier_id);
+	            foreach (request('title_name') as $name){
+	                $ti=new Title(array(
+	                    'supplier_id'=>$supplier->supplier_id,
+	                    'name'=>$name
+	                ));
+	                $ti->save();
+	            }
+	            return $this->_redirectMessage('供应商编辑', '供应商编辑成功', url('/search'));
+	        }
+	    }
+	    $this->_view['supplier']=$supplier;
+	    $this->_view['title']=$title;
+	}
+}
+
+?>

@@ -1,0 +1,474 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    订单查询
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<?php function showFN(){return request('parameters') =='' || request('parameters') =='no_package'|| request('parameters') =='paid';} ?>
+<style>
+td {
+     word-break: break-all;
+}
+.tabs li a.tabs-inner{
+	padding:0 5px;
+}
+.badge {
+	padding-left:5px;
+	padding-right:5px;
+}
+</style>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.browser.js"></script>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.sound.js"></script>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/supcan/binary/dynaload.js"></script>
+	<script type="text/javascript" src="<?php echo $_BASE_DIR?>qz/demo/js/dependencies/rsvp-3.1.0.min.js"></script>
+<script type="text/javascript" src="<?php echo $_BASE_DIR?>qz/demo/js/dependencies/sha-256.min.js"></script>
+<script type="text/javascript" src="<?php echo $_BASE_DIR?>qz/demo/js/qz-tray.js"></script>
+<script>
+$(function () {
+	var agent = navigator.userAgent.toLowerCase();
+	if (agent.indexOf("msie") > 0) {
+		return true;
+	}
+	iswin = (navigator.userAgent.indexOf("Windows",0) != -1)?1:0;
+	if (!navigator.mimeTypes["application/supcan-plugin"] && iswin ==1) {
+		if (agent.indexOf("chrome") > 0 ){
+			//window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.crx");
+		}
+		else{
+			//window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.xpi");
+		}
+	}
+});
+function OnReady(id){}
+function OnEvent(id, Event, p1, p2, p3, p4){}
+</script>
+<div>
+	<div style="height: 1px; width: 100%; visibility: hidden;">
+		<SCRIPT type="text/javascript">insertReport('AF', 'CollapseToolbar=true');</SCRIPT>
+	</div>
+</div>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>
+						订单日期从：
+					</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date" ),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>到</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date"),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>阿里订单号</th>
+					<td>
+						<input name="ali_order_no" type="text" style="width: 130px"
+							value="<?php echo request('ali_order_no')?>">
+					</td>
+					<th>泛远单号</th>
+					<td>
+						<input name="far_no" type="text" style="width: 130px"
+							value="<?php echo request('far_no')?>">
+					</td>
+					<th>快递单号</th>
+					<td>
+						<input name="reference_no" type="text" style="width: 130px"
+							value="<?php echo request('reference_no')?>">
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <button type="submit" name="export" class="btn btn-small btn-info" value="exportlist">
+							<i class="icon-download"></i>
+							导出
+						</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="tabs-container " style="min-width: 1148px;">
+		<?php
+		echo Q::control ( "tabs", "description", array (
+			"tabs" => $tabs,"active_id" => $active_id 
+		) );
+		?>
+		<div class="tabs-panels">
+			<div class="panel-body panel-body-noheader panel-body-noborder"
+				style="padding: 0px;">
+            </div>
+		</div>
+			<table class="FarTable">
+            		<thead>
+            			<tr>
+            				<th>No</th>
+            				<th>阿里订单号</th>
+            				<th>泛远单号</th>
+            				<th style="width:150px;">末端运单号</th>
+            				<th>目的地</th>
+            				<th>申报</th>
+            				<th>总价</th>
+            				<th>计费重</th>
+            				<?php if (showFN()):?>
+            				<th style="width:150px;">上门取件</th>
+            				<?php else:?>
+            				<th>部门</th>
+            				<th style="">问题</th>
+            				<th style="">退</th>
+            				<?php endif?>
+            				<th>状态</th>
+            				<th>支付时间</th>
+            				<th>订单时间</th>
+            				<th width="100px">操作</th>
+            			</tr>
+            		</thead>
+            		<tbody>
+            		<?php $i=1;$status=Order::$status?>
+            		<?php foreach ($orders as $order):?>
+            			<tr>
+            				<td><?php echo $i++ ?></td>
+            				<td><a  target="_blank"
+            					    href="<?php echo url('order/detail', array('order_id' => $order->order_id))?>">
+            					    <?php echo $order->ali_order_no ?>
+            					</a>
+            				</td>
+            				<td><a href="javascript:void(0)" onClick="printfarlabel(<?php echo $order->order_id?>)"><?php echo $order->far_no?></a></td>
+            				<td><a target="_blank" href="<?php echo $_BASE_DIR?>_tmp/upload/<?php echo $order->tracking_no?>.pdf"><?php echo $order->tracking_no?></a></td>
+            				<td><?php if($order->order_status=='6' || $order->order_status=='7' || $order->order_status=='8'):?>
+            				<a href="javascript:void(0)" data="<?php echo $order->ali_order_no?>" account="<?php echo $order->account?>" onclick="printlabel(this)"><?php echo $order->consignee_country_code?></a>
+            				<?php else : echo $order->consignee_country_code?>
+            				<?php endif;?></td>
+            				<td><?php echo $order->declaration_type?></td>
+            				<td align="right"><?php echo $order->total_amount?></td>
+            				<td align="right"><?php if ($order->weight_income_in ) echo $order->weight_income_in?></td>
+            				<?php if (showFN()):?>
+            				<td style="width:70px;"><?php echo $order->need_pick_up=='1'?'是':$order->reference_no?></td>
+            				<?php else:?>
+            				<td>
+            					<?php echo $dpms[$order->department_id]?>
+            				</td>
+            				<td>
+            					<a target="_blank" href="<?php echo url('/issue',array('ali_order_no'=>$order->ali_order_no,'parcel_flag'=>1))?>">
+            					<?php echo $order->getACount()?>
+            					</a>
+            				</td>
+            				<td>
+            					<a target="_blank" href="<?php echo url('/returnlist',array('ali_order_no'=>$order->ali_order_no))?>">
+            					<?php echo $order->getRCount()?>
+            					</a>
+            				</td>
+            				<?php endif;?>
+            				<td><?php echo $status[$order->order_status]?></td>
+            				<td align="center"><?php echo Helper_Util::strDate('m-d H:i', $order->payment_time)?></td>
+            				<td align="center" title="<?php echo Helper_Util::strDate('m-d H:i:s', $order->create_time)?>"><?php echo Helper_Util::strDate('m-d H:i', $order->create_time)?></td>
+            				<td>
+            					<!-- 
+            				    <a class="btn btn-mini btn-primary" target="_blank" href="<?php echo url('order/event', array('order_id' => $order->order_id))?>">
+            						事件
+            					</a>
+            					 -->
+            					<a class="btn btn-mini btn-info" target="_blank" href="<?php echo url('order/trace', array('order_id' => $order->order_id))?>">
+            						轨迹
+            					</a>
+            					<a class="btn btn-mini btn-danger" target="_blank" href="<?php echo url('order/orderreturn', array('ali_order_no' => $order->ali_order_no,'return_id'=>''))?>">
+            						退件
+            					</a>
+            				</td>
+            			</tr>
+            		<?php endforeach;?>
+            		</tbody>
+            	</table>
+	</div>
+	<input id="parameters" type="hidden" name="parameters" value="<?php echo $parameters?>">
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+</form>
+<script type="text/javascript">
+	//补打泛远面单
+	function printfarlabel(order_id){
+		var num=prompt('打印份数：','1');
+		if(num>0){
+			$.ajax({
+				url:'<?php echo url('order/getpackageamout')?>',
+				data:{order_id:order_id},
+				type:'post',
+				success:function(ali_quantity_total){
+					for(var i=0;i<num;i++){
+						AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/farlabel.xml?v=6");
+						AF.func("SetSource", "orderdata \r\n "+"<?php echo url_standard('warehouse/infarlabel')?>&orderid="+order_id);
+						switchPrinter('Zebra');
+						AF.func("Calc");
+						AF.func("Print", "isOpenSysDialog=0");
+					}
+				}
+			})
+		}
+	}
+	/**
+	 * 切换打印机
+	 * 例如 switchPrinter('EMS')，找到打印机名字中带 EMS的打印机并指定
+	 */
+	function switchPrinter(printerName){
+		var printers=AF.func("GetPrinters").split(',');
+		//搜索打印机
+		for (i in printers){
+			if(typeof(printers[i]) == 'string' ){
+				if (printers[i].indexOf(printerName)>-1){
+					printerName=printers[i];
+				}
+			}
+		}
+		var setting=AF.func("GetProp", "Print");
+		// console.log(setting);
+		if (setting.indexOf('<Printer>') > -1){
+			setting=setting.replace(/<Printer>.*?<\/Printer>/mg,'<Printer>'+printerName+'</Printer>');
+		}else {
+			setting=setting.replace('<PrintPage>',"<PrintPage>\r\n<Printer>"+printerName+'</Printer>');
+		}
+		// console.log(setting);
+		AF.func("SetProp", "Print \r\n" + setting);
+	}
+	// 打印顺序号
+	var seqnum = '';
+	function getSeqNum(){
+		return seqnum;
+	}
+	/**
+	 *  点击tabs设置隐藏框值 
+	 */	 
+	function TabSwitch(code){
+		$("#parameters").val(code);
+		$("form").trigger("submit");
+	}
+	/**
+	*打印功能
+	**/
+	function printlabel(obj){
+		$.messager.confirm('重新打印','是否重新打印？',function(rs){
+			if(rs){
+				var ali_order_no=$(obj).attr('data');
+				var account=$(obj).attr('account');
+				$.ajax({
+					url:'<?php echo url('warehouse/gettrackingno')?>',
+					type:'POST',
+					dataType:'json',
+					data:{ali_order_no:ali_order_no},
+					success:function(data){
+						if(account=='4F1R24'){
+							for(var s=0;s<2;s++){
+								if(data.country=='PE' || data.country=='VG'){
+									AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/invoice_pe.xml");
+									AF.func("SetSource", "ds1 \r\n "+"<?php echo url_standard('warehouse/peinvoice')?>&tracking_no="+data.tracking_no);
+									switchPrinter('P1606dn');
+									AF.func("Calc", ""); //填充数据
+									AF.func("Print", "isOpenSysDialog=false");
+								}else{
+									AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsprintsheet3.xml");
+									AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+									switchPrinter('P1606dn');
+									AF.func("Calc", ""); //填充数据
+									AF.func("Print", "isOpenSysDialog=false");
+								}
+							}
+							AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/renfeng_copy.xml");
+							AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+							switchPrinter('P1606dn');
+							AF.func("Calc", ""); //填充数据
+							AF.func("Print", "isOpenSysDialog=false");
+						}else{
+							if(data.country=='PE' || data.country=='VG'){
+								for(var tt=1;tt<=4;tt++){
+									if(data.sub_code_count <= 11 && tt==2){
+										continue;
+									}
+									if(tt<3){
+										AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsprintsheet"+tt+".xml");
+										AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+										switchPrinter('P1606dn');
+										AF.func("Calc", ""); //填充数据
+										AF.func("callfunc", "105\r\nType=pdf; Scale=100;ExportAsPrint=true;filename="+ file_path +file_name);
+										AF.func("Print", "isOpenSysDialog=false");
+									}else{
+										AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/invoice_pe.xml");
+										AF.func("SetSource", "ds1 \r\n "+"<?php echo url_standard('warehouse/peinvoice')?>&tracking_no="+data.tracking_no);
+										switchPrinter('P1606dn');
+										AF.func("Calc", ""); //填充数据
+										AF.func("Print", "isOpenSysDialog=false");
+									}
+								}
+							}else{
+								for(var tt=1;tt<=4;tt++){
+									if(data.sub_code_count <= 11 && tt==2){
+										continue;
+									}
+									if(tt==4){
+										var num=3;
+										var file_name=data.tracking_no+"_invoice.pdf";
+										AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsprintsheet"+num+".xml");
+										AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+										switchPrinter('P1606dn');
+										AF.func("Calc", ""); //填充数据
+										AF.func("Print", "isOpenSysDialog=false");
+									}else{
+										AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsprintsheet"+tt+".xml");
+										AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+										switchPrinter('P1606dn');
+										AF.func("Calc", ""); //填充数据
+										AF.func("Print", "isOpenSysDialog=false");
+									}
+								}
+							}
+						}
+					}
+				})
+			}
+		})
+	}
+	/// QZ Config ///
+    var cfg = null;
+    function getUpdatedConfig(type) {
+        if (cfg == null) {
+            cfg = qz.configs.create(null);
+        }
+
+        updateConfig(type);
+        return cfg
+    }
+
+    function updateConfig(type) {
+        var pxlSize = null;
+        if (true) {
+            pxlSize = {
+                width: 100,
+                height: 145
+            };
+        }
+
+        var pxlMargins = $("#pxlMargins").val();
+        if (true) {
+            if(type=='A4'){
+            	pxlMargins = {
+                        top: 6,
+                        right: 6,
+                        bottom: 6,
+                        left: 6
+                    };
+            }
+            if(type==null){
+            	pxlMargins = {
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        left: 0
+                    };
+            }
+        }
+
+        var copies = 1;
+        var jobName = null;
+        if ($("#rawTab").hasClass("active")) {
+            copies = $("#rawCopies").val();
+            jobName = $("#rawJobName").val();
+        } else {
+            copies = $("#pxlCopies").val();
+            jobName = $("#pxlJobName").val();
+        }
+
+        cfg.reconfigure({
+                            altPrinting: $("#rawAltPrinting").prop('checked'),
+                            encoding: $("#rawEncoding").val(),
+                            endOfDoc: $("#rawEndOfDoc").val(),
+                            perSpool: $("#rawPerSpool").val(),
+
+                            colorType: $("#pxlColorType").val(),
+                            copies: copies,
+                            density: $("#pxlDensity").val(),
+                            duplex: $("#pxlDuplex").prop('checked'),
+                            interpolation: $("#pxlInterpolation").val(),
+                            jobName: jobName,
+                        	legacy: false,
+                            margins: pxlMargins,
+                            orientation: '',
+                            paperThickness: '',
+                            printerTray:'',
+                            rasterize: false,
+                            rotation: '0',
+                            scaleContent:true,
+                            size: pxlSize,
+                            units: 'mm'
+                        });
+    }
+
+    function setPrintFile() {
+        setPrinter({ file: $("#askFile").val() });
+        $("#askFileModal").modal('hide');
+    }
+
+    function setPrintHost() {
+        setPrinter({ host: $("#askHost").val(), port: $("#askPort").val() });
+        $("#askHostModal").modal('hide');
+    }
+
+    function setPrinter(printer) {
+        var cf = getUpdatedConfig();
+        cf.setPrinter(printer);
+
+        if (typeof printer === 'object' && printer.name == undefined) {
+            var shown;
+            if (printer.file != undefined) {
+                shown = "<em>FILE:</em> " + printer.file;
+            }
+            if (printer.host != undefined) {
+                shown = "<em>HOST:</em> " + printer.host + ":" + printer.port;
+            }
+
+            $("#configPrinter").html(shown);
+        } else {
+            if (printer.name != undefined) {
+                printer = printer.name;
+            }
+
+            if (printer == undefined) {
+                printer = 'NONE';
+            }
+            $("#configPrinter").html(printer);
+        }
+    }
+    function displayError(err) {
+	    console.error(err);
+	    displayMessage(err, 'alert-danger');
+	}
+	$(function(){
+		//加载可信证书
+		qz.security.setCertificatePromise(function(resolve, reject) {
+	    	$.ajax("<?php echo $_BASE_DIR?>qz/demo/assets/signing/digital-certificate.txt").then(resolve, reject);
+		});
+		//签名
+    	qz.security.setSignaturePromise(function(toSign) {
+            return function(resolve, reject) {
+            	$.post("<?php echo $_BASE_DIR?>qz/demo/assets/signing/sign-message.php", {request: toSign}).then(resolve, reject);
+            };
+        });
+     });
+</script>
+<?PHP $this->_endblock();?>
+

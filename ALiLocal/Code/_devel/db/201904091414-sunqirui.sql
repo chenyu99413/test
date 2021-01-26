@@ -1,0 +1,1 @@
+ALTER TABLE `tb_order` ADD COLUMN `weight_bill`  decimal(10,3) NULL COMMENT '账单重' AFTER `weight_label`;

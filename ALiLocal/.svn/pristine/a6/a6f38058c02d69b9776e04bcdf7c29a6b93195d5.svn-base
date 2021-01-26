@@ -1,0 +1,1 @@
+ALTER TABLE `tb_channel_cost` ADD COLUMN `fuel_surcharge_dicount`  decimal(10,2) NULL COMMENT '燃油附加费折扣，以小数显示' AFTER `fuel_surcharge_flag`;

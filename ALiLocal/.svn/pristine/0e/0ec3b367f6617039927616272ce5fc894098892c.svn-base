@@ -1,0 +1,668 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+包裹入库
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<style>
+<!--
+.checkin-table-1 #scan_no_type {
+	width: 150px;
+	height: 32px;
+	margin: 0;
+	font-size: 20px;
+	line-height: 26px;
+	vertical-align: middle;
+}
+
+.checkin-table-1 input {
+	width: 320px;
+	height: 30px;
+	font-size: 26px;
+	line-height: 26px;
+	vertical-align: middle;
+}
+
+#scan-msg {
+	font-size: 26px;
+	line-height: 26px;
+	vertical-align: middle;
+}
+
+.order-extend-info-label {
+	width: 60px;
+	margin: 0px;
+	text-align: right;
+}
+
+#order-package-list tbody td {
+	padding: 5px;
+	text-align: center;
+}
+
+#order-package-list tbody td input {
+	width: 80%;
+	margin: 0px;
+}
+-->
+</style>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.browser.js"></script>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.sound.js"></script>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/supcan/binary/dynaload.js"></script>
+<script>
+$(function () {
+	var agent = navigator.userAgent.toLowerCase();
+	if (agent.indexOf("msie") > 0) {
+		return true;
+	}
+	iswin = (navigator.userAgent.indexOf("Windows",0) != -1)?1:0;
+	if (!navigator.mimeTypes["application/supcan-plugin"] && iswin ==1) {
+		if (agent.indexOf("chrome") > 0 ){
+			window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.crx");
+		}
+		else{
+			window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.xpi");
+		}
+	}
+});
+function OnReady(id){}
+function OnEvent(id, Event, p1, p2, p3, p4){}
+</script>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<div>
+	<div style="height: 1px; width: 100%; visibility: hidden;">
+		<SCRIPT type="text/javascript">insertReport('AF', 'CollapseToolbar=true');</SCRIPT>
+	</div>
+</div>
+<div class="alert alert-info" style="margin-bottom: 10px;">
+	<ol style="margin-bottom: 0px;">
+		<li>【回车】切换至下一录入框；【 shift + 回车】切换至上一录入框；【 + 】新建行；【 - 】删除当前行。</li>
+		<li>【 ctrl + 回车】提交数据，并自动打印泛远面单。</li>
+		<li>请将输入法切换至英文状态。</li>
+	</ol>
+</div>
+<table class="table table-bordered checkin-table-1" style="margin-bottom: 10px;">
+	<tbody>
+		<tr>
+			<td style="width: 100px;">
+				<select name="scan_no_type" id="scan_no_type">
+					<option value="ali_order_no">阿里单号</option>
+					<option value="reference_no">快递单号</option>
+				</select>
+			</td>
+			<td style="width: 350px;">
+				<input type="text" name="scan_no" id="scan_no" value=""
+					autofocus="autofocus" placeholder="请录入【单号】并回车" style="margin: 0px;" />
+				<input type="hidden" name="order_id" id="order_id" value="" />
+			</td>
+			<td style="width: auto;" id="scan-msg">-</td>
+		</tr>
+	</tbody>
+</table>
+<div style="margin-bottom: 10px;">
+	<button class="btn btn-small btn-success" style="float: right;"
+		id="print-farlabel">
+		<i class="icon-print"></i>
+		打印泛远面单
+	</button>
+	<button class="btn btn-small btn-info" style="margin-right: 10px; float: left;"
+		id="add-line">
+		<i class="icon-plus"></i>
+		添加行
+	</button>
+	<button class="btn btn-small btn-primary"
+		style="margin-right: 10px; float: left;" id="submit-data">
+		<i class="icon-save"></i>
+		提交数据
+	</button>
+	<div style="margin-left:10px; float:left"><h5 style="margin:2px 0px;" id="weight_income_in"></h5></div>
+	<div style="clear: both;"></div>
+</div>
+<div class="row-fluid">
+	<div class="span8">
+		<table class="table table-bordered">
+			<tbody>
+				<tr>
+					<td id="handle-area">
+						<table class="FarTable" id="order-package-list">
+							<thead>
+								<tr>
+									<th style="width: 110px;">数量</th>
+									<th style="width: 110px;">重量(kg)</th>
+									<th style="width: 110px;">长(cm)</th>
+									<th style="width: 110px;">宽(cm)</th>
+									<th style="width: 110px;">高(cm)</th>
+									<th style="width: 110px;">泡重(kg)</th>
+									<th style="width: auto;">操作</th>
+								</tr>
+							</thead>
+							<tbody>
+							</tbody>
+						</table>
+						<div id="handle-msg" style="margin: 10px;"></div>
+						<div class="row-fluid" id="order-extend-info" style="margin-top: 10px;">
+							<div class="span3" style="padding: 3px 0;">
+								<label class="order-extend-info-label">包裹袋</label>
+								<input style="width: 80px;" type="text" name="EX0002" value="0" />
+							</div>
+							<div class="span3" style="padding: 3px 0; margin-left: 10px;">
+								<label class="order-extend-info-label">纸箱</label>
+								<input style="width: 80px;" type="text" name="EX0003" value="0" />
+							</div>
+							<div class="span3" style="padding: 3px 0; margin-left: 10px;">
+								<label class="order-extend-info-label">异形</label>
+								<input style="width: 80px;" type="text" name="EX0034" value="0" />
+							</div>
+							<div class="span3" style="padding: 3px 0; margin-left: 10px;">
+								<label class="order-extend-info-label">包裹总数量</label>
+								<input style="width: 80px;" type="text" name="far_quantity_total"
+									value="0" readonly="readonly" />
+							</div>
+						</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="span4">
+		<table class="table table-bordered table-hover table-condensed table-striped"
+			id="order-info">
+			<tbody>
+				<tr>
+					<th style="width: 35%;">阿里单号</th>
+					<td style="width: 65%;" class="ali_order_no"></td>
+				</tr>
+				<tr>
+					<th>泛远单号</th>
+					<td class="far_no"></td>
+				</tr>
+				<tr>
+					<th>订单描述</th>
+					<td class="remarks"></td>
+				</tr>
+				<tr>
+					<th>预报包裹数量</th>
+					<td class="ali_quantity_total"></td>
+				</tr>
+			</tbody>
+		</table>
+		<table class="FarTable" id="order-package-list-ali">
+			<thead>
+				<tr>
+					<td>数量</td>
+					<td>重量</td>
+					<td>长</td>
+					<td>宽</td>
+					<td>高</td>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<script>
+var ali_quantity_total = 0;
+var far_quantity_total = 0;
+var verify_status=true;
+var verify_reason='';
+var packagelist_tr_html = '<tr>';
+packagelist_tr_html += '<td><input type="text" name="quantity[]" value="1" /></td>';
+packagelist_tr_html += '<td><input type="text" name="weight[]" value="0" /></td>';
+packagelist_tr_html += '<td><input type="text" name="length[]" value="0" /></td>';
+packagelist_tr_html += '<td><input type="text" name="width[]" value="0" /></td>';
+packagelist_tr_html += '<td><input type="text" name="height[]" value="0" /></td>';
+packagelist_tr_html += '<td><input type="text" name="jipao[]" value="0" readonly="readonly" /></td>';
+packagelist_tr_html += '<td><button class="btn btn-mini btn-danger remove-line"><i class="icon-remove"></i></button></td>';
+packagelist_tr_html += '</tr>';
+
+// 循环显示阿里包裹数据
+function orderPackageListAli(json){
+	ali_quantity_total = 0;
+	$('#order-package-list-ali').find('tbody').html('');
+	$.each(json, function (k, v) {
+		var tr_html = '<tr>';
+		tr_html += '<td>'+v.quantity+'</td>';
+		tr_html += '<td>'+v.weight+'</td>';
+		tr_html += '<td>'+v.length+'</td>';
+		tr_html += '<td>'+v.width+'</td>';
+		tr_html += '<td>'+v.height+'</td>';
+		tr_html += '</tr>';
+		$('#order-package-list-ali').find('tbody').append(tr_html);
+		ali_quantity_total += v.quantity;
+    });
+	$('#order-info').find('.ali_quantity_total').html(ali_quantity_total);
+}
+// 循环显示泛远包裹数据
+function orderPackageListFar(json){
+	// 初始化表格
+	$('#order-package-list').find('tbody').find('tr').remove();// 清空行
+	$('#handle-msg').html('');
+	$('#order-extend-info').find(':input').val('0');
+	addLine();// 添加行
+	farQty();
+}
+// 求和
+function farQty(){
+	far_quantity_total = 0;
+    $('#order-package-list').find('[name="quantity[]"]').each(function(){
+        far_quantity_total += Math.round($(this).val().trim());
+    });
+    $('#order-extend-info').find('[name="far_quantity_total"]').val(far_quantity_total);
+}
+
+$(function () {
+	// 初始化 scan_no_type
+	var scan_no_type = $('#scan_no_type').val();//ali_order_no、reference_no
+	$('#scan_no_type').on('change',function(){
+		scan_no_type = $(this).val();
+	});
+    // 阿里单号录入回车
+    $('#scan_no').on('keydown', function (e) {
+        if (e.which == 13) {
+            e.preventDefault();
+            var scan_no = $(this).val().trim();
+            $.ajax({
+                type: "POST",
+                url: "<?php echo url('/inscan')?>",
+                data: {
+                	scan_no : scan_no,
+                	scan_no_type : scan_no_type
+                },
+                dataType: "json",
+                success: function (json) {
+                    console.log(json);
+                    $('#scan-msg').html(json.msg);
+                    $.sound.play('<?php echo $_BASE_DIR?>public/sound/' + json.sound);
+                    if (json.status) {
+                        $('#scan-msg').css('color', 'rgb(70, 136, 71)'); // 绿
+                        $('#order-info').find('.ali_order_no').html(json.data.order.ali_order_no);
+                        $('#order-info').find('.far_no').html(json.data.order.far_no);
+                        $('#order-info').find('.remarks').html(json.data.order.remarks);
+                        $('#order_id').val(json.data.order.order_id);
+                        orderPackageListAli(json.data.order_package);
+                        orderPackageListFar(json.data.far_package)
+                    } else {
+                        $('#order-info').find('td').html(''); // 清空阿里订单信息
+                        $('#order-package-list-ali').find('tbody').html(''); // 清空阿里包裹信息
+                        $('#scan-msg').css('color', 'rgb(185, 74, 72)'); // 红
+                        $('#scan_no').select();
+                    }
+                }
+            });
+        }
+    });
+
+    // 打印
+    $('#print-farlabel').on('click',function(){
+		// 操作下一条
+		$('#scan_no').select();
+		
+		// 打印
+		var orderid = $('#order_id').val().trim();
+		// 件数大于等于5时，只出一张
+		if(ali_quantity_total >= 5){
+			seqnum =ali_quantity_total+'/'+ali_quantity_total;
+	    	AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/farlabel.xml?v=6");
+			AF.func("SetSource", "orderdata \r\n "+"<?php echo url_standard('warehouse/infarlabel')?>&orderid="+orderid);
+			switchPrinter('Zebra');
+			AF.func("Calc");
+			// AF.func("CallFunc","18");
+			AF.func("Print", "isOpenSysDialog=0");
+		} else {
+			for (var label_seq = 0;label_seq < ali_quantity_total;label_seq++){
+				seqnum = (label_seq + 1)+'/'+ali_quantity_total;
+				AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/farlabel.xml?v=6");
+				AF.func("SetSource", "orderdata \r\n "+"<?php echo url_standard('warehouse/infarlabel')?>&orderid="+orderid);
+				switchPrinter('Zebra');
+				AF.func("Calc");
+				//AF.func("CallFunc","18");
+				AF.func("Print", "isOpenSysDialog=0");
+			}
+		}
+    });
+
+    // 录入过程处理
+    $('#handle-area').on('blur change', '[name="weight[]"],[name="length[]"],[name="width[]"],[name="height[]"]', function (event) {
+    	// 2位小数
+    	var str = $(this).val().trim();
+    	if (!isNaN(parseFloat(str))) {
+    		$(this).val(Math.round(parseFloat(str) * 100) / 100);
+    	} else {
+    		$(this).val('0');
+    	}
+    });
+    $('#handle-area').on('blur change', '[name="quantity[]"],[name=EX0002],[name=EX0003],[name=EX0034]', function (event) {
+    	// 整数
+    	var str = $(this).val().trim();
+    	if (!isNaN(parseFloat(str))) {
+    		$(this).val(Math.round(parseFloat(str)));
+    	} else {
+    		$(this).val('0');
+    	}
+    });
+    $('#handle-area').on('blur change', '[name="quantity[]"]', function (event) {
+    	farQty();
+    });
+    $('#handle-area').on('blur change', '[name="weight[]"],[name="width[]"],[name="height[]"]', function (event) {
+        jipao($(this), event);
+    });
+
+    // 操作区键盘操作
+    $('#handle-area').on('keydown', ':input', function (event) {
+        console.log(event.which);
+        if (!event.ctrlKey && !event.shiftKey && event.which == 13) {
+            // enter : 下一个 input (新建行时询问是新建，还是录入数量)
+            event.preventDefault();
+            keydownEnter($(this), event);
+        }
+        if (event.shiftKey && event.which == 13) {
+            // shift + enter : 上一个 input
+            event.preventDefault();
+            keydownShiftEnter($(this), event);
+        }
+        if (event.ctrlKey && event.which == 13) {
+            // ctrl + enter : 提交
+            event.preventDefault();
+            if($('#submit-data').prop('disabled')){
+            	alert('数据处理中，请不要重复提交');
+            } else {
+            	submitData();
+            }
+        }
+        if (event.which == 107 || event.which == 78) {
+            // + : 新建行
+            event.preventDefault();
+            addLine();
+        }
+        if (event.which == 109 || event.which == 68) {
+            // - : 删除行，上一行的第一个 input 获取焦点
+            event.preventDefault();
+            removeLine($(this),event);
+        }
+    });
+    // 点击移除行的按钮
+    $('#order-package-list').on('click','.remove-line',function(event){
+    	console.log('remove-line');
+        removeLine($(this),event);
+    });
+    // 添加行按钮
+    $('#add-line').on('click',function(){
+    	console.log('add-line');
+        addLine();
+    });
+    // 提交数据
+    $('#submit-data').on('click',function(){
+    	if($('#submit-data').prop('disabled')){
+            alert('数据处理中，请不要重复提交');
+        } else {
+        	submitData();
+        }
+    });
+});
+// 计算计泡
+function jipao($this, event) {
+    var length = Math.round(parseFloat($this.closest('tr').find('[name="length[]"]').val().trim()) * 100);
+    var width = Math.round(parseFloat($this.closest('tr').find('[name="width[]"]').val().trim()) * 100);
+    var height = Math.round(parseFloat($this.closest('tr').find('[name="height[]"]').val().trim()) * 100);
+
+    // 计泡 : 长 x 宽 x 高 / 5000
+    var jipao = Math.round(((length * width * height) / 5000) / 10000) / 100;
+    $this.closest('tr').find('[name="jipao[]"]').val(jipao);
+}
+// 处理回车
+function keydownEnter($this, event) {
+    console.log('keydownEnter');
+    switch ($this.attr('name')) {
+        case 'quantity[]':
+	        $this.closest('tr').find('[name="weight[]"]').select();
+            break;
+        case 'weight[]':
+            $this.closest('tr').find('[name="length[]"]').select();
+            break;
+        case 'length[]':
+            $this.closest('tr').find('[name="width[]"]').select();
+            break;
+        case 'width[]':
+            $this.closest('tr').find('[name="height[]"]').select();
+            break;
+        case 'height[]':
+            //当单件实际重量超过68kg,或者最长边超过243厘米，或者最长边+2*（宽+高）超过327厘米时，预报播报：不提供服务。
+            var verify_weight=$this.parent().parent().find('input').eq(1).val();
+            var verify_length=$this.parent().parent().find('input').eq(2).val();
+            var verify_width=$this.parent().parent().find('input').eq(3).val();
+            var verify_height=$this.parent().parent().find('input').eq(4).val();
+            //判断单件实际重量是否超过68KG
+            if(verify_weight > 68){
+            	verify_status=false;
+            	verify_reason='单件实际重量超过68kg';
+            	$('#handle-msg').html('单件实际重量超过68kg').css('color', 'rgb(185, 74, 72)'); // 红
+            	$.sound.play('<?php echo $_BASE_DIR?>public/sound/butigongfuwu.mp3');
+            	$this.parent().parent().find('input').eq(0).select();
+            }else{
+            	//定义长宽高数组
+                var verify_array=[verify_length,verify_width,verify_height];
+                verify_array=verify_array.sort();
+                //获取最大边长度
+                var verify_max=verify_array[2];
+                if(verify_max > 243){
+                	verify_status=false;
+                	verify_reason='最长边超过243厘米';
+                	$('#handle-msg').html('最长边超过243厘米').css('color', 'rgb(185, 74, 72)'); // 红
+                	$.sound.play('<?php echo $_BASE_DIR?>public/sound/butigongfuwu.mp3');
+                	$this.parent().parent().find('input').eq(0).select();
+                }else{
+					if((parseFloat(verify_array[0])+parseFloat(verify_array[1]))*2+parseFloat(verify_array[2])> 327){
+						verify_status=false;
+	                	verify_reason='最长边+2*（宽+高）超过327厘米';
+	                	$('#handle-msg').html('最长边+2*（宽+高）超过327厘米').css('color', 'rgb(185, 74, 72)'); // 红
+	                	$.sound.play('<?php echo $_BASE_DIR?>public/sound/butigongfuwu.mp3');
+	                	$this.parent().parent().find('input').eq(0).select();
+					}else{
+						verify_status=true;
+	                	verify_reason='';
+						if ($this.closest('tr').is(':last-child')) {
+			                // 最后一行的 height 中回车，对比数量
+			                farQty();
+			            	if(far_quantity_total < ali_quantity_total){
+			                	addLine();
+			                } else if (far_quantity_total > ali_quantity_total) {
+			                	$('#handle-msg').html('包裹总数超出预报包裹总数').css('color', 'rgb(185, 74, 72)'); // 红
+			                	$.sound.play('<?php echo $_BASE_DIR?>public/sound/cuowu.mp3');
+			                	$('#order-package-list').find('tbody').find('tr').filter(':last').find(':input').eq(0).select();
+			                } else {
+			                	$('#handle-msg').html('包裹数量通过验证').css('color', 'rgb(70, 136, 71)'); // 绿
+			                	$('#order-extend-info').find('[name=EX0002]').select();
+			                }
+			            } else {
+			                // 中间行的 height 中回车，切换至下一行的 weight
+			                $this.closest('tr').next().find(':input').eq(0).select();
+			            }
+					}
+                }
+            }
+            break;
+        case 'EX0002':
+        	$('#order-extend-info').find('[name=EX0003]').select();
+            break;
+        case 'EX0003':
+            $('#order-extend-info').find('[name=EX0034]').select();
+            break;
+        case 'EX0034':
+            $('#submit-data').click();
+            break;
+        default:
+            console.log('错误1');
+    }
+}
+// add line
+function addLine() {
+    $('#order-package-list').find('tbody').append(packagelist_tr_html);
+    $('#order-package-list').find('tbody').find('tr').filter(':last').find(':input').eq(0).select();
+}
+// remove line
+function removeLine($this, event){
+	if ($this.closest('tr').is(':first-child')) {
+        // 第一行：如果大于一行，则下一行第一个 input 获取焦点；如果只有一行，无动作；
+        if ($('#order-package-list').find('tbody').find('tr').length > 1) {
+            $this.closest('tr').next().find(':input').eq(0).select();
+            $this.closest('tr').remove();
+        }
+    } else {
+        // 非第一行：上一行，第一个选中
+        $this.closest('tr').prev().find(':input').eq(0).select();
+        $this.closest('tr').remove();
+    }
+}
+//处理 shift + enter
+function keydownShiftEnter($this, event) {
+    console.log('keydownShiftEnter');
+    switch ($this.attr('name')) {
+        case 'quantity[]':
+            if ($this.closest('tr').is(':first-child')) {
+                // 第一行第一个，什么都不做
+                break;
+            } else {
+                // 中间行第一个，切换至上一行的 height
+                $this.closest('tr').prev().find('[name="height[]"]').select();
+            }
+            break;
+        case 'weight[]':
+        	$this.closest('tr').find('[name="quantity[]"]').select();
+            break;
+        case 'length[]':
+            $this.closest('tr').find('[name="weight[]"]').select();
+            break;
+        case 'width[]':
+            $this.closest('tr').find('[name="length[]"]').select();
+            break;
+        case 'height[]':
+            $this.closest('tr').find('[name="width[]"]').select();
+            break;
+        case 'EX0002':
+        	$('#order-package-list').find('tbody').find('tr').filter(':last').find('[name="height[]"]').select();
+            break;
+        case 'EX0003':
+            $('#order-extend-info').find('[name=EX0002]').select();
+            break;
+        case 'EX0034':
+            $('#order-extend-info').find('[name=EX0003]').select();
+            break;
+        default:
+            console.log('错误2');
+    }
+}
+function submitData() {
+	if($('#order-extend-info').find('[name="EX0002"]').val().trim() > ali_quantity_total){
+		$('#order-extend-info').find('[name="EX0002"]').select();
+		$('#handle-msg').html('包裹袋数量超出预报包裹总数').css('color', 'rgb(185, 74, 72)'); // 红
+    	$.sound.play('<?php echo $_BASE_DIR?>public/sound/cuowu.mp3');
+    	return false;
+	}
+	if($('#order-extend-info').find('[name="EX0003"]').val().trim() > ali_quantity_total){
+		$('#order-extend-info').find('[name="EX0003"]').select();
+		$('#handle-msg').html('纸箱数量超出预报包裹总数').css('color', 'rgb(185, 74, 72)'); // 红
+    	$.sound.play('<?php echo $_BASE_DIR?>public/sound/cuowu.mp3');
+    	return false;
+	}
+	if($('#order-extend-info').find('[name="EX0034"]').val().trim() > ali_quantity_total){
+		$('#order-extend-info').find('[name="EX0034"]').select();
+		$('#handle-msg').html('异形数量超出预报包裹总数').css('color', 'rgb(185, 74, 72)'); // 红
+    	$.sound.play('<?php echo $_BASE_DIR?>public/sound/cuowu.mp3');
+    	return false;
+	}
+	if (far_quantity_total > ali_quantity_total) {
+    	$('#handle-msg').html('包裹总数超出预报包裹总数').css('color', 'rgb(185, 74, 72)'); // 红
+    	$.sound.play('<?php echo $_BASE_DIR?>public/sound/cuowu.mp3');
+    	$('#order-package-list').find('tbody').find('tr').filter(':first').find(':input').eq(0).select();
+    	return false;
+    }
+	if (verify_status==false) {
+    	$('#handle-msg').html(verify_reason).css('color', 'rgb(185, 74, 72)'); // 红
+    	$.sound.play('<?php echo $_BASE_DIR?>public/sound/butigongfuwu.mp3');
+    	$('#order-package-list').find('tbody').find('tr').filter(':first').find(':input').eq(0).select();
+    	return false;
+    }
+	$('#handle-msg').html('数据验证完成').css('color', 'rgb(70, 136, 71)'); // 绿
+	$('#submit-data').prop('disabled',true).html('处理中。。。');
+	
+    var json_str = '{';
+    json_str += '"order_id":"' + $('#order_id').val().trim() + '",'
+    json_str += '"EX0002":"' + $('#order-extend-info').find('[name="EX0002"]').val().trim() + '",'
+    json_str += '"EX0003":"' + $('#order-extend-info').find('[name="EX0003"]').val().trim() + '",'
+    json_str += '"EX0034":"' + $('#order-extend-info').find('[name="EX0034"]').val().trim() + '",'
+    json_str += '"package_list":{';
+    $('#order-package-list').find('tbody').find('tr').each(function (i, e) {
+        if (i != 0) {
+            json_str += ',';
+        }
+        json_str += '"package' + i + '":'
+        json_str += '{"weight":"' + $(this).find('[name="weight[]"]').val().trim() + '"';
+        json_str += ',"length":"' + $(this).find('[name="length[]"]').val().trim() + '"';
+        json_str += ',"width":"' + $(this).find('[name="width[]"]').val().trim() + '"';
+        json_str += ',"height":"' + $(this).find('[name="height[]"]').val().trim() + '"';
+        json_str += ',"jipao":"' + $(this).find('[name="jipao[]"]').val().trim() + '"';
+        json_str += ',"quantity":"' + $(this).find('[name="quantity[]"]').val().trim() + '"';
+        json_str += '}';
+    });
+    json_str += '}}';
+    console.log(json_str);
+    $.ajax({
+        type: "POST",
+        url: "<?php echo url('/insave')?>",
+        data: {
+            jsonstr: json_str
+        },
+        dataType: "json",
+        success: function (json) {
+        	$('#submit-data').prop('disabled',false).html('<i class="icon-save"></i> 提交数据');
+        	$('#scan-msg').html(json.msg);
+        	//总计费重显示在页面上
+        	$("#weight_income_in").html('总计费重：'+json.weight_income_in);
+            $.sound.play('<?php echo $_BASE_DIR?>public/sound/' + json.sound);
+            if(json.status){
+            	$('#scan-msg').css('color', 'rgb(70, 136, 71)'); // 绿
+            	$('#print-farlabel').click();
+            } else {
+            	$('#scan-msg').css('color', 'rgb(185, 74, 72)'); // 红
+            }
+            $('#scan_no').select();
+        }
+    });
+}
+/**
+ * 切换打印机
+ * 例如 switchPrinter('EMS')，找到打印机名字中带 EMS的打印机并指定
+ */
+function switchPrinter(printerName){
+	var printers=AF.func("GetPrinters").split(',');
+	//搜索打印机
+	for (i in printers){
+		if(typeof(printers[i]) == 'string' ){
+			if (printers[i].indexOf(printerName)>-1){
+				printerName=printers[i];
+			}
+		}
+	}
+	var setting=AF.func("GetProp", "Print");
+	// console.log(setting);
+	if (setting.indexOf('<Printer>') > -1){
+		setting=setting.replace(/<Printer>.*?<\/Printer>/mg,'<Printer>'+printerName+'</Printer>');
+	}else {
+		setting=setting.replace('<PrintPage>',"<PrintPage>\r\n<Printer>"+printerName+'</Printer>');
+	}
+	// console.log(setting);
+	AF.func("SetProp", "Print \r\n" + setting);
+}
+// 打印顺序号
+var seqnum = '';
+function getSeqNum(){
+	return seqnum;
+}
+</script>
+<?PHP $this->_endblock();?>
+

@@ -1,0 +1,738 @@
+<?php
+require_once _INDEX_DIR_ . '/_code/helper/PDFMerger/fpdf/fpdf.php';
+require_once _INDEX_DIR_ . '/_code/helper/PDFMerger/fpdf/chinese.php';
+/**
+ * 后台服务控制器
+ *
+ */
+class Controller_Cron extends Controller_Abstract{
+    /**
+     * notifyBizEvent
+     */
+    function actionnotifyBizEvent(){
+        $url_sign='https://gw.open.1688.com/openapi/param2/1/ali.intl.onetouch/logistics.order.notifyBizEvent/563333';
+       	$events=Event::find("ifnull(send_flag,'')!='1' and order_id>'82' and confirm_flag = '1' and ifnull(reason,'')=''  and event_time<=?",time())->order('order_id,event_time')->getAll();
+        foreach ($events as $event){
+            $ali=new Helper_ALI();
+            $event_request_data=$ali->notifyBizEvent($event);
+            $sign=$ali->sign($url_sign, json_encode($event_request_data),'notifyBizEvent');
+            //组合完整url
+            QLog::log($url_sign.'?notifyBizEventDTO='.json_encode($event_request_data).'&_aop_signature='.$sign);
+            $url=$url_sign.'?notifyBizEventDTO='.urlencode(json_encode($event_request_data)).'&_aop_signature='.$sign;
+            QLog::log($url);
+            //通过curl get 方式发送至阿里
+            $response=Helper_Curl::get1($url);
+            QLog::log('event_response'.$response);
+            $response=json_decode($response,true);
+            if(isset($response['success']) && $response['success']==true){
+                $event->send_flag='1';
+                $event->save();
+                if($event->event_code=='DELIVERY'){
+	                	$order=Order::find('order_id=?',$event->order_id)->getOne();
+	                	$order->delivery_time=$event->event_time;
+	                	$order->save();
+                }
+            }else{
+            	$order=Order::find('order_id=?',$event->order_id)->getOne();
+                $email_response=Helper_Mailer::send('2570277324@qq.com', '发送事件失败', '阿里单号 '.$order->ali_order_no);
+            }
+        }
+        exit();
+    }
+    /**
+     * notifyTrace
+     */
+    function actionnotifyTrace(){
+        $url_sign='https://gw.open.1688.com/openapi/param2/1/ali.intl.onetouch/logistics.order.notifyTrace/563333';
+        $tracking=Tracking::find("ifnull(send_flag,'')!='1' and order_id>'82' and confirm_flag = '1' and trace_time<=?",time())->getAll();
+        foreach ($tracking as $temp){
+            $ali=new Helper_ALI();
+            $trace_request_data=$ali->notifyTrace($temp);
+            $sign=$ali->sign($url_sign, json_encode($trace_request_data),'notifyTrace');
+            //组合完整url
+            $url=$url_sign.'?notifyTraceDTO='.urlencode(json_encode($trace_request_data)).'&_aop_signature='.$sign;
+            //通过curl get 方式发送至阿里
+            $response=Helper_Curl::get1($url);
+            QLog::log('trace_request'.json_encode($trace_request_data));
+            QLog::log('trace_response'.$response);
+            $response=json_decode($response,true);
+            if(isset($response['success']) && $response['success']==true){
+                $temp->send_flag='1';
+                $temp->save();
+            }else{
+            	$order=Order::find('order_id=?',$temp->order_id)->getOne();
+                $email_response=Helper_Mailer::send('2570277324@qq.com', '发送轨迹失败', '阿里单号 '.$order->ali_order_no);
+                continue;
+            }
+            //自动确认签收事件
+            if ($temp->tracking_code =='S_DELIVERY_SIGNED'){
+	            $ev=Event::find('order_id =? and confirm_flag =0 and event_code="DELIVERY"',$temp->order_id)->getOne();
+	            if (!$ev->isNewRecord()){
+	            		$ev->confirm_flag=1;
+	            		$ev->save();
+	            }
+            }
+        }
+        exit();
+    }
+   
+    /**
+     * 跟踪渠道末端轨迹
+     */
+    function actionRoute(){
+    		$args=func_get_args();
+    		$sleep=Q::cache('RouteSleep',array('life_time'=>3600));
+    		if ($sleep && empty($args[3])){
+    			self::log('sleep');
+    			exit;
+    		}
+    		self::log('begin');
+    		$select=Order::find('order_status in (?)',array(Order::STATUS_OUT,Order::STATUS_PRESEND,Order::STATUS_SENT,Order::STATUS_LOCK));
+    		if (!empty($args[3]) && $args[3]!='force'){
+    			$select->where('tracking_no =?',$args[3]);
+    		}
+    		$select= $select->order('update_time')
+    			->setColumns('order_id,tracking_no,channel_id')
+    			->all()
+    			->getQueryHandle();
+    		while ($row=$select->fetchRow()){
+    			self::log($row['order_id']);
+    			$order=Order::find('order_id =?',$row['order_id'])->getOne();
+    			
+    			if (!empty($row['tracking_no']) && !empty($row['channel_id'])){
+    				self::log($row['tracking_no']);
+    				
+    				$channel =Channel::find('channel_id =?',$row['channel_id'])->getOne();
+    				$trackings=Tracking::find('order_id =?',$row['order_id'])->getAll();
+    				
+    				// 求最晚时间并转换为utc+8
+    				$evt=Event::find('order_id =? ',$row['order_id'])->order('event_time desc') ->getOne();
+    				$lastTime=strtotime(date("Y-m-d 2:25:00",$evt->event_time))+86400*2;	//事件最后的时间+2天
+    				
+    				if (count($trackings)) foreach ($trackings as $tr){
+    					if ($tr->timezone==-19){
+    						continue;
+    					}
+    					if ($tr->trace_time + (8-$tr->timezone )*3600 > $lastTime ){
+    						$lastTime =$tr->trace_time + (8-$tr->timezone )*3600;
+    					}
+    				}
+    				
+    				$network_code=$channel->network_code;
+    				if ($network_code =='UPS'){
+    					$json=Helper_Curl::get('http://m.far800.com/?action=tracking&num='.$row['tracking_no'].'&lang=en');
+    					$routes=json_decode($json,TRUE);
+    					if (!empty($routes['data']) && count($routes['data'])){
+    						// 将轨迹按照时间升序排序
+    						$routes['data']=array_reverse($routes['data']);
+    						$prevLocation='';
+    						foreach ($routes['data'] as $d){
+    							// 保存
+    							$r=Route::checkAndSave(array(
+    								'network_code'=>$network_code,
+    								'tracking_no'=>$row['tracking_no'],
+    								'time'=>strtotime($d['time']),
+    								'location'=>$d['location'],
+    								'description'=>$d['context'],
+    							));
+    							if (!is_null($r)){
+    								self::log('save');
+    								//判断是否更改地址
+    								if(!$order->address_change){
+    									$tracking=Tracking::find('order_id=? and tracking_code="F_DELIVERY_5043"',$order->order_id)->getOne();
+    									if (!$tracking->isNewRecord()){
+    										$order->address_change='1';
+    										$order->address_change_info='F_DELIVERY_5043:Delivery information needed,attempting to update it';
+    										$order->save();
+    									}else {
+    										$change_array=array('corrected the street number','corrected the apartment number','corrected the postal code','delivery change','a request to modify the delivery address','delivery address has been updated','requested an alternate delivery address','updated the delivery information','request to modify the delivery address','updated the address','change of delivery');
+    										foreach ($change_array as $value){
+    											if(strpos(strtolower($d['context']), $value)!==false){
+    												$order->address_change='1';
+    												$order->address_change_info=$d['context'];
+    												$order->save();
+    												break;
+    											}
+    										}
+    									}
+    								}
+    								$r->generateTrace($lastTime,$order,$prevLocation);
+    							}
+    							
+    							if (strlen($d['location'])){
+    								$prevLocation=$d['location'];
+    							}
+    						}
+    					}
+    				}
+    			}
+    		}
+    		Q::writeCache('RouteSleep',true,array('life_time'=>3600));
+    		exit;
+    }
+    static function log($str){
+    		QLog::log($str);
+    		echo date('Ymd H:i').']'.$str."\n";
+    }
+    
+    /**
+     * 推送数据到新的出库表格里
+     */
+    function actionsyncpackage(){
+    	set_time_limit(0);
+    	$farpackages=Farpackage::find()->getAll();
+    	foreach ($farpackages as $f){
+    		$order=Order::find('order_id=? and order_status=5',$f->order_id)->getOne();
+    		if(!$order->isNewRecord()){
+    			continue;
+    		}
+    		$faroutpackge=new Faroutpackage();
+    		$faroutpackge->order_id=$f->order_id;
+    		$faroutpackge->quantity_out=$f->quantity;
+    		if($f->weight_out>0){
+    			$faroutpackge->length_out=$f->length_out;
+    			$faroutpackge->width_out=$f->width_out;
+    			$faroutpackge->height_out=$f->height_out;
+    			$faroutpackge->weight_out=$f->weight_out;
+    		}else{
+    			$faroutpackge->length_out=$f->length;
+    			$faroutpackge->width_out=$f->width;
+    			$faroutpackge->height_out=$f->height;
+    			$faroutpackge->weight_out=$f->weight;
+    		}
+    		$faroutpackge->save();
+    	}
+    	exit;
+    }
+    
+    /**
+     * 测试拆分阿里推送过来的数据
+     */
+    function actiontestapi(){
+    	$url='localhost/AliExpress/Code/api/orderbooking';
+    	$requestBody='{"bookingOrderDTO":"{\"aliOrderNo\":\"ALS002019031503\",\"consignee\":{\"city\":\"North hudson\",\"countryCode\":\"US\",\"mobile\":\"7153772133\",\"name1\":\"Ceme-Tube LLC\",\"name2\":\"Ceme-Tube LLC\",\"postalCode\":\"54016\",\"stateRegionCode\":\"Wisconsin\",\"street1\":\"579 Schommer Dr\"},\"consignor\":{\"city\":\"苏州市\",\"countryCode\":\"CN\",\"email\":\"eric.hwang@wonsten.com\",\"mobile\":\"18112752189\",\"name1\":\"王欣跃\",\"postalCode\":\"215600\",\"stateRegionCode\":\"江苏省\",\"street1\":\"乐余镇兆丰开发区双丰路5号\"},\"customsDeclaration\":{\"currencyCode\":\"USD\",\"declarationType\":\"QT\",\"totalAmount\":1000},\"needInsurance\":false,\"needPickUp\":false,\"packages\":[{\"height\":40,\"length\":67,\"packageType\":\"BOX\",\"quantity\":1,\"unit\":\"CM\",\"weight\":40,\"weightUnit\":\"KG\",\"width\":40}],\"products\":[{\"declarationPrice\":1000,\"hasBattery\":false,\"hsCode\":\"9617001100\",\"productName\":\"撕碎机筛网\",\"productNameEn\":\"Screen for shredder \",\"productQuantity\":1,\"productUnit\":\"pcs\"}],\"referenceNo\":\"803678522198,803678522199\",\"serviceCode\":\"Express_Standard_Global\",\"warehouse\":{\"code\":\"ASP_FAR_SH_PD\",\"name\":\"泛远上海浦东仓\"}}","sign":"302c02147ab07e89a99b19c4fe7f79a1ec9d918a2989f3d4021439822da781fe778c67b5b07caffb00b15b8a7e73"}';
+    	Helper_Curl::post($url, $requestBody);
+    	exit;
+    }
+    
+    /**
+     * 将阿里老订单里的运单号拆分到新表中
+     */
+    function actionsplitreference(){
+    	set_time_limit(0);
+    	$orders=Order::find('order_id <1452')->getAll();
+    	foreach ($orders as $order){
+    	  	if(strlen($order->reference_no)){
+	        	$references=explode(",", $order->reference_no);
+	        	foreach ($references as $r){
+	        		$alireference=new Alireference();
+	        		$alireference->order_id=$order->order_id;
+	        		$alireference->reference_no=$r;
+	        		$alireference->save();
+	        	}
+        	}
+    	}
+    	exit;
+    }
+    
+    /**
+     * 处理老数据的重量问题
+     */
+    function actioncalcweight(){
+    	set_time_limit(0);
+    	$orders=Order::find('ali_testing_order !="1" and order_status not in ("1","2","3","11") and order_id <1000')->getAll();
+    	foreach ($orders as $order){
+    		$far_in_packages=Farpackage::find('order_id=?',$order->order_id)->getAll();
+    		//应收实重
+    		if(!$order->weight_actual_in){
+    			if(count($far_in_packages)){
+    				$weight_actual_in=0;
+    				foreach ($far_in_packages as $far_in_actual){
+    					$weight_actual_in+=$far_in_actual->weight*$far_in_actual->quantity;
+    				}
+    				if($weight_actual_in>0){
+    					$order->weight_actual_in=$weight_actual_in;
+    					$order->save();
+    				}
+    			} 
+    		}
+    		//应收计费重
+    		if(!$order->weight_income_in){
+    			if(count($far_in_packages)){
+    				 $weight_income_in=0;
+    				 foreach ($far_in_packages as $far_in_income){
+    				 	$volumn_weight=$far_in_income->length*$far_in_income->width*$far_in_income->height/5000;
+    				 	$volumn=$volumn_weight>$far_in_income->weight;
+    				 	if($volumn){
+    				 		$weight_income_in+=$volumn_weight>20?ceil($volumn_weight)*$far_in_income->quantity:ceil($volumn_weight/0.5)*0.5*$far_in_income->quantity;
+    				 	}else{
+    				 		$weight_income_in+=$far_in_income->weight>20?ceil($far_in_income->weight)*$far_in_income->quantity:ceil($far_in_income->weight/0.5)*0.5*$far_in_income->quantity;
+    				 	}
+    				 	
+    				 }
+    				 if($weight_income_in>0){
+    				 	$order->weight_income_in=$weight_income_in>20?ceil($weight_income_in):$weight_income_in;
+    				 	$order->save();
+    				 }
+    			} 
+    		}
+    	}
+    	exit;
+    }
+    
+    /**
+     * 自动计算老的应收费用
+     */
+    function actioncalcfee(){
+    	set_time_limit(0);
+    	$fees=Fee::find('fee_type="1" and amount is null and fee_item_name="基础运费"')->getAll();
+    	foreach ($fees as $fee){
+    		$order=Order::find("order_id=?",$fee->order_id)->getOne();
+    		if($order->isNewRecord() || $order->order_status =='2' ||  $order->order_status =='3'){
+    			continue;
+    		}
+    		//基础运费
+    		$tracking_fee=0;
+    		$partition=Partition::find('partition_manage_id=1 and country_code_two=?',$order->consignee_country_code)->getOne();
+    		//获取价格
+    		$price=Price::find('price_manage_id=3 and partition_code=? and boxing_type=? and start_weight<? and end_weight>=?',$partition->partition_code,"BOX",$order->weight_income_in,$order->weight_income_in)->getOne();
+    		if($price->isNewRecord()){
+    			continue;
+    		}
+    		if($price->additional_weight>0){
+    			if(($order->weight_income_in-$price->first_weight)>0){
+    				$tracking_fee=(ceil(($order->weight_income_in-$price->first_weight)/$price->additional_weight)*$price->additional_fee)+$price->first_fee;
+    			}else{
+    				$tracking_fee=$price->first_fee;
+    			}
+    		}else{
+    			if(($order->weight_income_in-$price->first_weight)>0){
+    				$tracking_fee=(($order->weight_income_in-$price->first_weight)*$price->additional_fee)+$price->first_fee;
+    			}else{
+    				$tracking_fee=$price->first_fee;
+    			}
+    		}
+    		if($tracking_fee<=0){
+    			continue;
+    		}
+    		$fee->amount=$tracking_fee;
+    		$fee->save();
+    		
+    		//燃油附加费
+    		$fuel_amount=0;
+    		$fuel_fee=Fee::find('fee_type="1" and amount is null and fee_item_name="燃油附加费" and order_id=?',$order->order_id)->getOne();
+    		if($fuel_fee->isNewRecord()){
+    			continue;
+    		}
+    		$fuel_amount=Fee::find('fee_type="1" and fee_item_name in ("基础运费","超尺寸/超重附加费","偏远地区附加费") and order_id=?',$order->order_id)->getSum("amount");
+    		if($fuel_amount<=0){
+    			continue;
+    		}
+    		$fuel_fee->amount=sprintf("%.2f",$fuel_amount*0.15);
+    		$fuel_fee->save();
+    	}
+    	exit;
+    }
+    
+    /**
+     * 处理老数据的毛利
+     */
+    function actioncalcprofit(){
+    	set_time_limit(0);
+    	$orders=Order::find('order_id <5119 and ifnull(profit,"")="" ')->getAll();
+    	foreach ($orders as $order){
+    		$shou=Fee::find("order_id=? and fee_type='1'",$order->order_id)->getSum(amount);
+    		$fu=Fee::find("order_id=? and fee_type='2'",$order->order_id)->getSum(amount);
+    		$amout=$shou-$fu;
+    		if($amout){
+    			$order->profit=$amout;
+    			$order->save();
+    		}
+    	}
+    	exit;
+    }
+    
+    /**
+     * 检索老数据中更改地址的订单
+     */
+    function actionchangeaddress(){
+    	set_time_limit(0);
+    	$orders=Order::find()->getAll();
+    	foreach ($orders as $order){
+    		$tracking=Tracking::find('order_id=? and tracking_code="F_DELIVERY_5043"',$order->order_id)->getOne();
+    		if (!$tracking->isNewRecord()){
+    			$order->address_change='1';
+    			$order->address_change_info='F_DELIVERY_5043:Delivery information needed,attempting to update it';
+    			$order->save();
+    		}else {
+    			$change_array=array('corrected the street number','corrected the apartment number','corrected the postal code','delivery change','a request to modify the delivery address','delivery address has been updated','requested an alternate delivery address','updated the delivery information','request to modify the delivery address','updated the address','change of delivery');
+    			$routes=Route::find('tracking_no=?',$order->tracking_no)->getAll();
+    			foreach ($routes as $route){
+    				foreach ($change_array as $value){
+    					if(strpos(strtolower($route->description), $value)!==false){
+    						$order->address_change='1';
+    						$order->address_change_info=$route->description;
+    						$order->save();
+    						//跳出两层循环
+    						 break 2;
+    					}
+    				}
+    			}
+    		}
+    	}
+    	exit;
+    }
+    
+    /**
+     * 发送中性面单给阿里(状态=8的订单)
+     */
+    function actionUploadRecordForm(){
+        ini_set('max_execution_time', '0');
+        set_time_limit(0);
+        $select = Order::find("order_status='8' and send_ali_form !='1'")->setColumns('order_id')->all()->getQueryHandle();
+        while (($row = $select->fetchRow()) != false) {
+            $order = Order::find('order_id=?', $row['order_id'])->getOne();
+            $i=1;
+            $total_value='';
+            foreach ($order->product as $v){
+                if($i>=4){
+                    break;
+                }
+                $invoice['items'][]=array(
+    				'prdoduct_name_hs'=>$v->product_name_far.' '.$v->product_name_en_far.' '.$v->hs_code_far,
+    				'quantity'=>$v->product_quantity,
+    				'price'=>$v->declaration_price,
+    				'itotal'=>round($v->product_quantity*$v->declaration_price,2),
+                );
+                $total_value += round($v->product_quantity*$v->declaration_price,2);
+                $i++;
+            }
+            $toal_package=Farpackage::find('order_id=?',$order->order_id)->getCount();
+            $total_weight=$order->weight_income_in;
+            
+            //仓库名称
+            $consignor='From Consignor : ';
+            //发件人相关信息：
+            $shipper="Shipper: ";
+            if($order->department_id==6){
+                $consignor.="Far's warehouse in Hangzhou";
+                $shipper.='1st Floor, No.43 Ganchang Road, Xiacheng District, Hangzhou, Zhejiang, China  310022 ';
+                $shipper.='Miss.Zhang ';
+                $shipper.='0571-87834076';
+                //上海仓
+            }elseif ($order->department_id==7){
+                $consignor.="Far's warehouse in Shanghai";
+                $shipper.='No. 12, Jinshun Road, Zhuqiao Town, Pudong New Area, Shanghai,China 201323 ';
+                $shipper.='Mr.Gu ';
+                $shipper.='021-58590952';
+                //义乌仓
+            }elseif ($order->department_id==8){
+                $consignor.="Far's warehouse in Yiwu";
+                $shipper.='No.675-2 Airport Road, Yiwu City, Zhejiang Province,China 322000 ';
+                $shipper.='Mr.Yang ';
+                $shipper.='0579-85119351';
+            }
+            
+            $dir=Q::ini('upload_tmp_dir');
+            $barcode=$dir.DS.$order->order_id.'.barcode.png';
+            $logo=$dir.DS.'logo.png';
+            $source=trim(file_get_contents('http://wms.checkout2cn.com/link/barcode/html/image.php?filetype=PNG&dpi=90&scale=20&rotation=0&font_family=0&font_size=0&thickness=70&start=C&code=BCGcode128&text='.$order->far_no));
+            file_put_contents($barcode, $source);
+            $pdf=new PDF_Chinese('L','mm','far');
+            $pdf->AddGBFont('simhei', '黑体');
+            $pdf->Open();
+            $pdf->AddPage();
+            $pdf->SetFont('Arial','B',12);
+            //阿里单号
+            $pdf->Cell(84,6,'Order No. :'.$order->ali_order_no,'1');
+            $pdf->Cell(66,6,'','TR');
+            $pdf->Ln();
+            $pdf->Cell(84,20,'','1','','C');
+            //泛远单号条形码
+            $pdf->Image($barcode,'12','19','80','14');
+            //泛远logo
+            $pdf->Image($logo,'95','15','63','20');
+            $pdf->Cell(66,20,'','R');
+            $pdf->Ln();
+            //泛远单号
+            $pdf->Cell(84,6,$order->far_no,'1','','C');
+            $pdf->SetFont('Arial','B',10);
+            //产品
+            $pdf->Cell(66,6,$order->service_code,'RB','','C');
+            $pdf->Ln();
+            $pdf->SetFont('Arial','B',12);
+            //仓库名称
+            $pdf->Cell(150,8,$consignor,'1');
+            $pdf->Ln();
+            //发件人相关信息
+            $pdf->MultiCell(150,8,$shipper,'1');
+            //收件人姓名
+            $pdf->MultiCell(150,6,'To Consignee: '.$order->consignee_name1.' '.$order->consignee_name2,'1');
+            $pdf->SetFont('Arial','B',12);
+            //收件人地址1
+            $pdf->MultiCell(150,8,'Street Address1: '.$order->consignee_street1,'1');
+            //收件人地址2
+            $pdf->MultiCell(150,8,'Street Address2: '.$order->consignee_street2,'1');
+            //收件人城市和邮编
+            $pdf->Cell(99,8,'City&PostCode: '.$order->consignee_city.' '.$order->consignee_postal_code,'1');
+            $pdf->SetFont('Arial','B',10);
+            //收件人行政区/州
+            $pdf->Cell(51,8,'State: '.$order->consignee_state_region_code,'1');
+            $pdf->Ln();
+            $pdf->SetFont('Arial','B',11);
+            //收件人电话
+            $pdf->Cell(99,8,'Contact Phone: '.$order->consignee_mobile,'1');
+            //收件人国家
+            $pdf->Cell(51,8,'Country: '.$order->consignee_country_code,'1');
+            $pdf->Ln();
+            $pdf->SetFont('Arial','B',12);
+            $pdf->Cell(150,8,'SHIPMENT INFORMATION:','1','','C');
+            $pdf->Ln();
+            $pdf->Cell(99,7,'Main Products List','1','','C');
+            $pdf->SetFont('Arial','B',10);
+            $pdf->Cell(14,7,'Amount','1','','C');
+            $pdf->Cell(20,7,'Price/Unit','1','','C');
+            $pdf->Cell(17,7,'Subtotal','1','','C');
+            foreach ($invoice['items'] as $in){
+                $pdf->Ln();
+                $pdf->SetFont('simhei','',9);
+                //FAR中文品名FAR英文品名FAR HS编码
+                $pdf->Cell(99,6,iconv("utf-8","gbk",$in['prdoduct_name_hs']),'1','','L');
+                $pdf->SetFont('Arial','B',11);
+                //产品数量
+                $pdf->Cell(14,6,$in['quantity'],'1','','C');
+                //单价
+                $pdf->Cell(20,6,$in['price'],'1','','C');
+                //总价
+                $pdf->Cell(17,6,$in['itotal'],'1','','C');
+            }
+            $pdf->Ln();
+            $pdf->SetFont('Arial','B',11);
+            $pdf->Cell(99,6,'','1');
+            $pdf->Cell(34,6,'Total Value(USD):','1','','C');
+            //产品总价
+            $pdf->Cell(17,6,$total_value,'1','','C');
+            $pdf->Ln();
+            $pdf->SetFont('Arial','B',14);
+            $pdf->Cell(99,8,'Total packages','1','','C');
+            $pdf->Cell(51,8,'Total Weight(KG):','1','','C');
+            $pdf->Ln();
+            //包裹件数
+            $pdf->Cell(99,8,$toal_package,'1','','C');
+            //包裹重
+            $pdf->Cell(51,8,$total_weight,'1','','C');
+            $pdf->Ln();
+            $pdf->Cell(150,8,'Shipping Charges Payment Term: Prepaid&DDU','1');
+            $pdf->Ln();
+            $pdf->MultiCell(150,7,'Declaration Statement:I hereby certify that the information of this invoice is truce and correct and the contents and value of this shipment is as stated above.','1','L');
+            $alilabel=$dir.DS.$order->order_id.'.pdf';
+            $pdf->Output($alilabel,'F');
+            exec("/usr/bin/convert -density 300 -depth 8 -quality 85 {$alilabel} -append {$alilabel}.jpg");
+            $recordformdata=file_get_contents($alilabel.'.jpg');
+            $array=array(
+                'aliOrderNo'=>$order->ali_order_no,
+                'recordFromType'=>'jpg',
+                'recordFormData'=>base64_encode($recordformdata)
+            );
+            $url_sign='http://112.124.134.6:80/openapi/param2/1/ali.intl.onetouch/logistics.order.uploadRecordForm/831170';
+            $ali=new Helper_ALI();
+            $sign=$ali->sign($url_sign, json_encode($array),'uploadRecordForm');
+            //组合完整url
+            QLog::log($url_sign.'?uploadRecordFormDTO='.json_encode($array).'&_aop_signature='.$sign);
+            $url=$url_sign.'?uploadRecordFormDTO='.urlencode(json_encode($array)).'&_aop_signature='.$sign;
+            QLog::log($url);
+            //通过curl get 方式发送至阿里
+            $response=Helper_Curl::get1($url);
+            QLog::log('ali_form_response:'.$response);
+            $response=json_decode($response,true);
+            if(isset($response['isSuccess']) && $response['isSuccess']==true){
+                $order->send_ali_form='1';
+                $order->save();
+            }else{
+                $order->send_ali_form_error=$response['message'];
+                $order->save();
+            }
+        }
+        exit();
+    }
+    
+    /**
+     * 发送中性面单给阿里(状态=8的订单)
+     */
+    function actionUploadone(){
+    	ini_set('max_execution_time', '0');
+    	set_time_limit(0);
+    	//ALS00200398537
+    	$order = Order::find("ali_order_no='ALS00000576004'")->getOne();
+    	if (!$order->isNewRecord()) {
+    		$i=1;
+    		$total_value='';
+    		foreach ($order->product as $v){
+    			if($i>=4){
+    				break;
+    			}
+    			$invoice['items'][]=array(
+    				'prdoduct_name_hs'=>$v->product_name_far.' '.$v->product_name_en_far.' '.$v->hs_code_far,
+    				'quantity'=>$v->product_quantity,
+    				'price'=>$v->declaration_price,
+    				'itotal'=>round($v->product_quantity*$v->declaration_price,2),
+    			);
+    			$total_value += round($v->product_quantity*$v->declaration_price,2);
+    			$i++;
+    		}
+    		$toal_package=Farpackage::find('order_id=?',$order->order_id)->getCount();
+    		$total_weight=$order->weight_income_in;
+    
+    		//仓库名称
+    		$consignor='From Consignor : ';
+    		//发件人相关信息：
+    		$shipper="Shipper: ";
+    		if($order->department_id==6){
+    			$consignor.="Far's warehouse in Hangzhou";
+    			$shipper.='1st Floor, No.43 Ganchang Road, Xiacheng District, Hangzhou, Zhejiang, China  310022 ';
+    			$shipper.='Miss.Zhang ';
+    			$shipper.='0571-87834076';
+    			//上海仓
+    		}elseif ($order->department_id==7){
+    			$consignor.="Far's warehouse in Shanghai";
+    			$shipper.='No. 12, Jinshun Road, Zhuqiao Town, Pudong New Area, Shanghai,China 201323 ';
+    			$shipper.='Mr.Gu ';
+    			$shipper.='021-58590952';
+    			//义乌仓
+    		}elseif ($order->department_id==8){
+    			$consignor.="Far's warehouse in Yiwu";
+    			$shipper.='No.675-2 Airport Road, Yiwu City, Zhejiang Province,China 322000 ';
+    			$shipper.='Mr.Yang ';
+    			$shipper.='0579-85119351';
+    		}
+    
+    		$dir=Q::ini('upload_tmp_dir');
+    		@Helper_Filesys::mkdirs($dir);
+    		$barcode=$dir.DS.$order->order_id.'.barcode.png';
+    		$logo=$dir.DS.'logo.png';
+    		$source=trim(file_get_contents('http://wms.checkout2cn.com/link/barcode/html/image.php?filetype=PNG&dpi=90&scale=20&rotation=0&font_family=0&font_size=0&thickness=70&start=C&code=BCGcode128&text='.$order->far_no));
+    		file_put_contents($barcode, $source);
+    		$pdf=new PDF_Chinese('L','mm','far');
+    		$pdf->AddGBFont('simhei', '黑体');
+    		$pdf->AddPage();
+    		$pdf->SetFont('Arial','B',12);
+    		//阿里单号
+    		$pdf->Cell(84,6,'Order No. :'.$order->ali_order_no,'1');
+    		$pdf->Cell(66,6,'','TR');
+    		$pdf->Ln();
+    		$pdf->Cell(84,20,'','1','','C');
+    		//泛远单号条形码
+    		$pdf->Image($barcode,'12','19','80','14');
+    		//泛远logo
+    		$pdf->Image($logo,'95','15','63','20');
+    		$pdf->Cell(66,20,'','R');
+    		$pdf->Ln();
+    		//泛远单号
+    		$pdf->Cell(84,6,$order->far_no,'1','','C');
+    		$pdf->SetFont('Arial','B',10);
+    		//产品
+    		$pdf->Cell(66,6,$order->service_code,'RB','','C');
+    		$pdf->Ln();
+    		$pdf->SetFont('Arial','B',12);
+    		//仓库名称
+    		$pdf->Cell(150,8,$consignor,'1');
+    		$pdf->Ln();
+    		//发件人相关信息
+    		$pdf->MultiCell(150,8,$shipper,'1');
+    		//收件人姓名
+    		$pdf->MultiCell(150,6,'To Consignee: '.$order->consignee_name1.' '.$order->consignee_name2,'1');
+    		$pdf->SetFont('Arial','B',12);
+    		//收件人地址1
+    		$pdf->MultiCell(150,8,'Street Address1: '.$order->consignee_street1,'1');
+    		//收件人地址2
+    		$pdf->MultiCell(150,8,'Street Address2: '.$order->consignee_street2,'1');
+    		//收件人城市和邮编
+    		$pdf->Cell(99,8,'City&PostCode: '.$order->consignee_city.' '.$order->consignee_postal_code,'1');
+    		$pdf->SetFont('Arial','B',10);
+    		//收件人行政区/州
+    		$pdf->Cell(51,8,'State: '.$order->consignee_state_region_code,'1');
+    		$pdf->Ln();
+    		$pdf->SetFont('Arial','B',11);
+    		//收件人电话
+    		$pdf->Cell(99,8,'Contact Phone: '.$order->consignee_mobile,'1');
+    		//收件人国家
+    		$pdf->Cell(51,8,'Country: '.$order->consignee_country_code,'1');
+    		$pdf->Ln();
+    		$pdf->SetFont('Arial','B',12);
+    		$pdf->Cell(150,8,'SHIPMENT INFORMATION:','1','','C');
+    		$pdf->Ln();
+    		$pdf->Cell(99,7,'Main Products List','1','','C');
+    		$pdf->SetFont('Arial','B',10);
+    		$pdf->Cell(14,7,'Amount','1','','C');
+    		$pdf->Cell(20,7,'Price/Unit','1','','C');
+    		$pdf->Cell(17,7,'Subtotal','1','','C');
+    		foreach ($invoice['items'] as $in){
+    			$pdf->Ln();
+    			$pdf->SetFont('simhei','',9);
+    			//FAR中文品名FAR英文品名FAR HS编码
+    			$pdf->Cell(99,6,iconv("utf-8","gbk",$in['prdoduct_name_hs']),'1','','L');
+    			$pdf->SetFont('Arial','B',11);
+    			//产品数量
+    			$pdf->Cell(14,6,$in['quantity'],'1','','C');
+    			//单价
+    			$pdf->Cell(20,6,$in['price'],'1','','C');
+    			//总价
+    			$pdf->Cell(17,6,$in['itotal'],'1','','C');
+    		}
+    		$pdf->Ln();
+    		$pdf->SetFont('Arial','B',11);
+    		$pdf->Cell(99,6,'','1');
+    		$pdf->Cell(34,6,'Total Value(USD):','1','','C');
+    		//产品总价
+    		$pdf->Cell(17,6,$total_value,'1','','C');
+    		$pdf->Ln();
+    		$pdf->SetFont('Arial','B',14);
+    		$pdf->Cell(99,8,'Total packages','1','','C');
+    		$pdf->Cell(51,8,'Total Weight(KG):','1','','C');
+    		$pdf->Ln();
+    		//包裹件数
+    		$pdf->Cell(99,8,$toal_package,'1','','C');
+    		//包裹重
+    		$pdf->Cell(51,8,$total_weight,'1','','C');
+    		$pdf->Ln();
+    		$pdf->Cell(150,8,'Shipping Charges Payment Term: Prepaid&DDU','1');
+    		$pdf->Ln();
+    		$pdf->MultiCell(150,7,'Declaration Statement:I hereby certify that the information of this invoice is truce and correct and the contents and value of this shipment is as stated above.','1','L');
+    		$alilabel=$dir.DS.$order->order_id.'.pdf';
+    		$pdf->Output($alilabel,'F');
+    		$pdf->Close();
+    		exec("/usr/bin/convert -density 300 -depth 8 -quality 85 {$alilabel} -append {$alilabel}.jpg");
+    		$recordformdata=file_get_contents($alilabel.'.jpg');
+    		//uploadRecordFormDTO数据
+    		$array=array(
+    			'aliOrderNo'=>$order->ali_order_no,
+    			'recordFormType'=>'farLabel',
+    			'recordFormData'=>base64_encode($recordformdata)
+    		);
+    		$url_sign='http://112.124.132.140:80/openapi/param2/1/ali.intl.onetouch/logistics.order.uploadRecordForm/831170';
+    		$ali=new Helper_ALI();
+    		$secretKey='fq6nVNy02u';
+    		$urlpath=strstr($url_sign, 'param2/');
+    		$s=$urlpath.'appKey831170uploadRecordForm'.'DTO'.json_encode($array);
+    		$sign=strtoupper(bin2hex(hash_hmac('sha1',$s,$secretKey,true)));
+    		$post_data=array(
+    			'appKey'=>'831170',
+    			'_aop_signature'=>$sign,
+    			'uploadRecordFormDTO'=>$array
+    		);
+    		QLog::log(json_encode($post_data));
+    		//通过curl post 方式发送至阿里x-www-form-urlencoded 方式发送
+    		$response=Helper_Curl::post($url_sign, http_build_query($post_data));
+    		QLog::log('ali_form_response:'.$response);
+    		$response=json_decode($response,true);
+    		if(isset($response['success']) && $response['success']==true){
+    			$order->send_ali_form='1';
+    			$order->save();
+    		}else{
+    			$order->send_ali_form_error=$response['message'];
+    			$order->save();
+    		}
+    	}
+    	exit();
+    }
+}

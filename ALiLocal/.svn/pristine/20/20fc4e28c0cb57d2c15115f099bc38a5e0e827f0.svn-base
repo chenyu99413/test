@@ -1,0 +1,54 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+  单票核查
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<script type="text/javascript" src="<?php echo $_BASE_DIR;?>public/js/jquery.sound.js"></script>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<div class="FarSearch" >
+	<table>
+		<tbody>
+			<tr>
+				<th>阿里订单号</th>
+				<td>
+					<input name="ali_order_no" type="text" id="ali_order_no"  style="width: 200px" value=""><span id="explain" style="margin-left:10px;"></span>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+<?PHP $this->_endblock();?>
+<script type="text/javascript">
+	$(function(){
+		document.getElementById("ali_order_no").focus();
+		//扫描阿里单号
+		$('#ali_order_no').on('keyup', function (e) {
+			if (e.keyCode == 13) {
+				$("#explain").html('')
+				$.ajax({
+					url:'<?php echo url('warehouse/confirmone')?>',
+					type:'POST',
+					data:{ali_order_no:$("#ali_order_no").val()},
+					success:function(data){
+						if(data=='success'){
+							$("#explain").html('成功').css('color','green');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/chenggong.mp3');//核查成功
+						}else if(data=='confirmed'){
+							$("#explain").html('失败').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yihecha.mp3');//已核查
+						}else if(data=='issued'){
+							$("#explain").html('失败').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yikoujian.mp3');//已扣件
+						}else if(data=='error'){
+							$("#explain").html('失败').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yichang.mp3');//核查失败
+						}
+						$("#ali_order_no").select();
+					}
+				})
+			}
+		});
+	})
+</script>

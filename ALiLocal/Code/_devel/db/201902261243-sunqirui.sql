@@ -1,0 +1,1 @@
+ALTER TABLE `tb_order` ADD COLUMN `warehouse_in_time`  int NULL COMMENT '入库时间' AFTER `pick_company`;

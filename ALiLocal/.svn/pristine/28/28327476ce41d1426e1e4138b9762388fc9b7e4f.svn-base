@@ -1,0 +1,107 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script type="text/javascript"
+	src="<?php echo $_BASE_DIR?>public/js/jquery.tablesorter.min.js"></script>
+    <form method="POST" id="searchForm" style="margin-bottom:0px;">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>退货时间</th>
+					<td>
+					<input type="text" data-options = "showSeconds:false" class="easyui-datetimebox" name="start_date"
+							value="<?php echo request('start_date')?>" style="width: 120px;">
+					</td>
+					<th>到</th>
+					<td>
+					<input type="text" data-options = "showSeconds:false" class="easyui-datetimebox" name="end_date"
+						value="<?php echo request('end_date')?>" style="width: 120px;">
+					</td>
+					<th>末端/阿里单号</th>
+					<td>   
+					   <textarea name="order_no" placeholder="每行一个单号"
+							style="width: 90%"><?php echo request("order_no")?></textarea>
+                    </td>
+                    <td>
+                     <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+                    </td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+    <div class="tabs-container " style="min-width: 1148px;border-bottom:0px;margin-bottom: 10px">
+       <?php
+		echo Q::control ( "tabs", "description", array (
+			"tabs" => $tabs,"active_id" => $active_id 
+		) );
+		?>
+		<div style="width: 100%;overflow: scroll;" id='table-cont'>
+			<table id="myTable" class="FarTable tablesorter" style="max-width: 7100px;margin-top:0px;">
+            		<thead>
+            			<tr>
+            				<th class="x_scroll x_scroll_th">退货仓库</th>
+            				<th class="x_scroll x_scroll_th">末端单号</th>
+            				<th class="x_scroll x_scroll_th">ALS单号</th>
+            				<th>退货时间</th>
+            				<th>仓储时间</th>
+            				<th>重发单号</th>
+            				<th>重发时间</th>
+            				<th>销毁时间</th>
+            				<th>退回单号</th>
+            				<th>退回时间</th>
+            				<th>原件数</th>
+            				<th>原重量</th>
+            				<th>退货件数</th>
+            				<th>退货重量</th>
+            			</tr>
+            		</thead>
+            		<tbody>
+            		<?php foreach ($orders as $order):?>
+            			<tr>
+            				<td><?php echo $order->department_id?></td>
+            				<td><?php echo $order->tracking_no?></td>
+            				<td><?php echo $order->ali_order_no?></td>
+            				<td><?php echo $order->return_time?></td>
+            				<td><?php echo $order->storage_time?></td>
+            				<td><?php echo $order->new_tracking_no?></td>
+            				<td><?php echo $order->again_time?></td>
+            				<td><?php echo $order->destroy_time?></td>
+            				<td><?php echo $order->send_back_no?></td>
+            				<td><?php echo $order->send_back_time?></td>
+            				<td><?php echo $order->original_num?></td>
+            				<td><?php echo $order->original_weight?></td>
+            				<td><?php echo $order->return_num?></td>
+            				<td><?php echo $order->return_weight?></td>
+            				
+            			</tr>
+            		<?php endforeach;?>
+            		</tbody>
+            	</table>
+            </div>
+	</div>
+    <input id="parameters" type="hidden" name="parameters" value="<?php echo $parameters?>">
+    </form>
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+<?PHP $this->_endblock();?>
+<script type="text/javascript">
+/**
+ *  点击tabs设置隐藏框值 
+ */	 
+function TabSwitch(code){
+	$("#parameters").val(code);
+	$("#searchForm").trigger("submit");
+}
+</script>

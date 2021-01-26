@@ -1,0 +1,273 @@
+<?php
+class Controller_Channelcost extends Controller_Abstract {
+	/**
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 检索
+	 */
+	function actionSearch() {
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		$this->_view ["tabs"] = Controller_Product::createTabs ( $product );
+		$this->_view ["product"] = $product;
+	}
+	
+	/**
+	 * 编辑
+	 */
+	function actionEdit() {
+		//产品
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		//产品渠道
+		$channelcost = ChannelCost::find ( "product_id = ? and [channel.channel_id] = ?", request ( "id" ), request ( "channel_id" ) )->getOne ();
+		//保存
+		if (request_is_post ()) {
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			
+			//渠道成本
+			if (request ( "channelcost" ) != null || strlen ( request ( "channelcost" ) ) > 0) {
+				$channelcost->product_id = $product->product_id;
+				$channelcost->changeProps ( request ( "channelcost" ) );
+				$channelcost->save ();
+			}
+			//渠道折扣-价格-分区-偏派列表
+			if (request ( "Channelcostppr" ) != null || strlen ( request ( "Channelcostppr" ) ) > 0) {
+				Channelcostppr::meta ()->destroyWhere ( "channel_cost_id = ?", $channelcost->channel_cost_id);
+				foreach ( json_decode ( request ( "Channelcostppr" ) ) as $value ) {
+				    $value->effective_time=strtotime($value->effective_time);
+				    $value->invalid_time=strtotime($value->invalid_time);
+					$Channelcostppr = new Channelcostppr ();
+					$Channelcostppr->changeProps ( $value );
+					$Channelcostppr->channel_cost_id=$channelcost->channel_cost_id;
+					$Channelcostppr->save ();
+				}
+			}
+			
+			$conn->completeTrans ();
+			return $this->_redirectMessage ( "渠道成本", "保存成功", url ( "channelcost/edit", array (
+				"id" => $channelcost->product_id,
+				"channel_id" => $channelcost->channel_id
+			) ) );
+		}
+		
+		$this->_view ["tabs"] = Controller_Product::createTabs ( $product );
+		//产品
+		$this->_view ["product"] = $product;
+		//渠道成本
+		$this->_view ["channelcost"] = $channelcost;
+		//渠道列表
+		$select = Channel::find ();
+		$channel_ids = Helper_Array::getCols ( ChannelCost::find ( "product_id = ? and channel_id != ?", request ( "id" ), request ( "channel_id", "" ) )->getAll (), "channel_id" );
+		if (! empty ( $channel_ids )) {
+			$select->where ( "channel_id not in (?)", $channel_ids );
+		}
+		$this->_view ["channel"] = $select->getAll ();
+	}
+	
+	/**
+	 * 删除
+	 */
+	function actionDelete() {
+		//产品
+		$product = Product::find ( "product_id = ?", request ( "id" ) )->getOne ();
+		if ($product->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品信息", "产品ID错误,请重新选择产品", url ( "product/search" ) );
+		}
+		
+		//产品渠道
+		$channelcost = ChannelCost::find ( "product_id = ? and [channel.channel_id] = ?", request ( "id" ), request ( "channel_id" ) )->getOne ();
+		if ($channelcost->isNewRecord ()) {
+			return $this->_redirectMessage ( "产品渠道", "产品渠道错误,请重新选择渠道", url ( "channelcost/search", array (
+				"id" => $product->product_id 
+			) ) );
+		}
+		
+		$channelcost->destroy ();
+		
+		return $this->_redirectMessage ( "产品渠道", "删除成功", url ( "channelcost/search", array (
+			"id" => $product->product_id 
+		) ) );
+	}
+	
+	/**
+	 * 分区特殊分组
+	 *
+	 * @param 数组 $array        	
+	 * @param 字段开始 $key_start        	
+	 * @param 字段结束 $key_end        	
+	 * @return Ambigous <multitype:, unknown>
+	 */
+	function partitionGroupBy($array) {
+		$result = array ();
+		foreach ( $array as $value ) {
+			$key = $value ["start_weight"] . "-" . $value ["end_weight"];
+			$partition = $value ["partition_code"];
+			$result [$key] [$partition] = $value;
+		}
+		return $result;
+	}
+	
+	/**
+	 * 国家特殊分区
+	 *
+	 * @param unknown $array        	
+	 * @return multitype:string
+	 */
+	function countryGroupBy($array) {
+		$result = array ();
+		
+		foreach ( $array as $value ) {
+			$key = $value ["discount"] * 10000;
+			$result [$key] = (isset ( $result [$key] ) ? $result [$key] . "," : "") . $value ["country_code_word_two"];
+		}
+		return $result;
+	}
+	
+	/**
+	 * 创建标签 包装类型
+	 *
+	 * @param 产品 $product        	
+	 * @return 标签列
+	 */
+	function createTabsType($product, $channelcost) {
+		return array (
+			array (
+				"id" => "P",
+				"title" => "包裹",
+				"href" => url ( "channelcost/edit", array (
+					"id" => $product->product_id,
+					"channel_id" => $channelcost->channel_id,
+					"type" => "P" 
+				) ) 
+			),
+			array (
+				"id" => "B",
+				"title" => "小包裹",
+				"href" => url ( "channelcost/edit", array (
+					"id" => $product->product_id,
+					"channel_id" => $channelcost->channel_id,
+					"type" => "B" 
+				) ) 
+			),
+			array (
+				"id" => "F",
+				"title" => "文件D",
+				"href" => url ( "channelcost/edit", array (
+					"id" => $product->product_id,
+					"channel_id" => $channelcost->channel_id,
+					"type" => "F" 
+				) ) 
+			),
+			array (
+				"id" => "L",
+				"title" => "文件封L",
+				"href" => url ( "channelcost/edit", array (
+					"id" => $product->product_id,
+					"channel_id" => $channelcost->channel_id,
+					"type" => "L" 
+				) ) 
+			),
+			array (
+				"id" => "T",
+				"title" => "ESF",
+				"href" => url ( "channelcost/edit", array (
+					"id" => $product->product_id,
+					"channel_id" => $channelcost->channel_id,
+					"type" => "T" 
+				) ) 
+			) 
+		);
+	}
+	
+	/*
+	 * 渠道折扣信息处理
+	 */
+	function actionDiscount(){
+		//保存
+		if (request_is_post ()) {
+			//分重量分区折扣
+			if (request ( "partition" ) != null || strlen ( request ( "partition" ) ) > 0) {
+					$value=json_decode ( request ( "partition" ),true);
+					if(strlen($value[0]["partition_id"])){
+						//判断时间冲突
+						
+					}else{
+						
+					}
+					$partition = ChannelDiscountPartition::find("partition_id=?",$value[0]["partition_id"])->getOne();
+					if (request ( "delete_flag" ) == "true") {
+						if (! $partition->isNewRecord ()) {
+							$partition->destroy ();
+						}
+					}else{
+						$partition->changeProps ( $value[0] );
+						$partition->save ();
+					}
+					echo ($partition->partition_id);
+			//特殊国家折扣
+			}elseif (request ( "country" ) != null || strlen ( request ( "country" ) ) > 0) {
+					$value=json_decode ( request ( "country" ),true);
+					$country = ChannelDiscountCountry::find("discount_country_id=?",$value[0]["discount_country_id"])->getOne();
+					if (request ( "delete_flag" ) == "true") {
+						if (! $country->isNewRecord ()) {
+							$country->destroy ();
+						}
+					}else{
+						$country->changeProps ( $value[0] );
+						$country->save ();
+					}
+					echo ($country->discount_country_id);
+			//分重量操作费
+			}elseif (request ( "operating" ) != null || strlen ( request ( "operating" ) ) > 0) {
+					$value=json_decode ( request ( "operating" ),true);
+					$operating = ChannelDiscountOperating::find("operating_id=?",$value[0]["operating_id"])->getOne();
+					if (request ( "delete_flag" ) == "true") {
+						if (! $operating->isNewRecord ()) {
+							$operating->destroy ();
+						}
+					}else{
+						$operating->changeProps ( $value[0] );
+						$operating->save ();
+					}
+					echo ($operating->operating_id);
+			//其他费用
+			}elseif (request ( "other" ) != null || strlen ( request ( "other" ) ) > 0) {
+					$value=json_decode ( request ( "other" ),true);
+					$other =  ChannelDiscountOther::find("other_id=?",$value[0]["other_id"])->getOne();
+					if (request ( "delete_flag" ) == "true") {
+						if (! $other->isNewRecord ()) {
+							$other->destroy ();
+						}
+					}else{
+						$other->changeProps ( $value[0] );
+						$other->save ();
+					}
+					echo ($other->other_id);
+			}elseif (request("other_rs")!=null || strlen(request("other_rs"))>0){
+				$value=json_decode ( request ( "other_rs" ),true);
+				$other_rs=ChannelDiscountOtherRs::find("rs_id=?",$value[0]["rs_id"])->getOne();
+				if (request ( "delete_flag" ) == "true") {
+					if (! $other_rs->isNewRecord ()) {
+						$other_rs->destroy ();
+					}
+				}else{
+					$other_rs->changeProps ( $value[0] );
+					$other_rs->save ();
+				}
+				echo ($other_rs->rs_id);
+			}
+			exit;
+		}
+	}
+}

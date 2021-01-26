@@ -1,0 +1,27 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>角色变更记录<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th width="120">修改日期</th>
+				<th width="90">被修改员工</th>
+				<th>修改记录</th>
+				<th width="90">操作者</th>
+			</tr>
+		</thead>
+		<tbody>
+		    <?php foreach($logs as $log):?>
+			<tr>
+				<td><?php echo date("Y-m-d",$log->log_date)?></td>
+				<td><?php echo $log->user->user_name;?></td>
+				<td><?php echo $log->log_content;?></td>
+				<td><?php echo $log->operator;?></td>
+			</tr>
+			<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+
+<?PHP $this->_endblock();?>

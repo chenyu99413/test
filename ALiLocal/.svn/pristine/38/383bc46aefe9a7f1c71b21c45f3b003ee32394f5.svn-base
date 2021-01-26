@@ -1,0 +1,1 @@
+ALTER TABLE `tb_route_matchrules` CHANGE `sort` `sort` int(10) DEFAULT '9999' COMMENT '序号';

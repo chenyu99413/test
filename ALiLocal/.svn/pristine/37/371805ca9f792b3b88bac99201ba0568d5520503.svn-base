@@ -1,0 +1,21 @@
+<?php 
+class Controller_A extends Controller_Abstract{
+	function actionB(){
+		$user=new User();
+		// or
+		$user=User::find()
+			->where('username =?',request('username'))	//request means $_REQUEST
+			->getOne();
+		echo $user->username;
+		$user->username='new name';
+		$user->save();
+		//delete
+		$user->destroy();
+	}
+	function actionLZ(){
+		new Helper_Network();
+		$o=new Helper_Network_LianZhong('CO011705-003468');
+		dump($o->getTracking());
+		exit;
+	}
+}

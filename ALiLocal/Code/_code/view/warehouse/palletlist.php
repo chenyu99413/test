@@ -1,0 +1,124 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    托盘列表
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php 
+	$d = array();
+	foreach(Order::channelgroup() as $k => $v){
+		$d[$k] = $k;
+	}
+?>
+<div>
+</div>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>
+						创建日期从：
+					</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date" ),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>到</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date"),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>阿里订单号</th>
+					<td>
+						<input name="pallet_no" type="text" style="width: 150px"
+							value="<?php echo request('pallet_no')?>">
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<a class="btn btn-success btn-small" href="javascript:void(0)" onclick="$('#dialog_search').dialog('open');$('.window-shadow').css('top','106px');$('.panel').css('top','106px');$('#dialog_search').removeClass('hide');"><i class="icon-plus"></i> 新建托盘</a>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th>No</th>
+				<th>托盘号</th>
+				<th>发起人</th>
+				<th>建托时间</th>
+				<th>包裹数量</th>
+				<th style="width:80px;">操作</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php $i=1; foreach ($palletlist as $temp):?>
+			<tr>
+				<td><?php echo $i++ ?></td>
+				<td><?php echo $temp->pallet_no ?></td>
+				<td><?php echo $temp->operator?></td>
+				<td align="center"><?php echo Helper_Util::strDate('Y-m-d H:i', $temp->create_time)?></td>
+				<td><?php echo count(Subcode::find('pallet_no=?',$temp->pallet_no)->getAll())=='0'?'':count(Subcode::find('pallet_no=?',$temp->pallet_no)->getAll())?></td>
+			    <td><a class="btn btn-mini btn-info" target="_blank" href="<?php echo url('warehouse/pallet', array('pallet_id' => $temp->pallet_id))?>">
+            						编辑
+            					</a></td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	<div id="dialog_search" class="easyui-dialog hide"title="新建托盘"
+		data-options="closed:true, modal:true"
+		style="width: 400px; height: 100px;">
+		<table style="margin-top: 5px; margin-bottom: 5px; width: 100%;">
+			<tbody>
+				<tr>
+					<th style="width:60px;">渠道分组</th>
+					<td>
+						<?php
+						echo Q::control ( "dropdownbox", "channel", array (
+							"items" => $d,
+							"style" => "width:120px" ,
+						) )?>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2" style="text-align: center;">
+						<button class="btn btn-primary btn-small" type="submit" onclick="savepallet()" >
+							<i class="icon-search"></i>
+							保存
+						</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<input type="hidden" name="channel_name" id="channel_name">
+	<input type="hidden" name="action" id="action">
+</form>
+<?php
+$this->_control ( "pagination", "my-pagination", array (
+	"pagination" => $pagination 
+) );
+?>
+<script type="text/javascript">
+function savepallet(){
+   	$("#channel_name").val($("#channel").val());
+   	$("#action").val('new_pallet');
+   	$("form").submit();
+}
+</script>
+<?PHP $this->_endblock();?>
+

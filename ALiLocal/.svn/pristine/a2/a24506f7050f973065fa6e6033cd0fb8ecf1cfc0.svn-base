@@ -1,0 +1,1 @@
+ALTER TABLE `tb_routes` ADD COLUMN `time_zone`  varchar(10) NULL COMMENT '时区' AFTER `create_time`;

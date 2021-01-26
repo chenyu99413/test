@@ -1,0 +1,62 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+扫描详情
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+if (request('id')) {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'仓库业务' => '',
+			'国内快递扫描' => url ( 'warehouse/scantotallist' ),
+			'扫描详情' => url ( 'warehouse/scantotaldetail', array (
+				'id' => request('id') 
+			) ) 
+		) 
+	) );
+}
+?>
+<a class="btn btn-primary btn-small" href="<?php echo url('warehouse/scantotalexport',array('total_no'=>$list_single->total_no))?>" >
+			              <i class="icon-download"></i>
+			                                         导出
+		               </a>
+<table class="FarTable">
+	<thead>
+		<tr>
+			<th>No</th>
+			<th>总单号</th>
+			<th>仓库</th>
+			<th>快递单号</th>
+			<th>国内快递</th>
+			<th>扫描时间</th>
+			<th>订单预报</th>
+			<th>操作人</th>
+		</tr>
+	</thead>
+	<tbody>
+	<?php 
+		$i=1; foreach ($details as $temp):
+	?>
+	<tr>
+		<td><?php echo $i++?></td>
+		<td><?php echo $list_single->total_no?></td>
+		<td><?php echo $department[$list_single->department_id]?></td>
+		<td><?php echo $temp->reference_no?></td>
+		<td><?php echo $logistics_code[$list_single->logistics_id]?></td>
+		<td><?php echo Helper_Util::strDate('Y-m-d H:i:s', $temp->scan_no_time)?></td>
+		<td><?php echo ScanTotalDetail::$s_status[$temp->status]?></td>
+		<td><?php echo $list_single->operation_name?></td>		
+	</tr>
+	<?php endforeach;?>
+	</tbody>
+</table>
+<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+?>
+<?PHP $this->_endblock();?>
+

@@ -1,0 +1,86 @@
+<?php
+class Controller_Network extends Controller_Abstract {
+	/**
+	 * 网络查询
+	 */
+	function actionSearch() {
+		$result = array ();
+		foreach ( Network::find ()->order ( 'update_time desc' )->getAll () as $network ) {
+			$result [] = array (
+				"id" => $network->network_id,
+				"code" => $network->network_code,
+				"name" => $network->network_name,
+			);
+		}
+		$this->_view ["items"] = $result;
+	}
+	
+	/**
+	 * 网络编辑
+	 */
+	function actionEdit() {
+		//网络ID
+		$network = new Network ();
+		if (request ( "id" ) != null) {
+			//网络
+			$network = Network::find ( "network_id = ?", request ( "id" ) )->getOne ();
+		}
+		
+		if (request_is_post ()) {
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			
+			//网络
+			if (request ( "network" ) != null || strlen ( request ( "network" ) ) > 0) {
+				$network->changeProps ( request ( "network" ) );
+				$network->save ();
+			}
+			$conn->completeTrans ();
+			return $this->_redirectMessage ( "网络保存", "保存成功", url ( "network/edit", array (
+				"id" => $network->network_id 
+			) ) );
+		}
+		
+		$this->_view ["network"] = $network;
+	}
+	/**
+	 * 保存燃油
+	 */
+	function actionNetworkfuelsave(){
+	    //燃油附加费
+	    if (request('networkfuel')){
+	        $p = request ( "networkfuel" );
+	        $networkfuel = Networkfuel::find ( "network_fuel_id = ?", $p ["network_fuel_id"] )->getOne ();
+	        $networkfuel->network_id = request('network_id');
+	        $p['effective_date']=strtotime($p['effective_date']);
+	        $p['fail_date']=strtotime($p['fail_date']);
+	        $networkfuel->changeProps ( $p );
+	        $networkfuel->save ();
+	        echo ($networkfuel->network_fuel_id);
+	    }
+	    exit();
+	}
+	
+	/**
+	 * 燃油删除
+	 */
+	function actionDelete() {
+		if (request ( "network_fuel_id" )) {
+			$networkfuel = Networkfuel::find ( "network_fuel_id = ?", request ( "network_fuel_id" ) )->getOne ();
+			$networkfuel->destroy ();
+		}
+		exit();
+	}
+	/**
+	 * 检查网络
+	 */
+	function actionChecknetwork() {
+	    $network = Network::find ( "network_code= ?", request ( "value" ) )->getOne ();
+	    if (!$network->isNewRecord () && ($network->network_id!=request('network_id'))) {
+	        echo "false";
+	    } else {
+	        echo "true";
+	    }
+	    exit ();
+	}
+}

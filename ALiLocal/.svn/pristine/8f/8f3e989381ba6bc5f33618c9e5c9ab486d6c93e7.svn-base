@@ -1,0 +1,9 @@
+
+create view `v_route_latest_ids` as
+select max(id) as latest,tracking_no from tb_routes group by tracking_no;
+
+
+create view `v_route_latest` as 
+select o.ali_order_no,rot2.tracking_no,rot2.location,rot2.time from tb_order o left join v_route_latest_ids as rot on o.tracking_no=rot.tracking_no 
+left join tb_routes rot2 on rot2.id=rot.latest and rot2.tracking_no=rot.tracking_no
+where o.order_status in (7,8) or (o.order_status=12 and o.order_status_copy in (7,8) );

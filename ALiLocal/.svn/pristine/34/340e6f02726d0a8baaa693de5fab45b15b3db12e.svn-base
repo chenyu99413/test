@@ -1,0 +1,70 @@
+<div style="overflow: scroll; height: 370px;" id="scroll-fee-list-talbe">
+	<table class="FarTable" style="margin: 0; width: 1500px; table-layout: fixed;"
+		id="fee-list-talbe">
+		<thead>
+			<tr>
+				<th style="width: 50px;">No.</th>
+				<th style="width: 135px;">订单日期</th>
+				<th style="width: 120px;">阿里单号</th>
+				<th style="width: 135px;">泛远单号</th>
+				<th style="width: 150px;">跟踪单号</th>
+				<th style="width: 60px;">仓库</th>
+				<th style="width: 100px;">客户</th>
+				<th style="width: 120px;">产品</th>
+				<th style="width: 135px;">出库日期</th>
+				<th style="width: 80px;">基础运费</th>
+				<th style="width: 80px;">燃油附加费</th>
+				<th style="width: 70px;">操作费</th>
+				<th style="width: 80px;">其他费用</th>
+				<th style="width: 70px;">总费用</th>
+			</tr>
+		</thead>
+		<tbody>
+			<?php $pageTotal = 0;$i=1;?>
+			<?php foreach ($order as $o):?>
+			<tr>
+			    <td><?php echo $i?></td>
+				<td><?php echo date('Y-m-d H:i:s',$o->create_time)?></td>
+				<td><?php echo $o->ali_order_no?></td>
+				<td><?php echo $o->far_no?></td>
+				<td><?php echo $o->tracking_no?></td>
+				<td><?php echo $o->department->department_name?></td>
+				<td><?php echo $o->customer->customer?></td>
+				<td><?php echo $o->service_product->product_chinese_name?></td>
+				<td><?php echo date('Y-m-d H:i:s',$o->warehouse_out_time)?></td>
+				<td style="text-align: right;"><?php echo Fee::find('order_id = ? and fee_type="1" and  fee_item_code="logisticsExpressASP_EX0001"',$o->order_id)->getSum('amount')?></td>
+				<td style="text-align: right;"><?php echo Fee::find('order_id = ? and fee_type="1" and  fee_item_code="logisticsExpressASP_EX0019"',$o->order_id)->getSum('amount')?></td>
+				<td style="text-align: right;"><?php echo Fee::find('order_id = ? and fee_type="1" and  fee_item_code="operating_fee"',$o->order_id)->getSum('amount')?></td>
+				<td style="text-align: right;"><?php echo Fee::find('order_id = ? and fee_type="1" and  fee_item_code not in ("operating_fee","logisticsExpressASP_EX0001","logisticsExpressASP_EX0019")',$o->order_id)->getSum('amount')?></td>
+				<?php $fee=Fee::find('order_id = ? and fee_type="1"',$o->order_id)->getSum('amount'); $pageTotal +=$fee;?>
+				<td style="text-align: right;"><?php echo $fee?></td>
+			</tr>
+			<?php $i++; endforeach;?>
+			<tr>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+    			<td style="text-align: center;"></td>
+				<td style="text-align: center;">总计</td>
+				<td style="text-align: right;"><?php echo $pageTotal;?></td>
+			</tr>
+		
+		</tbody>
+	</table>
+</div>
+
+<script type="text/javascript">
+$('#fee-list-talbe').floatThead({
+    scrollContainer: function($table){
+        return $table.closest('#scroll-fee-list-talbe');
+    }
+});
+</script>

@@ -1,0 +1,1 @@
+ALTER TABLE `tb_sender` ADD COLUMN `sender_country`  varchar(2) NULL COMMENT '发件人国家' AFTER `sender_phone`;

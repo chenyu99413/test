@@ -1,0 +1,46 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>密码修改<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<h3>用户:<?php echo MyApp::currentUser("user_name")?> <?php echo MyApp::currentUser("user_account")?></h3>
+	<div class="FarSearch">
+	<table>
+		<tbody>
+			<tr>
+				<th width=80 class="required-title">旧密码</th>
+				<td width=150>
+					<input type="password" name="old_password" required="required"  autocomplete="off"/>
+				</td>
+				<td></td>
+			</tr>
+			<tr>
+				<th class="required-title">新密码</th>
+				<td>
+					<input type="password" name="new_password" required="required" autocomplete="off" />
+				</td>
+			</tr>
+			<tr>
+				<th class="required-title">密码确认</th>
+				<td>
+					<input type="password" name="confirm_password" required="required"  autocomplete="off"/>
+				</td>
+			</tr>
+			<tr>
+				<td colspan="2" style="text-align: center">
+					<label>
+						<font color="red"><?php if (@count($errors['errors'])){echo  implode(',', $errors['errors']);} ?></font>
+					</label>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	</div>
+	<div class="FarTool">
+		<button class="btn btn-primary" type="submit">
+			<i class="icon-save"></i>
+			确认修改
+		</button>
+	</div>
+</form>
+
+<?PHP $this->_endblock();?>

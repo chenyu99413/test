@@ -1,0 +1,31 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+  单票核查
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<script type="text/javascript" src="<?php echo $_BASE_DIR;?>public/js/jquery.sound.js"></script>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+					<th>阿里订单号</th>
+					<td>
+						<input name="ali_order_no" type="text"  style="width: 200px" value="">
+					</td>
+					<td>
+						<button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-save"></i>
+			              	提交
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</form>   
+<?PHP $this->_endblock();?>
+

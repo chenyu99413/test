@@ -1,0 +1,201 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    价格编辑
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<?php
+echo Q::control ( 'path', '', array (
+	'path' => array (
+		'产品管理' => '','价格列表' => url ( 'price/search' ),'价格编辑' => '' 
+	) 
+) )?>
+<form method="post" onSubmit="return Check();">
+    <?php echo Q::control ( "tabs", "description", array ( "tabs" => $tabs, "active_id" => request ( "active_tab", "0" ) ) ); ?>
+	<div class="tabs-panels">
+		<div class="panel-body panel-body-noheader panel-body-noborder"
+			style="padding: 10px;">
+			<?php if(request ( "active_tab" ,"0") == "0"):?>
+			<div class="FarSearch">
+				<table>
+					<tbody>
+						<tr>
+							<th class="required-title">价格名称</th>
+							<td>
+								<input id="text_price_name" type="text" Style="width: 300px"
+									name="price_name"
+									value="<?php echo $priceManage->price_name?>"
+									required="required" />
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="FarTool text-center">
+				<a class="btn btn-inverse" href="<?php echo url('price/search')?>">
+					<i class="icon-reply"></i>
+					返回
+				</a>
+				<button type="submit" class="btn btn-primary">
+					<i class="icon-save"></i>
+					保存
+				</button>
+			</div>
+			<?php else:?>
+			<div class="" style="margin-top:0px;">
+			     <a class="btn btn-inverse" href="<?php echo url('price/search')?>">
+					<i class="icon-reply"></i>
+					返回
+				</a>
+				<?php
+				echo Q::control ( "uploadfile", "file", array (
+					"url" => url ( "/import", array (
+						"price_manage_id" => $priceManage->price_manage_id,
+						"type" => request ( "type", "BOX" ) 
+					) ) 
+				) )?>
+				<a class="btn btn-info" href="javascript:void(0)"
+					onclick="ExportTable('<?php echo url('/export',array("id"=>$priceManage->price_manage_id,"type"=>request ( "type", "BOX" )))?>',null,'<?php echo $priceManage->price_name?>_<?php echo request("type","BOX")?>_价格表_<?php echo Helper_Util::strDate('Y-m-d', time())?>')">
+					<i class="icon-download"></i>
+					导出
+				</a>
+			</div>
+			<?php echo Q::control("tabs", "tabs_boxing_type", array ("tabs" => $tabs_type,"active_id" => request("type","BOX") ))?>
+			<div class="tabs-panels">
+				<div class="panel-body panel-body-noheader panel-body-noborder"
+					style="padding: 10px;">
+						<?php echo Q::control("tabs", "tabs_partition_type", array ("tabs" => $tabs_partition,"active_id" => request("partition","1")))?>
+						<div class="tabs-panels">
+						<div class="panel-body panel-body-noheader panel-body-noborder"
+							style="padding: 0px;">
+							<table class="FarTable" style="width: 99.6%;">
+									<thead>
+										<tr>
+											<th width="100px;">结束重量(kg)&lt;=</th>
+											<th width="100px;">首重重量(kg)</th>
+											<th width="100px;">首重费用</th>
+											<th width="100px;">续重单位(kg)</th>
+											<th width="100px;">续重费用</th>
+											<th width="200px;">产品代码</th>
+											<th width="150px;">操作</th>
+										</tr>
+									</thead>
+							</table>
+							<div style="width: 100%; height: 400px; overflow: scroll;margin-top:-10px;">
+								<table id="table_price" class="FarTable" style="width: 100%;">
+									<tbody>
+										<?php foreach ($prices as $value):?>
+										<tr id="<?php echo $value->price_id?>">
+											<td width="100px;" style="text-align: right"><?php echo sprintf ( "%.3f", $value->end_weight )?></td>
+											<td width="100px;" style="text-align: right"><?php echo sprintf ( "%.3f", $value->first_weight )?></td>
+											<td width="100px;" style="text-align: right"><?php echo sprintf ( "%.3f", $value->first_fee )?></td>
+											<td width="100px;" style="text-align: right"><?php echo sprintf ( "%.3f", $value->additional_weight )?></td>
+											<td width="100px;" style="text-align: right"><?php echo sprintf ( "%.6f", $value->additional_fee )?></td>
+											<td width="200px;" ><?php echo $value->account?></td>
+											<td width="150px;">
+												<a class="btn btn-mini" href="javascript:void(0);"
+													onclick="EditRow([{'type':'number','precision':'3','min':'0'},{'type':'number','precision':'3','min':'0'},{'type':'number','precision':'3','min':'0'},{'type':'number','precision':'3','min':'0'},{'type':'number','precision':'6','min':'0'},{'type':'text'}],this);">
+													<i class="icon-pencil"></i>
+													编辑
+												</a>
+												<a class="btn btn-mini btn-danger"
+													href="javascript:void(0);" onclick="DeleteRow(this);">
+													<i class="icon-trash"></i>
+													删除
+												</a>
+											</td>
+										</tr>
+										<?php endforeach;?>
+										<tr>
+											<td width="100px;"></td>
+											<td width="100px;"></td>
+											<td width="100px;"></td>
+											<td width="100px;"></td>
+											<td width="100px;"></td>
+											<td width="200px;"></td>
+											<td width="150px;">
+												<a class="btn btn-mini btn-success"
+													href="javascript:void(0);"
+													onclick="NewRow([{'type':'number','precision':'3','min':'0'},{'type':'number','precision':'3','min':'0'},{'type':'number','precision':'3','min':'0'},{'type':'number','precision':'3','min':'0'},{'type':'number','precision':'6','min':'0'},{'type':'text'}],this);">
+													<i class="icon-plus"></i>
+													新建
+												</a>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<?php endif;?>
+		</div>
+	</div>
+</form>
+
+<script type="text/javascript">
+	/**
+	 * 回调 删除数据
+	 */
+	function DeleteBefore(obj){
+		$.ajax({
+			url:"<?php echo url('price/del')?>",
+			type:"POST",
+			data:{"price_id":$(obj).attr("id")==undefined?"":$(obj).attr("id")},
+			success:function(msg){
+			}
+		});
+	}
+				
+	/**
+	 * 回调 保存数据
+	 */
+	function CallBack(obj,name){
+		if(obj==null){
+			return false;
+		}
+		$.ajax({
+			url:"<?php echo url('price/save')?>",
+			type:"POST",
+			data:{"price_manage_id":"<?php echo request('price_manage_id')?>",
+				"price":{
+					"price_id":$(obj).attr("id")==undefined?"":$(obj).attr("id"),
+					"boxing_type":"<?php echo request ( "type", "BOX" )?>",
+					"partition_code":"<?php echo request ( "partition", "1" )?>",
+					"end_weight":$.trim($(obj).children().eq(0).text()),
+					"first_weight":$(obj).children().eq(1).text(),
+					"first_fee":$(obj).children().eq(2).text(),
+					"additional_weight":$(obj).children().eq(3).text(),
+					"additional_fee":$(obj).children().eq(4).text(),
+					"account":$(obj).children().eq(5).text()}},
+			success:function(msg){
+				$(obj).attr("id",msg);
+			}
+		});
+	}
+
+	/**
+	 * 判断价格名称是否重复
+	 */
+	function Check(){
+		var result = true;
+		$.ajax({
+			url:"<?php echo url('price/checkname')?>",
+			type:"POST",
+			data:{"price_manage_id":"<?php echo request("price_manage_id")?>","name":$("#text_price_name").val()},
+			async : false,
+			success:function(msg){
+				if(msg!="true"){
+					alert(msg);
+					result = false;
+				}
+			}
+		});
+		return result;
+	}
+</script>    
+<?PHP $this->_endblock();?>
+

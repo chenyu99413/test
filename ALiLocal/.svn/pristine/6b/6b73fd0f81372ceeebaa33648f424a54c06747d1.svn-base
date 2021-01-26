@@ -1,0 +1,674 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>权限编辑<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<style>
+.checkbox_purview {
+	margin-left: 4px;
+}
+
+.checkbox_purview input {
+	margin-top: -4px;
+}
+</style>
+<form method="post">
+	<div class="FarSearch">
+		<table>
+			<tbody>
+				<tr>
+					<th width="80" class="required-title">角色名称</th>
+					<td>
+						<input name="role_name" value="<?php echo $role->role_name?>"
+							required="required" />
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<?php echo Q::control('purview','description', array("checked"=>$purviews))?>
+	<table class="FarTable">
+		<caption>额外权限</caption>
+		<tr>
+			<td width="100">票件查询</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="waybill-search-show-profit"
+						<?php if (in_array('waybill-search-show-profit', $purviews)) echo 'checked'?>>
+					显示毛利
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="waybill-new"
+						<?php if (in_array('waybill-new', $purviews)) echo 'checked'?>>
+					新建
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td>票件明细</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="waybill-edit-balance-abnormal"
+						<?php if (in_array('waybill-edit-balance-abnormal', $purviews)) echo 'checked'?>>
+					标记到付拒付费用
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="waybill-edit-channel-confirm"
+						<?php if (in_array('waybill-edit-channel-confirm', $purviews)) echo 'checked'?>>
+					标记渠道对账完成
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="waybill-edit-enable-flag"
+						<?php if (in_array('waybill-edit-enable-flag', $purviews)) echo 'checked'?>>
+					作废票件
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="waybill-edit-delete-fee"
+						<?php if (in_array('waybill-edit-delete-fee', $purviews)) echo 'checked'?>>
+					编辑和删除有发票号的费用
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="waybill-save"
+						<?php if (in_array('waybill-save', $purviews)) echo 'checked'?>>
+					保存
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="waybill-balance-new"
+						<?php if (in_array('waybill-balance-new', $purviews)) echo 'checked'?>>
+					费用新建
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="remove-scanning"
+						<?php if (in_array('remove-scanning', $purviews)) echo 'checked'?>>
+					删除扫描件
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="save-back"
+						<?php if (in_array('save-back', $purviews)) echo 'checked'?>>
+					保存退单
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="upload-back"
+						<?php if (in_array('upload-back', $purviews)) echo 'checked'?>>
+					上传退单
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="delete-back"
+						<?php if (in_array('delete-back', $purviews)) echo 'checked'?>>
+					删除退单
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="upload-prealert"
+						<?php if (in_array('upload-prealert', $purviews)) echo 'checked'?>>
+					上传预录单
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="delete-realert"
+						<?php if (in_array('delete-realert', $purviews)) echo 'checked'?>>
+					删除预录单
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >扫描件导入</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="upload-scanning"
+						<?php if (in_array('upload-scanning', $purviews)) echo 'checked'?>>
+					上传扫描件
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >子单号录入</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="save-subcode"
+						<?php if (in_array('save-subcode', $purviews)) echo 'checked'?>>
+					保存子单号
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >批量查单</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="export-waybill-edi"
+						<?php if (in_array('export-waybill-edi', $purviews)) echo 'checked'?>>
+					导出三免EDI
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >客户管理</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="customer-new"
+						<?php if (in_array('customer-new', $purviews)) echo 'checked'?>>
+					新建客户
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="customer-save"
+						<?php if (in_array('customer-save', $purviews)) echo 'checked'?>>
+					保存客户
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="upload-customer-data"
+						<?php if (in_array('upload-customer-data', $purviews)) echo 'checked'?>>
+					上传客户资料
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="customer-discount-new"
+						<?php if (in_array('customer-discount-new', $purviews)) echo 'checked'?>>
+					新建/编辑客户折扣
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="delete-customer-discount"
+						<?php if (in_array('delete-customer-discount', $purviews)) echo 'checked'?>>
+					删除客户折扣
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="customs-edit-contract-number"
+						<?php if (in_array('customs-edit-contract-number', $purviews)) echo 'checked'?>>
+					编辑合同号
+				</label>
+                <label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="customer_sender_export"
+						<?php if (in_array('customer_sender_export', $purviews)) echo 'checked'?>>
+					导出发件信息
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="customer_finance_export"
+						<?php if (in_array('customer_finance_export', $purviews)) echo 'checked'?>>
+					导出财务信息
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="customer_tripartite_export"
+						<?php if (in_array('customer_tripartite_export', $purviews)) echo 'checked'?>>
+					导出三方账号
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >产品列表</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="product-new"
+						<?php if (in_array('product-new', $purviews)) echo 'checked'?>>
+					新建产品
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="copy-product"
+						<?php if (in_array('copy-product', $purviews)) echo 'checked'?>>
+					复制产品
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="save-product"
+						<?php if (in_array('save-product', $purviews)) echo 'checked'?>>
+					保存产品
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="product-fee-new"
+						<?php if (in_array('product-fee-new', $purviews)) echo 'checked'?>>
+					新建费用
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="delete-product-fee"
+						<?php if (in_array('delete-product-fee', $purviews)) echo 'checked'?>>
+					删除费用
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="channelcost-new"
+						<?php if (in_array('channelcost-new', $purviews)) echo 'checked'?>>
+					新建渠道成本
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="delete-channelcost"
+						<?php if (in_array('delete-channelcost', $purviews)) echo 'checked'?>>
+					删除渠道成本
+				</label><label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="save-channelcost"
+						<?php if (in_array('save-channelcost', $purviews)) echo 'checked'?>>
+					保存渠道成本
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >分区列表</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="partition-new"
+						<?php if (in_array('partition-new', $purviews)) echo 'checked'?>>
+					新建分区
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="upload-partition"
+						<?php if (in_array('upload-partition', $purviews)) echo 'checked'?>>
+					上传分区
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="delete-partition"
+						<?php if (in_array('delete-partition', $purviews)) echo 'checked'?>>
+					删除分区
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >价格列表</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="price-new"
+						<?php if (in_array('price-new', $purviews)) echo 'checked'?>>
+					新建价格
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="save-price"
+						<?php if (in_array('save-price', $purviews)) echo 'checked'?>>
+					保存价格
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="upload-price"
+						<?php if (in_array('upload-price', $purviews)) echo 'checked'?>>
+					上传价格
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="delete-price"
+						<?php if (in_array('delete-price', $purviews)) echo 'checked'?>>
+					删除价格
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >偏派列表</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="remote-new"
+						<?php if (in_array('remote-new', $purviews)) echo 'checked'?>>
+					新建偏派
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="save-remote"
+						<?php if (in_array('save-remote', $purviews)) echo 'checked'?>>
+					保存偏派
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="upload-remote"
+						<?php if (in_array('upload-remote', $purviews)) echo 'checked'?>>
+					上传偏派
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="delete-remote"
+						<?php if (in_array('delete-remote', $purviews)) echo 'checked'?>>
+					删除偏派
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >部门公开折扣</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="publicprice-new"
+						<?php if (in_array('publicprice-new', $purviews)) echo 'checked'?>>
+					新建部门公开折扣
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="delete-publicprice"
+						<?php if (in_array('delete-publicprice', $purviews)) echo 'checked'?>>
+					删除部门公开折扣
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="save-publicprice"
+						<?php if (in_array('save-publicprice', $purviews)) echo 'checked'?>>
+					保存部门公开折扣
+				</label>
+			</td>
+		</tr>
+			<tr>
+			<td >网络列表</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="network-new"
+						<?php if (in_array('network-new', $purviews)) echo 'checked'?>>
+					新建网络
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="save-network"
+						<?php if (in_array('save-network', $purviews)) echo 'checked'?>>
+					保存网络
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="delete-network"
+						<?php if (in_array('delete-network', $purviews)) echo 'checked'?>>
+					删除网络
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >渠道列表</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="channel-new"
+						<?php if (in_array('channel-new', $purviews)) echo 'checked'?>>
+					新建渠道
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="save-channel"
+						<?php if (in_array('save-channel', $purviews)) echo 'checked'?>>
+					保存渠道
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="activate-channel"
+						<?php if (in_array('activate-channel', $purviews)) echo 'checked'?>>
+					激活渠道
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >到付账号</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="upload-account"
+						<?php if (in_array('upload-account', $purviews)) echo 'checked'?>>
+					导入到付账号
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td >黑名单</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="blacklist-new"
+						<?php if (in_array('blacklist-new', $purviews)) echo 'checked'?>>
+					新建黑名单
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="active-blacklist"
+						<?php if (in_array('active-blacklist', $purviews)) echo 'checked'?>>
+					激活黑名单
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td>财务模块</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="balance-edit-receivable-offs"
+						<?php if (in_array('balance-edit-receivable-offs', $purviews)) echo 'checked'?>>
+					编辑已销账收款记录
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="balance-edit-payment-offs"
+						<?php if (in_array('balance-edit-payment-offs', $purviews)) echo 'checked'?>>
+					编辑已销账付款记录
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="balance-edit-other-offs"
+						<?php if (in_array('balance-edit-payment-offs', $purviews)) echo 'checked'?>>
+					编辑已销账其他记录
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="balance-edit-headquarters-offs"
+						<?php if (in_array('balance-edit-headquarters-offs', $purviews)) echo 'checked'?>>
+					总部销账
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="balance-delete-miscellaneous-payment"
+						<?php if (in_array('balance-delete-miscellaneous-payment', $purviews)) echo 'checked'?>>
+					杂支删除
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="balance-delete-miscellaneous-receivable"
+						<?php if (in_array('balance-delete-miscellaneous-receivable', $purviews)) echo 'checked'?>>
+					杂收删除
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="balance-edit-export-customs"
+						<?php if (in_array('balance-edit-export-customs', $purviews)) echo 'checked'?>>
+					导出客户资料
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="balance-save"
+						<?php if (in_array('balance-save', $purviews)) echo 'checked'?>>
+					销账保存
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="write-off"
+						<?php if (in_array('write-off', $purviews)) echo 'checked'?>>
+					按发票号销账
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="balance-split"
+						<?php if (in_array('balance-split', $purviews)) echo 'checked'?>>
+					拆分
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="extras"
+						<?php if (in_array('extras', $purviews)) echo 'checked'?>>
+					杂收/杂支
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="invoice-confirm"
+						<?php if (in_array('invoice-confirm', $purviews)) echo 'checked'?>>
+					确认开票
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="unlock-fee"
+						<?php if (in_array('unlock-fee', $purviews)) echo 'checked'?>>
+					解锁费用
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td width="100">基础设置</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="importhscode"
+						<?php if (in_array('importhscode', $purviews)) echo 'checked'?>>
+					导入HS编码
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="create-delete-hscode"
+						<?php if (in_array('create-delete-hscode', $purviews)) echo 'checked'?>>
+					新建/删除HS编码
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="manage-user"
+						<?php if (in_array('manage-user', $purviews)) echo 'checked'?>>
+					用户管理
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="import-waybilltitle"
+						<?php if (in_array('import-waybilltitle', $purviews)) echo 'checked'?>>
+					导入账单抬头
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="import-customer"
+						<?php if (in_array('import-customer', $purviews)) echo 'checked'?>>
+					导入客户
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="import-consignee"
+						<?php if (in_array('import-consignee', $purviews)) echo 'checked'?>>
+					导入收件人
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="import-sender"
+						<?php if (in_array('import-sender', $purviews)) echo 'checked'?>>
+					导入发件人
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="import-discount"
+						<?php if (in_array('import-discount', $purviews)) echo 'checked'?>>
+					导入客户折扣
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="manage-feetype"
+						<?php if (in_array('manage-feetype', $purviews)) echo 'checked'?>>
+					费用类别
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="edit-department"
+						<?php if (in_array('edit-department', $purviews)) echo 'checked'?>>
+					部门编辑
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="set-system"
+						<?php if (in_array('set-system', $purviews)) echo 'checked'?>>
+					系统设置
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="extras-unit"
+						<?php if (in_array('extras-unit', $purviews)) echo 'checked'?>>
+					杂支杂收单位
+				</label>
+			</td>
+		</tr>
+		<tr>
+			<td width="100">中美专线</td>
+			<td>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="chinamerica-order-cancel"
+						<?php if (in_array('chinamerica-order-cancel', $purviews)) echo 'checked'?>>
+					订单取消
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="charge"
+						<?php if (in_array('charge', $purviews)) echo 'checked'?>>
+					充值
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="chinamerica-payment-modify"
+						<?php if (in_array('chinamerica-payment-modify', $purviews)) echo 'checked'?>>
+					修改收付信息
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="chinamerica_order_modify"
+						<?php if (in_array('chinamerica_order_modify', $purviews)) echo 'checked'?>>
+					修改订单明细
+				</label>
+				<label class="checkbox_purview">
+					<input type="checkbox" name="purview_path[]"
+						value="balance_remark"
+						<?php if (in_array('balance_remark', $purviews)) echo 'checked'?>>
+					对账备注
+				</label>
+			</td>
+		</tr>
+	</table>
+	<div class="FarTool text-center">
+		<a class="btn btn-inverse" href="<?php echo url('purview/search')?>">
+			<i class="icon-reply"></i>
+			返回
+		</a>
+		<button class="btn btn-primary" type="submit" onclick="Save();">
+			<i class="icon-save"></i>
+			保存
+		</button>
+	</div>
+	<input type="hidden" name="id" value="<?php echo $role->role_id?>" />
+	<input id="purviews_hidden" type="hidden" name="purviews" />
+</form>
+
+<script type="text/javascript">
+    /**
+     * 保存
+     */
+    function Save(){
+    	var json = "";
+    	$(".checkbox_purview").each(function(obj){
+    		var checkbox = $(this).children().eq(0);
+    		if(checkbox.attr("checked") == "checked"){
+    			var name= $(this).text().trim();
+    			json += '{"name":"'+name+'","path":"'+checkbox.val()+'"},';
+    		}
+    	});
+    	json = "["+json.substring(0,json.length-1)+"]";
+    	$("#purviews_hidden").val(json);
+    }
+</script>
+
+<?PHP $this->_endblock();?>

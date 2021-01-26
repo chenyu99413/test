@@ -1,0 +1,193 @@
+<div style="width:99%;">
+    <div style="width:100%;">
+        <h6>发件人信息</h6>
+        <table class="FarTable" style="width:100%;margin-top:-5px;">
+            <thead>
+              <tr>
+                  <th>发件人姓名</th>
+                  <th>发件人固定电话</th>
+                  <th>发件人手机号</th>
+                  <th>发件人邮箱</th>
+                  <th>发件人国家</th>
+                  <th>发件人省/州</th>
+                  <th>发件人城市</th>
+                  <th>发件人邮编</th>
+                  <th>发件人地址1</th>
+                  <th>发件人地址2</th>
+              </tr>
+           </thead>
+           <tbody>
+               <tr>
+                   <td><?php echo $order->sender_name1.' '.$order->sender_name2?></td>
+                   <td><?php echo $order->sender_telephone?></td>
+                   <td><?php echo $order->sender_mobile?></td>
+                   <td><?php echo $order->sender_email?></td>
+                   <td><?php echo $order->sender_country_code?></td>
+                   <td><?php echo $order->sender_state_region_code?></td>
+                   <td><?php echo $order->sender_city?></td>
+                   <td><?php echo $order->sender_postal_code?></td>
+                   <td><?php echo $order->sender_street1?></td>
+                   <td><?php echo $order->sender_street2?></td>
+               </tr>
+           </tbody>
+        </table>
+    </div>
+    <div style="width:100%;float:left">
+        <h6 style="margin-top:0px;">收件人信息</h6>
+        <table class="FarTable" style="width:100%;margin-top:-5px;">
+            <thead>
+              <tr>
+                  <th>收件人姓名</th>
+                  <th>固定电话</th>
+                  <th>手机号</th>
+                  <th>邮箱</th>
+                  <th>收件人税号</th>
+                  <th>国家</th>
+                  <th>收件人省/州</th>
+                  <th>收件人城市</th>
+                  <th>收件人邮编</th>
+                  <th>收件人地址1</th>
+                   <th>收件人地址2</th>
+              </tr>
+           </thead>
+           <tbody>
+               <tr>
+                   <td><?php echo $order->consignee_name1.' '.$order->consignee_name2?></td>
+                   <td><?php echo $order->consignee_telephone?></td>
+                   <td><input style="width:110px;" type="text" name="consignee_mobile" value="<?php echo $order->consignee_mobile?>"></td>
+                   <td><?php echo $order->consignee_email?></td>
+                   <td><?php echo $order->tax_payer_id?></td>
+                   <td><?php echo $order->consignee_country_code?></td>
+                   <td><?php echo $order->consignee_state_region_code?></td>
+                   <td><?php echo $order->consignee_city?></td>
+                   <td><?php echo $order->consignee_postal_code?></td>
+                   <td><input style="width:160px;" type="text" name="consignee_street1" value="<?php echo $order->consignee_street1?>"></td>
+                   <td><input style="width:160px;" type="text" name="consignee_street2" value="<?php echo $order->consignee_street2?>"></td>
+               </tr>
+           </tbody>
+        </table>
+    </div>
+    <?php if ($order->order_status=='11'):?>
+    <div style="width:100%;float:left">
+        <h6 style="margin-top:0px;">退货信息</h6>
+        <table class="FarTable" style="width:100%;margin-top:-5px;">
+            <thead>
+              <tr>
+                  <th>退货类型</th>
+                  <th>原因代码</th>
+                  <th>原因名称</th>
+                  <th>原因备注</th>
+                  <th>收件人</th>
+                  <th>手机号</th>
+                  <th>固定电话</th>
+                  <th>省</th>
+                  <th>市</th>
+                  <th>地址</th>
+                  <th>邮编</th>
+                  <th>邮箱</th>
+              </tr>
+           </thead>
+           <tbody>
+               <tr>
+                   <td><?php echo $order->return_type;?></td>
+                   <td><?php echo $order->reason_code;?></td>
+                   <td><?php echo $order->reason_name;?></td>
+                   <td><?php echo $order->reason_remark;?></td>
+                   <td><?php echo $order->return_name1;?></td>
+                   <td><?php echo $order->return_mobile;?></td>
+                   <td><?php echo $order->return_telephone;?></td>
+                   <td><?php echo $order->return_state_region_code;?></td>
+                   <td><?php echo $order->return_city;?></td>
+                   <td><?php echo $order->return_street1." ".$order->return_street2;?></td>
+                   <td><?php echo $order->return_postal_code;?></td>
+                   <td><?php echo $order->return_email;?></td>
+               </tr>
+           </tbody>
+        </table>
+    </div>
+    <?php endif;?>
+    <div style="width:100%;float:left">
+        <h6 style="margin-top:0px;">产品信息&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;报关类型：<?php echo $order->declaration_type?> 申报总价：<?php echo $order->total_amount?> 申报币种：<?php echo $order->currency_code?></h6>
+        <table class="FarTable" style="width:100%;margin-top:-5px;">
+            <thead>
+              <tr>
+                   	<th >中文品名</th>
+                    <th >英文品名</th>
+                    <th >HS Code</th>
+                    <th >材质用途</th>
+                    <th >数量1</th>
+                    <th >单位1</th>
+                    <th >数量2</th>
+                    <th >单位2</th>
+                    <th >申报单价</th>
+              </tr>
+           </thead>
+           <tbody>
+           <?php $i=0;?>
+           <?php foreach ($order->product as $v): $i++;?>
+               <tr>
+                   <td ><input type="hidden" name="order_product_id[]" value="<?php echo $v->order_product_id?>"><input type="text" style="width:120px;" name="product_name_far[]" value="<?php echo $v->product_name_far?$v->product_name_far:$v->product_name?>"></td>
+                   <td ><input type="text" style="width:150px;" name="product_name_en_far[]" value="<?php echo $v->product_name_en_far?$v->product_name_en_far:$v->product_name_en?>"></td>
+                   <td ><input type="text" style="width:100px;" name="hs_code_far[]" value="<?php echo $v->hs_code_far?$v->hs_code_far:$v->hs_code?>"></td>
+                   <td ><input type="text" style="width:150px;" name="material_use[]" value="<?php echo $v->material_use?>"></td>
+                   <td ><input type="text" style="width:70px;" name="product_quantity1_far[]" value="<?php echo $v->product_quantity1_far?>"></td>
+                   <td ><input type="text" style="width:60px;" name="product_unit1_far[]" value="<?php echo $v->product_unit1_far?>"></td>
+                   <td ><input type="text" style="width:70px;" name="product_quantity2_far[]" value="<?php echo $v->product_quantity2_far?$v->product_quantity2_far:$v->product_quantity?>"></td>
+                   <td ><input type="text" style="width:60px;" name="product_unit2_far[]" value="<?php echo $v->product_unit2_far?$v->product_unit2_far:$v->product_unit?>"></td>
+                   <td ><input type="text" style="width:70px;" name="declaration_price[]" value="<?php echo $v->declaration_price?>"></td>
+               </tr>
+           <?php endforeach;?>
+           </tbody>
+        </table>
+    </div>
+    <div style="width:50%;float:left">
+        <h5 style="margin-top:0px;">阿里包裹信息</h5>
+        <table class="FarTable" style="width:96%;margin-top:-5px;">
+           <thead>
+              <tr>
+                  <th>数量</th>
+                  <th>长度</th>
+                  <th>宽度</th>
+                  <th>高度</th>
+                  <th>重量</th>
+              </tr>
+           </thead>
+           <tbody>
+               <?php foreach ($order->packages as $value):?>
+               <tr>
+                   <td style="text-align: right"><?php echo $value->quantity?></td>
+                   <td style="text-align: right"><?php echo $value->length?></td>
+                   <td style="text-align: right"><?php echo $value->width?></td>
+                   <td style="text-align: right"><?php echo $value->height?></td>
+                   <td style="text-align: right"><?php echo $value->weight?></td>
+               </tr>
+               <?php endforeach;?>
+           </tbody>
+        </table>
+    </div>
+    <div style="width:50%;float:left">
+        <h5 style="margin-top:0px;">泛远包裹信息</h5>
+        <table class="FarTable" style="width:100%;margin-top:-5px;">
+           <thead>
+              <tr>
+                  <th>数量</th>
+                  <th>长度</th>
+                  <th>宽度</th>
+                  <th>高度</th>
+                  <th>重量</th>
+              </tr>
+           </thead>
+           <tbody>
+               <?php foreach ($order->farpackages as $package):?>
+               <tr>
+                   <td style="text-align: right"><?php echo $package->quantity?></td>
+                   <td style="text-align: right"><?php echo $package->length?></td>
+                   <td style="text-align: right"><?php echo $package->width?></td>
+                   <td style="text-align: right"><?php echo $package->height?></td>
+                   <td style="text-align: right"><?php echo $package->weight?></td>
+               </tr>
+               <?php endforeach;?>
+           </tbody>
+        </table>
+     </div>
+</div>

@@ -1,0 +1,238 @@
+<?php
+class Controller_Channel extends Controller_Abstract {
+	/**
+	 * 检索
+	 */
+	function actionSearch() {
+		$this->_view['networks']=Network::find()->getAll();
+		$this->_view ['channels'] = Channel::find ()->getAll ();
+	}
+	
+	/**
+	 * 编辑
+	 */
+	function actionEdit() {
+	    $channel=Channel::find('channel_id=?',request('channel_id'))->getOne();
+	    //多选发件人
+	    $checked = explode(',', $channel->sender_id);
+	    if(request_is_post()){
+	        //判断渠道名称是否存在
+	        $channel_check=Channel::find('channel_name=?',request('channel_name'))->getOne();
+	        if(!$channel_check->isNewRecord() && ($channel_check->channel_id!=request('channel_id'))){
+	            return $this->_redirectMessage('渠道编辑失败', '渠道名称已存在', url('/edit',array('channel_id'=>$channel->channel_id)),2);
+	        }else{
+	        	$sender_id = join ( ',', request ( 'sender_id' ) );
+	            $channel=Channel::find('channel_id=?',request('channel_id'))->getOne();
+	            $channel->channel_name=request('channel_name');
+	            $channel->channel_group_id=request('channel_group_id');
+	            $channel->network_code=request('network_code');
+	            $channel->trace_network_code=request('trace_network_code');
+	            $channel->sender_id=$sender_id;
+	            $channel->account=request('account');
+	            $channel->supplier_id=request('supplier_id');
+	            $channel->label_sign=request('label_sign');
+	            $channel->save();
+	            
+	            //保存可用部门
+	            Channeldepartmentavailable::find('channel_id=?',$channel->channel_id)->getAll()->destroy();
+	            foreach (explode(',', request('department_hidden')) as $department_id){
+	            	if(!$department_id){
+	            		continue;
+	            	}
+	                $available= new Channeldepartmentavailable();
+	                $available->changeProps(array(
+	                    'channel_id'=>$channel->channel_id,
+	                    'department_id'=>$department_id
+	                ));
+	                $available->save();
+	            }
+	            return $this->_redirectMessage('渠道编辑', '渠道编辑成功', url('/edit',array('channel_id'=>$channel->channel_id)));
+	        }
+	    }
+	    $this->_view['channel']=$channel;
+	    $this->_view['checked']=$checked;
+	    $this->_view['disabled_department']=Channeldepartmentdisable::find('channel_id=?',$channel->channel_id)->getAll();
+	    $this->_view['disabled_country']=ChannelCountryDisabled::find('channel_id=?',$channel->channel_id)->getAll();
+	    $this->_view['limitation_amount']=ChannelLimitationAmount::find('channel_id=?',$channel->channel_id)->getAll();
+	    $this->_view['country_group']=Helper_Array::toHashmap(CodeCountryGroup::find()->asArray()->getAll(), 'id','name');
+	    //筛选可用部门
+	    $available_department=Channeldepartmentavailable::find('channel_id=?',$channel->channel_id)->getAll();
+	    $this->_view ["department"] = array (
+	        "state" => true,
+	        "checked" => implode ( ",", Helper_Array::getCols ( $available_department, "department_id" ) )
+	    );
+	}
+	/**
+	 * 禁运国家明细
+	 */
+	function actionEditModal(){
+		$disable_country = ChannelCountryDisabled::find('disabled_country_id = ?',request('disabled_country_id'))->getOne();
+		$this->_view['disable_country'] = $disable_country;
+		$checked = explode(',', $disable_country->country_code_two);
+		$this->_view ['checked'] = $checked;
+	}
+	function actionEditSave(){
+		if (! request_is_ajax ()) {
+			return $this->_redirectAjax ( false );
+		}
+		if (strlen ( request ( 'disabled_country_id' ) ) > 0) {
+			$disable_country = ChannelCountryDisabled::find ()->where ( 'disabled_country_id=?', request ( 'disabled_country_id' ) )
+				->getOne ();
+			if ($disable_country->isNewRecord ()) {
+				return $this->_redirectAjax ( false, '数据不存在，请刷新页面重试' );
+			}
+		} else {
+			$disable_country = new ChannelCountryDisabled ();
+		}
+		$country_code_str = '';
+		if (request ( 'country_code' )) {
+			$country_code_str = join ( ',', request ( 'country_code' ) );
+		}
+		$countrys_save = array ();
+		if (request ( "countrylist" )) {
+			$countrys = explode ( "\r\n", request ( "countrylist" ) );
+			foreach ( $countrys as $country ) {
+				$check_country = Country::find ( "code_word_two = ? or english_name = ? or english_name2 = ? or chinese_name = ?", $country, $country, $country, $country )->getOne ();
+				if (! $check_country->isNewRecord ()) {
+					$countrys_save [] = $check_country->code_word_two;
+				}
+			}
+		}
+		$countrys_save = array_filter ( $countrys_save );
+		$countrys_save = array_unique ( $countrys_save );
+		$countrys_str = join ( ',', $countrys_save );
+		$disable_country->channel_id = request ( 'channel_id' );
+		$disable_country->effect_time = strtotime ( request ( 'effect_time' ) );
+		$disable_country->failure_time = strtotime ( request ( 'failure_time' ) );
+		$disable_country->country_code_two = strlen($countrys_str)>0?$countrys_str:$country_code_str;
+		$disable_country->save ();
+		return $this->_redirectAjax ( true, '保存成功' );
+	}
+	function actionDeleteModal(){
+		if (! request_is_ajax ()) {
+			return $this->_redirectAjax ( false );
+		}
+		$disabled_country_id = request ( 'disabled_country_id' );
+		ChannelCountryDisabled::meta()->destroyWhere('disabled_country_id = ?',$disabled_country_id);
+		return $this->_redirectAjax ( true, '删除成功' );
+	}
+	/**
+	 * 限制额度
+	 */
+	function actionEditLimitModal(){
+		$limit_amount = ChannelLimitationAmount::find('limitation_amount_id = ?',request('limitation_amount_id'))->getOne();
+		$this->_view['limit_amount'] = $limit_amount;
+	}
+	function actionEditLimitSave(){
+		if (! request_is_ajax ()) {
+			return $this->_redirectAjax ( false );
+		}
+		if (strlen(request ( 'limitation_amount_id' ))>0) {
+			$limit_amount = ChannelLimitationAmount::find ()->where ( 'limitation_amount_id=?', request ( 'limitation_amount_id' ) )
+			->getOne ();
+			if ($limit_amount->isNewRecord ()) {
+				return $this->_redirectAjax ( false, '数据不存在，请刷新页面重试' );
+			}
+		} else {
+			$limit_amount = new ChannelLimitationAmount();
+		}
+		$limit_amount->channel_id = request('channel_id');
+		$limit_amount->cycle = request('cycle');
+		$limit_amount->type = request('type');
+		$limit_amount->department_id = request('department_id');
+		$limit_amount->max_value = request('max_value');
+		$limit_amount->country_group_id = request('country_group_id');
+		$limit_amount->effect_time = strtotime(request('effect_time'));
+		$limit_amount->failure_time = strtotime(request('failure_time'));
+		$limit_amount->save ();
+		return $this->_redirectAjax ( true, '保存成功' );
+	}
+	function actionDeleteLimitModal(){
+		if (! request_is_ajax ()) {
+			return $this->_redirectAjax ( false );
+		}
+		$limitation_amount_id = request ( 'limitation_amount_id' );
+		ChannelLimitationAmount::meta()->destroyWhere('limitation_amount_id = ?',$limitation_amount_id);
+		return $this->_redirectAjax ( true, '删除成功' );
+	}
+	/**
+	 * 获取渠道信息
+	 */
+	function actionGetchannel(){
+	    $channel=Channel::find('channel_id=?',request('channel_id'))->asArray()->getOne();
+	    echo json_encode($channel);
+	    exit();
+	}
+	/**
+	 * 保存禁用部门信息
+	 */
+	function actionDisabledsave(){
+	    if (request('disable_department')){
+	        $p = request ( "disable_department" );
+	        $disabled = Channeldepartmentdisable::find ( "disabled_id = ?", $p ["disabled_id"] )->getOne ();
+	        $disabled->channel_id = request('channel_id');
+	        $p['effect_time']=strtotime($p['effect_time']."00:00:00");
+	        $p['failure_time']=strtotime($p['failure_time']."23:59:59");
+	        $department=Department::find('department_name=?',$p['department_id'])->getOne();
+	        $p['department_id']=$department->department_id;
+	        $disabled->changeProps ( $p );
+	        $disabled->save ();
+	        echo ($disabled->disabled_id);
+	    }
+	    exit();
+	}
+	/**
+	 * 禁用部门删除
+	 */
+	function actionDisableddel() {
+	    if (request ( "disabled_id" )) {
+	        $disabled = Channeldepartmentdisable::find ( "disabled_id = ?", request ( "disabled_id" ) )->getOne ();
+	        $disabled->destroy ();
+	    }
+	    exit();
+	}
+	/**
+	 * 渠道分组管理
+	 */
+	function actionChannelgroup(){
+	    $channel_group=Channelgroup::find()->getAll();
+	    $this->_view['list']=$channel_group;
+	}
+	/**
+	 * 渠道分组编辑
+	 */
+	function actionChannelgroupedit(){
+	    $channel_group_info=Channelgroup::find('channel_group_id=?',request('channel_group_id'))->getOne();
+	    if(request_is_post()){
+	        //判断渠道分组名称是否存在
+	        $channel_group_check=Channelgroup::find('channel_group_name=?',request('channel_group_name'))->getOne();
+	        if(!$channel_group_check->isNewRecord() && ($channel_group_check->channel_group_id!=request('channel_group_id'))){
+	            return $this->_redirectMessage('渠道分组编辑失败', '渠道分组名称已存在', url('/Channelgroupedit',array('channel_group_id'=>$channel_group_info->channel_group_id)),2);
+	        }else{
+	            $channel_group_info->channel_group_name=request('channel_group_name');
+	            $channel_group_info->save();
+	            return $this->_redirectMessage('渠道分组编辑', '成功', url('/Channelgroupedit',array('channel_group_id'=>$channel_group_info->channel_group_id)));
+	        }
+	    }
+	    $this->_view['channel_group_info']=$channel_group_info;
+	}
+	/**
+	 * 渠道分组删除
+	 */
+	function actionChannelgroupdel(){
+	    $channel_group_info=Channelgroup::find('channel_group_id=?',request('channel_group_id'))->getOne();
+	    if($channel_group_info->isNewRecord()){
+	        echo 'error';
+	    }
+	    //检查渠道分组是否绑定渠道
+	    $channel=Channel::find('channel_group_id=?',$channel_group_info->channel_group_id)->getOne();
+	    if($channel->isNewRecord()){//未绑定，可以删除
+	        $channel_group_info->destroy();
+	        echo 'success';
+	    }else {
+	        echo 'fail';
+	    }
+	    exit();
+	}
+}
+

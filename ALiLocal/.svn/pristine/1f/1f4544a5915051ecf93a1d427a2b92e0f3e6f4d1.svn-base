@@ -1,0 +1,100 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+总单列表
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>
+						<?php
+                            echo Q::control ( 'dropdownlist', 'timetype', array (
+                            'items'=>array('1'=>'发件日期','2'=>'创建日期'),
+                            'value' => request('timetype'),
+                            'style'=>'width:80px'
+                         ) )?>
+					</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date" ),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>到</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date"),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>总单单号</th>
+					<td><input name="total_list_no" type="text" style="width: 100px" value="<?php echo request('total_list_no')?>" /></td>
+					<th>仓库</th>
+					<td><?php
+                        echo Q::control ( 'dropdownbox', 'department_id', array (
+                        'items'=>Helper_Array::toHashmap(Department::departmentlist(),'department_id','department_name'),
+                        'empty'=>true,
+                        'style'=>'width:70px',
+                        'value' => request('department_id'),
+                        ) )?>
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th>No</th>
+				<th>总单单号</th>
+				<th>渠道分组</th>
+				<th>国家</th>
+				<th>仓库</th>
+				<th>操作人</th>
+				<th>操作日期</th>
+				<th>发件日</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php $i=1; foreach ($total_list as $temp):?>
+			<tr>
+				<td><?php echo $i++ ?></td>
+				<td>
+				    <a  target="_blank"
+				        href="<?php echo url('warehouse/totaldetail', array('total_list_no' => $temp->total_list_no))?>">
+            					    <?php echo $temp->total_list_no?>
+            	    </a>
+            	</td>
+				<td><?php echo $temp->channel_group->channel_group_name?></td>
+				<td><?php echo $temp->country_code?></td>
+				<td><?php echo $temp->department_id?$dpms[$temp->department_id]:''?></td>
+				<td><?php echo $temp->operation_name?></td>
+				<td><?php echo Helper_Util::strDate('Y-m-d', $temp->operation_time)?></td>
+				<td><?php echo Helper_Util::strDate('Y-m-d', $temp->record_order_date)?></td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+</form>
+<script type="text/javascript">
+</script>
+<?PHP $this->_endblock();?>
+

@@ -1,0 +1,62 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script type="text/javascript">
+var tns=[];
+</script>
+<h3>出库5天还没签收</h3>
+<table class="FarTable">
+<thead>
+<tr>
+	<th>阿里单号</th>
+	<th>运单号 &nbsp;<a href="#13" onclick="trace()"><i class="icon icon-link"></i></a></th>
+	<th>最近轨迹时间</th>
+	<th>最近轨迹地点</th>
+	<th style="width:400px">最近轨迹</th>
+	<th>抓取时间</th>
+	<th>操作</th>
+	<th>?</th>
+</tr>
+</thead>
+<tbody>
+<?php foreach ($list as $row):?>
+<tr>
+	<td><?php echo $row->ali_order_no?></td>
+	<td>
+	<a target="_blank" href="https://www.ups.com/track?loc=en_US&tracknum=<?php echo $row->tracking_no?>&requester=WT/trackdetails">
+	<?php echo $row->tracking_no?>
+	</a>
+	</td>
+	<td><?php echo date('m-d H:i',$row->time)?></td>
+	<td><?php echo $row->location?></td>
+	<td><?php echo $row->description?></td>
+	<td><?php echo date('m-d H:i',$row->create_time)?></td>
+	<td>
+		<a class="btn btn-mini" target="_blank" href="<?php echo url('order/trace',array('order_id'=>$row->order_id))?>">轨迹</a>
+		<a class="btn btn-mini" target="_blank" href="<?php echo url('order/newIssueParcel',array('ali_order_no'=>$row->ali_order_no))?>">问题</a>
+		
+		<script type="text/javascript">tns.push("<?php echo $row->tracking_no?>")</script>
+	</td>
+	<td>
+		<a target="_blank" href="<?php echo url('order/issue',array('ali_order_no'=>$row->ali_order_no,'parcel_flag'=>1))?>">
+			<?php echo Order::find('order_id =?',$row->order_id)->getOne()->getACount()?>
+		</a>
+	</td>
+</tr>
+<?php endforeach;?>
+</tbody>
+</table>
+<?php echo Q::control('pagination','',array('pagination'=>$pagination))?>
+</div>
+<script type="text/javascript">
+function trace(){
+	window.open("https://www.ups.com/track?loc=en_US&tracknum="+tns.join("%250D%250A")+"&requester=WT/trackdetails");
+}
+</script>
+<?PHP $this->_endblock();?>
+

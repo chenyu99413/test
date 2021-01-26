@@ -1,0 +1,155 @@
+<HTML>
+<head><title>6.简化开发</title>
+<meta http-equiv="content-type" content="text/html; charset=gb2312">
+<link rel="stylesheet" href="temp1.css" type="text/css">
+</head>
+<body bgcolor=#ffffff vlink=#0000ff>
+<br>
+<p class='sz1'>6.简化开发</p><hr color=#2266ee size=1>
+　　为了方便使用硕正套件，开发者可以考虑使用Zip包中根目录下的 dynaload.js 小程序，这样就不必在页面中书写上述烦人的&lt;object ... &gt;了。该 js 小程序封装了页面调用插件、识别浏览器类型、动态下载和创建组件实例的过程，本Demo网站中的所有演示页均调用了该js，其源码非常简单：
+<pre class='cpp'>
+//区分浏览器：Firefox / Chrome / IE(X86/X64)
+var $agnt=navigator.userAgent.toLowerCase();
+var $isChrome = false, $is64 = false;
+var $isIE = ($agnt.indexOf("msie")>0 || $agnt.indexOf("trident")>0) ? true : false;
+if($isIE) {
+ if($agnt.indexOf("win64")>=0 || $agnt.indexOf("x64")>=0) $is64 = true;
+}
+else {
+ if($agnt.indexOf("chrome")>0) $isChrome = true;
+}
+ 
+//private:
+function bldStr(ctlType, id, para, height)
+{
+ //!!!!组件版本号，升级后须修改!!!
+ var ctlver = '1.0.81.0';
+ 
+ //取得组件包的绝对路径(假设和dynaload.js部署在同一个目录)
+ var SupcanPath="", arrScript = document.getElementsByTagName("script");
+ for(var i=0; i<arrScript.length; i++) {
+  var src = arrScript[i].src;
+  var index = src.indexOf('dynaload.js');		//假设dynaload.js文件名没变
+  if(index >= 0) {
+   SupcanPath = src.substring(0, index);
+   if(SupcanPath.charAt(0) == '/') {
+    src = location.href;
+    index = src.indexOf('//');
+    if(index != -1) {
+     index = src.indexOf('/', index+2);
+     if(index != -1) src = src.substring(0, index);
+     SupcanPath = src + SupcanPath;
+    }
+   }
+   break;
+  }
+ }
+ 
+ var typeid;
+ if($isIE) {
+  if($is64)
+   typeid = 'CLASSID="clsid:11249C26-4BCD-4A74-B4D9-068936D77EFE" Codebase="' +SupcanPath+ 'supcan2.x64.cab#Version=1,0,0,3"';
+  else
+   typeid = 'CLASSID="clsid:619F1AC0-2644-40D3-9EB1-22F81C5FE097" Codebase="' +SupcanPath+ 'supcan2.cab#Version=1,0,0,3"';
+ }
+ else {
+  typeid = 'type="application/supcan-plugin"';
+  if($isChrome==false) typeid += ' Codebase="' +SupcanPath+ 'supcan.xpi"';
+ }
+ 
+ //组件包URL
+ var zipurl = SupcanPath + ($is64 ? "BCV1.x64.bin" : "BCV1.bin");
+ if(ctlType=="LuxForm")
+  zipurl += "," +SupcanPath+ ($is64 ? "LuxForm.x64.bin" : "LuxForm.bin");
+ else if(ctlType.indexOf("BCV4")>=0)
+  zipurl += "," +SupcanPath+ ($is64 ? "BCV4.x64.bin" : "BCV4.bin");
+ 
+ var str = '&lt;Object id=' +id+ ' Width=100% height=' +height+ ' ' +typeid+ '&gt;';
+ str += '&lt;param Name="CtlName" Value="' +ctlType+ '"&gt;';
+ str += '&lt;param Name="CtlVersion" Value="' +ctlver+ '"&gt;';
+ str += '&lt;param Name="ZipUrl" Value="' +zipurl+ '"&gt;';
+ str += '&lt;param Name="id" Value="' +id+ '"&gt;';
+ str += '&lt;param Name="Cookie" Value="' +document.cookie+ '"&gt;';
+ str += '&lt;param Name="CtlPara" Value="' +para+ '"&gt;&lt;/Object&gt;';
+ return str;
+}
+ 
+//public:
+function insertTreeList(id, para)  {
+ document.write( bldStr("BCV1.TreeList", id, para, (arguments.length>2) ? arguments[2]:"100%"))
+}
+function insertEdit(id, para) {
+ document.write( bldStr("BCV1.Edit", id, para, (arguments.length>2) ? arguments[2]:"100%"))
+}
+function insertReport(id, para) {
+ document.write( bldStr("LuxForm", id, para, (arguments.length>2) ? arguments[2]:"100%"))
+}
+function insertTree(id, para) {
+ document.write( bldStr("BCV1.Tree", id, para, (arguments.length>2) ? arguments[2]:"100%"))
+}
+function insertFreeForm(id, para) {
+ document.write( bldStr("BCV1.FreeForm", id, para, (arguments.length>2) ? arguments[2]:"100%"))
+}
+function insertChart(id, para) {
+ document.write( bldStr("BCV1.Chart", id, para, (arguments.length>2) ? arguments[2]:"100%"))
+}
+function insertUpload(id, para) 	{
+ document.write( bldStr("BCV1.Upload", id, para, (arguments.length>2) ? arguments[2]:"100%"))
+}
+function insertFormDesigner(id, para) {
+ document.write( bldStr("BCV4.FormDesigner", id, para, (arguments.length>2) ? arguments[2]:"100%"))
+}
+ 
+//必需的函数(控件会反向调用，用途:切换焦点)
+function focusIE(obj_or_id)
+{
+ if($isIE==false) {
+  document.activeElement.blur();
+  return;
+ }
+ try {
+  if(typeof(obj_or_id)=='object') {
+   if(document.activeElement != obj_or_id) obj_or_id.focus();
+  }
+  else {
+   if(document.activeElement.id == obj_or_id) return;
+   var o = document.getElementById(obj_or_id);
+   if(o != null) o.focus();
+  }
+ }
+ catch(e) {
+ }
+}</pre>
+　　相信您一看就能明白，在页面中只要调用从65到88行之间的任一函数就行，这几个函数有2个显式参数:id、para，参数id就是&lt;object id=...&gt;中的id值，参数para就是名为CtlPara的&lt;Param&gt;的值，此外还允许有隐含参数：控件的初始高度，如果不指定这个高度，就以100%高度展现。<br>
+<br>
+<img src='glass.bmp' class="imgleft"><p class="glass">第 16 行中的版本号，该版本号是自动升级的关键.</p>
+<br>
+<img src='glass.bmp' class="imgleft"><p class="glass">其中的 focusIE( ) 是必需的，你可能永远不会去调用它，但是组件会去反向调用它的.</p>
+<br>
+<img src='glass.bmp' class="imgleft"><p class="glass">将第三个参数设成隐含参数，目的是为了版本兼容，在 1.0.82.0 本前，都只有 2 个参数.</p>
+<br>
+<br>
+　　如下就是一个引用了 dynaload.js 的完整的、最简单的demo页：<br>
+<pre class='xml'>
+&lt;html&gt;
+&lt;head&gt;
+&lt;meta http-equiv="content-type" content="text/html; charset=GB2312"&gt;
+
+&lt;!--引用dynaload.js。后面的"?20"是让浏览器及时刷新的时间戳，请参见“常见问题解答”--&gt;
+&lt;script type='text/javascript' src='binary/dynaload.js?20'&gt;&lt;/script&gt;
+
+&lt;/head&gt;
+&lt;body&gt;
+&lt;script&gt;insertReport('AF', '')&lt;/script&gt;	//AF是Object的id号、第二个参数为空表示没有初始参数
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+　　你将在页面上看到一个空的硕正报表，<font color=red>一切就那么简单</font>!<br>
+<br>
+<img src='glass.bmp' class="imgleft"><p class="glass">如果您是用Java EE、ASP.Net开发的，把上面的 html 文件修改成 jsp 或 aspx 应该是轻而易举的事.</p>
+<br>
+<img src='glass.bmp' class="imgleft"><p class="glass">您部署时，必须部署整个 binary 目录，不能光部署 dynaload.js 单个文件.</p>
+
+
+<br><br><br>
+<script type='text/javascript' src='nstd.js'></script>
+</body></html>

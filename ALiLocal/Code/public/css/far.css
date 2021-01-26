@@ -1,0 +1,317 @@
+.StickyHeader td,.StickyHeader th{
+	white-space: nowrap;
+}
+/* sortable */
+.sortable {
+	cursor: pointer;
+	font-family: FontAwesome, 'Helvetica Neue';
+}
+.nav-list li a{
+	min-height: 18px;
+}
+.desc:after {
+	content: " \f0d7";
+}
+
+.asc:after {
+	content: " \f0d8";
+}
+
+
+/* far.css */
+label {
+	font-size: 12px;
+	display: inline-block;
+}
+
+body {
+	overflow-y: scroll;
+}
+
+textarea {
+	font-size: 12px;
+	resize: none;
+}
+
+label input[type=checkbox] {
+	margin: 0;
+}
+
+.FarTool {
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+caption {
+	background: none repeat scroll 0% 0% #EEE;
+}
+
+.FarTool label {
+	display: inline
+}
+
+.FarSearch {
+	width: 100%;
+	margin: 5px 0;
+	border: 1px solid rgb(212, 212, 212);
+}
+
+.FarSearch table {
+	empty-cells: show;
+	margin: 5px;
+}
+
+.FarSearch th {
+	text-align: right;
+	padding: 4px 0px 4px 0px;
+}
+
+.FarSearch thead {
+	background-color: rgba(0, 0, 0, 0);
+	background-image: linear-gradient(rgb(255, 255, 255) 0px,
+		rgb(242, 242, 242) 100%);
+	background-repeat: repeat-x;
+	border: 1px solid rgb(212, 212, 212);
+	color: rgb(34, 34, 34);
+	font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+	height: 13px;
+	line-height: 18px;
+	margin: 0px;
+	padding: 5px;
+}
+
+.FarSearch thead th {
+	background-color: rgba(0, 0, 0, 0);
+	border-collapse: collapse;
+	text-align: center;
+	color: black;
+	font-size: 12px;
+	font-style: normal;
+	font-weight: bold;
+	height: 16px;
+	line-height: 16px;
+	border-right: 1px dotted #ccc;
+}
+
+.FarSearch thead th a {
+	text-decoration: underline;
+}
+
+.FarSearch td {
+	padding: 1px 10px 2px 10px;
+}
+
+.FarTable {
+	border-color: rgb(212, 212, 212);
+	border-style: solid;
+	border-width: 1px;
+	width: 100%;
+	margin: 5px 0 5px 0;
+	empty-cells: show;
+}
+
+.FarTable th {
+	text-align: left;
+	border: 1px dotted #ccc;
+	padding: 4px 0px 4px 0px;
+}
+
+.FarTable tbody tr:hover {
+	background: #eaf2ff;
+	color: black;
+}
+
+.FarTable thead {
+	background-color: rgba(0, 0, 0, 0);
+	background-image: linear-gradient(rgb(255, 255, 255) 0px,
+		rgb(242, 242, 242) 100%);
+	background-repeat: repeat-x;
+	border: 1px solid rgb(212, 212, 212);
+	color: rgb(34, 34, 34);
+	font-family: 'Helvetica Neue', Arial, Helvetica, sans-serif;
+	height: 13px;
+	line-height: 18px;
+	margin: 0px;
+	padding: 5px;
+}
+
+.FarTable thead th {
+	background-color: rgba(0, 0, 0, 0);
+	border-collapse: collapse;
+	text-align: center;
+	color: black;
+	font-size: 12px;
+	font-style: normal;
+	font-weight: bold;
+	height: 16px;
+	line-height: 16px;
+	border-right: 1px dotted #ccc;
+}
+
+.FarTable thead th a {
+	text-decoration: underline;
+}
+
+.FarTable td {
+	border-style: dotted;
+	border-color: #ccc;
+	border-width: 0 1px 1px 0;
+	padding: 1px 10px 2px 10px;
+}
+
+.FarTable tbody tr.success td {
+  background-color: #dff0d8;
+}
+.FarTable tbody tr.error td {
+  background-color: #f2dede;
+}
+.FarTable tbody tr.warning td {
+  background-color: #f9edbe;
+}
+.FarTable tbody tr.info td {
+  background-color: #d9edf7;
+}
+.FarTable-hover tbody tr.success:hover td {
+  background-color: #d0e9c6;
+}
+.FarTable-hover tbody tr.error:hover td {
+  background-color: #ebcccc;
+}
+.FarTable-hover tbody tr.warning:hover td {
+  background-color: #f7e7a7;
+}
+.FarTable-hover tbody tr.info:hover td {
+  background-color: #c4e3f3;
+}
+
+.FarPath {
+	margin-top: -20px;
+	/* width: 1365px; */
+}
+
+.FarNav {
+	/* width: 1365px; */
+	
+}
+
+.FarBody {
+	
+}
+
+body {
+	font-size: 12px;
+}
+
+.head {
+	background: url('/link/img/top_bg.png') repeat-x;
+}
+
+.head a, .head a:hover {
+	color: white;
+}
+
+.navbar .brand {
+	padding-bottom: 0px;
+}
+
+.navbar-inner {
+	min-height: 31px;
+}
+
+.navbar .nav>li>a, .navbar-ibtop {
+	padding: 5px 15px 5px 15px;
+	border-right: 1px solid #ddd;
+}
+
+/** btn fixed **/
+button, html input[type=button], input[type="reset"], input[type="submit"]
+	{
+	-webkit-appearance: button;
+	line-height: normal;
+}
+
+.dropdown:hover .dropdown-menu {
+	display: block;
+}
+
+.dropdown .dropdown-menu {
+	margin: 0px 15px;
+}
+
+select, input[type=text], input[type=password], input[type=number],
+	input[type=email] {
+	width: auto;
+	height: 20px;
+	padding: 0 5px;
+	font-size: 12px;
+	line-height: normal;
+	margin: 0 0 3px 0;
+	border-radius: 4px;
+}
+
+input[type="radio"], input[type="checkbox"] {
+	margin: 0;
+}
+
+.tabs-header {
+	border-bottom-width: 0;
+}
+
+.breadcrumb {
+	margin: -15px 0 10px;
+}
+
+.control_datebox_container {
+	position: relative;
+}
+
+.control_datebox_img {
+	display: block;
+	cursor: pointer;
+	position: absolute;
+	right: 2px;
+	top: -2px;
+}
+
+.red {
+	color: red;
+	font-size: 14px;
+}
+
+.required-title:before {
+	content: '*';
+	color: red;
+}
+
+/**
+ * bottom bar
+ */
+.bottomBar {
+	background:#eee;
+	width: 100%;
+	position: fixed;
+	bottom: 0px;
+	left: 0;
+}
+
+.pagination a {
+	color: red;
+}
+
+table.tablesorter tr.even:hover td,
+table.tablesorter tr.odd:hover td {
+    background-image: linear-gradient(rgb(0, 136, 204), rgb(0, 119, 179));
+	color: white;
+}
+td.selected{
+	color: white;
+	background-image: linear-gradient(rgb(0, 136, 204), rgb(0, 119, 179));
+}
+select[readonly]{
+    background: #eee;
+    cursor:no-drop;
+}
+
+select[readonly] option{
+    display:none;
+}

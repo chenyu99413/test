@@ -1,0 +1,91 @@
+<?php
+class Controller_Product extends Controller_Abstract {
+	/**
+	 */
+	function actionIndex() {
+	}
+	
+	/**
+	 * 产品一览
+	 */
+	function actionSearch() {
+		$select = Product::find ()->order ( 'product_name' );
+		$this->_view ['products'] = $select->getAll ();
+	}
+	
+	/**
+	 * 产品显示
+	 */
+	function actionEdit() {
+		//产品信息
+		$product = Product::find ( 'product_id = ?', request ( "id" ) )->getOne ();
+		
+		//产品保存
+		if (request_is_post ()) {
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			
+			//产品
+			if (request ( "product" ) != null || strlen ( request ( "product" ) ) > 0) {
+				$product->changeProps ( request ( "product" ) );
+				$product->save ();
+			}
+			//产品-价格-分区-偏派列表
+			if (request ( "productppr" ) != null || strlen ( request ( "productppr" ) ) > 0) {
+				Productppr::meta ()->destroyWhere ( "product_id = ?", $product->product_id );
+				foreach ( json_decode ( request ( "productppr" ) ) as $value ) {
+					$productprp = new Productppr ();
+					$value->effective_time=strtotime($value->effective_time."00:00:00");
+					$value->invalid_time=strtotime($value->invalid_time."23:59:59");
+					$productprp->changeProps ( $value );
+					$productprp->product_id=$product->product_id;
+					$productprp->save ();
+				}
+			}
+			
+			$conn->completeTrans ();
+			return $this->_redirectMessage ( "产品信息", "保存成功", url ( "product/edit", array (
+				"id" => $product->id ()
+			) ) );
+		}
+		$this->_view ["tabs"] = $this::createTabs ( $product );
+		$this->_view ["networks"] = Network::networks ();
+		$this->_view ["product"] = $product;
+	}
+	
+	
+	/**
+	 * 创建标签
+	 *
+	 * @param 产品 $product        	
+	 * @return 标签列
+	 */
+	static function createTabs($product) {
+		if ($product->isNewRecord ()) {
+			return array (
+				array (
+					"id" => "0",
+					"title" => "基本信息",
+					"href" => "" 
+				) 
+			);
+		} else {
+			return array (
+				array (
+					"id" => "0",
+					"title" => "基本信息",
+					"href" => url ( "product/edit", array (
+						"id" => $product->product_id 
+					) ) 
+				),
+				array (
+					"id" => "4",
+					"title" => "渠道成本",
+					"href" => url ( "channelcost/search", array (
+						"id" => $product->product_id 
+					) ) 
+				) 
+			);
+		}
+	}
+}

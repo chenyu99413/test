@@ -1,0 +1,82 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>渠道列表<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<form method="post">
+	<div class="FarTool">
+		<a class="btn btn-success" href="javascript:void(0)" data="" onclick="edit(this)">
+			<i class="icon-plus"></i>
+			新建
+		</a>
+	</div>
+	<table class="FarTable" style="width:60%;">
+		<thead>
+			<tr>
+				<th>渠道名称</th>
+				<th width=160>操作</th>
+			</tr>
+		</thead>
+		<tbody>
+    		<?php foreach ($channels as $channel):?>
+    		<tr>
+				<td>
+					<a
+						href="javascript:void(0)" data="<?php echo $channel->channel_id?>"  onclick="edit(this)"><?php echo $channel->channel_name?></a>
+				</td>
+				<td>
+					<a class="btn btn-mini"
+						href="javascript:void(0)" data="<?php echo $channel->channel_id?>"  onclick="edit(this)">
+						<i class="icon-edit"></i>
+						编辑
+					</a>
+				</td>
+			</tr>
+    		<?php endforeach;?>
+		</tbody>
+	</table>
+</form>
+<div id="window" class="easyui-window" title="渠道编辑" data-options="modal:true,closed:true" style="width:400px;height:150px;padding:10px;">
+    <form method="post" action="<?php echo url('channel/edit')?>">
+        <table>
+            <tr>
+				<th class="required-title">渠道名称</th>
+				<td>
+					<input name="channel_name" id="channel_name" type="text" style="width: 150px" required="required"value="">
+				</td>
+            </tr>
+        </table>
+        <div class="FarTool text-center" style="margin-top:30px;">
+    		<button class="btn btn-primary btn-small" type="submit">
+    			<i class="icon-save"></i>
+    			保存
+    		</button>
+	    </div>
+	<input type="hidden" name="channel_id" value='' id="channel_id">
+    </form>
+</div>
+<script type="text/javascript">
+	function edit(obj){
+		var channel_id=$(obj).attr('data');
+		if(channel_id!=''){//编辑
+			$.ajax({
+				url:'<?php echo url('/getchannel')?>',
+				data:{channel_id:channel_id},
+				type:'post',
+				dataType:"json",
+				async:false,
+				success:function(data){
+					$("#channel_name").val(data.channel_name);
+					$("#channel_id").val(data.channel_id);
+					$('#window').window({
+					    title:'渠道编辑',
+					});
+				}
+			})
+		}else{//新建
+			$('#window').window({
+			    title:'新建渠道',
+			});
+		}
+		$('#window').window('open');
+	}
+</script>
+<?PHP $this->_endblock();?>

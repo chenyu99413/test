@@ -1,0 +1,208 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+包裹启程扫描总单
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<form method="POST">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>创建日期</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "start_date", array (
+							"value" => request ( "start_date",date('Y-m-d')),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>到</th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "end_date", array (
+							"value" => request ( "end_date"),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<th>总单单号</th>
+					<td><textarea rows="1" name="total_no" placeholder="每行一个单号"><?php echo request('total_no')?></textarea></td>
+					<th>抵达仓</th>
+					<td><?php
+                        echo Q::control ( 'dropdownbox', 'in_department_id', array (
+                        'items'=>Helper_Array::toHashmap(Department::departmentlist(),'department_id','department_name'),
+                        'empty'=>true,
+                        'style'=>'width:70px',
+                        'value' => request('in_department_id'),
+                        ) )?>
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small" id="search">
+			             <i class="icon-search"></i>
+			                                         搜索
+		               </button>
+		               <a class="btn btn-success btn-small" href="<?php echo url('warehouse/edittatolout')?>" >
+			             <i class="icon-plus"></i>
+			                                         新建
+		               </a>
+		               <button class="btn btn-primary btn-small" name="export" value="export">
+			             <i class="icon-download"></i>
+			                                         导出
+		               </button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div style="overflow: scroll;" class="StickyHeader">
+	<table class="FarTable">
+		<thead>
+			<tr>
+				<th>No</th>
+				<th>操作</th>
+				<th>操作日期</th>
+				<th>总单号</th>
+				<th>启程仓</th>
+				<th>抵达仓</th>
+				<th>产品</th>
+				<th>总票数</th>
+				<th>总件数</th>
+				<th>总实重</th>
+				<th>总计费重</th>
+				<th>转运方式</th>
+				<th>转运单号</th>
+				<th>收件人</th>
+				<th>电话</th>
+				<th>地址</th>
+				<th>操作人</th>
+				<th>确认人</th>
+				<th>确认时间</th>
+			</tr>
+		</thead>
+		<tbody>
+		<?php $i=1;$service=Helper_Array::toHashmap(Product::find()->getAll(), 'product_name','product_chinese_name'); foreach ($total_out_list as $temp):?>
+		  <?php $order_count=0;$weight_cost=0;$weight_actual=0;$quantity=0;$quantity_sum=0;
+        		foreach ($temp->totalorderout as $value){
+    		       $order_count++;
+    		       if($value->order->order_id){
+    		          $faoutpackage = Faroutpackage::find('order_id = ?',$value->order->order_id)->asArray()->getAll();
+    		          if(count($faoutpackage)>0){
+    		             $weight_cost+=$value->order->weight_cost_out;
+    		             $weight_actual+=$value->order->weight_actual_out;
+    		             $quantity = Faroutpackage::find('order_id = ?',$value->order->order_id)->getSum('quantity_out');
+    		          }else{
+        		         $weight_cost+=$value->order->weight_income_in;
+        		         $weight_actual+=$value->order->weight_actual_in;
+               	         $quantity = Farpackage::find('order_id = ?',$value->order->order_id)->getSum('quantity');
+    		          }
+               	      $quantity_sum+=$quantity;
+    		       }
+        		}?>
+			<tr>
+				<td><?php echo $i++ ?></td>
+				<td><?php if($temp->status == '0'):?>
+				    <a class="btn btn-mini" href="<?php echo url('warehouse/edittatolout', array('total_id' => $temp->total_id))?>">
+        			    <i class="icon-edit"></i>
+                                                                            修改
+				    </a>
+				    <a class="btn btn-mini " target="_blank"
+				       href="<?php echo url('warehouse/packageout',array('total_no' => $temp->total_no))?>">            
+				                       扫描
+				    </a>
+				    <a class="btn btn-mini btn-danger" href="<?php echo url('warehouse/outfinished', array('total_no' => $temp->total_no))?>">
+                                                                        完成
+				    </a>
+				    <?php if($order_count == 0 && $quantity_sum == 0):?>
+				    <input type="button" class="btn btn-small btn-danger" href="javascript:void(0)" data="<?php echo $temp->total_id?>" onclick="del(this)" value="删除">
+				    <?php endif;?>
+				    <?php endif;?>
+				    <?php if($temp->type == '0' && MyApp::checkVisible('totalout-ture')):?>
+				    <input type="button" class="btn btn-small btn-primary" href="javascript:void(0)" data="<?php echo $temp->total_id?>" onclick="queren(this)" value="确认">
+				    <?php endif;?>
+				</td>
+				<td><?php echo Helper_Util::strDate('Y-m-d H:i:s', $temp->operation_time)?></td>
+				<td>
+				    <a  target="_blank" href="<?php echo url('warehouse/totaloutdetail', array('total_no' => $temp->total_no))?>">
+            			<?php echo $temp->total_no?>
+            	    </a>
+            	</td>
+				<td><?php echo $temp->out_department_id?$dpms[$temp->out_department_id]:''?></td>
+				<td><?php echo $temp->in_department_id?$dpms[$temp->in_department_id]:''?></td>
+				<?php $service_code=explode(',', $temp->service_code);
+				    $s='';
+				    foreach ($service_code as $code){
+				        $s.=','.@$service[$code];
+				    }
+				?>
+				<td><?php echo trim($s,',')?></td>
+				<td style="text-align:right;"><?php echo $order_count?></td>
+				<td style="text-align:right;"><?php echo $quantity_sum?></td>
+				<td style="text-align:right;"><?php echo sprintf('%.2f',$weight_actual)?></td>
+				<td style="text-align:right;"><?php echo sprintf('%.2f',$weight_cost)?></td>
+				<td><?php echo $temp->express_company?></td>
+				<td><?php echo $temp->express_no?></td>
+				<td><?php echo $temp->consignee_name?></td>
+				<td><?php echo $temp->consignee_phone?></td>
+				<td><?php echo $temp->consignee_address?></td>
+				<td><?php echo $temp->operation_name?></td>
+				<?php 
+				$staff = Staff::find('staff_id=?',$temp->update_type_name)->getOne();
+				?>
+				<td><?php echo $staff->staff_name?></td>
+				<td><?php echo $temp->update_type_time ? date('Y-m-d H:i:s',$temp->update_type_time) : '';?></td>
+			</tr>
+		<?php endforeach;?>
+		</tbody>
+	</table>
+	</div>
+</form>
+<?php
+	$this->_control ( "pagination", "my-pagination", array (
+		"pagination" => $pagination 
+	) );
+	?>
+<script type="text/javascript">
+$('.StickyHeader').floatThead({
+    useAbsolutePositioning: true,
+    scrollContainer: function($table){
+        return $table.closest(".StickyHeader");
+    }
+});
+function del(obj){
+	if (confirm('是否删除?')) {
+    	var total_id=$(obj).attr('data');
+    	$.ajax({
+    		url:'<?php echo url('warehouse/deltotalout')?>',
+    		data:{total_id:total_id},
+    		type:'post',
+    		async:false,
+    		success:function(data){
+    			if(data=='delsuccess'){
+    			   window.location.reload();
+    			}else if(data=='delfalse'){
+        			alert('该总单下已存在绑定的订单');
+        			window.location.reload();
+        		}
+    		}
+    	});
+	}
+}
+function queren(obj){
+	if (confirm('是否确认?')) {
+    	var total_id=$(obj).attr('data');
+    	$.ajax({
+    		url:'<?php echo url('warehouse/truetotalout')?>',
+    		data:{total_id:total_id},
+    		type:'post',
+    		async:false,
+    		success:function(data){
+   			 window.location.reload();
+    		}
+    	});
+	}
+}
+</script>
+<?PHP $this->_endblock();?>
+

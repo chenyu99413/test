@@ -1,0 +1,871 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!--By Supcan Report -->
+<Report>
+	<WorkSheet name="Sheet">
+		<Properties>
+			<BackGround bgColor="#FFFFFF"/>
+			<DefaultTD>
+				<TD fontIndex="0" textColor="#000000" transparent="true" leftBorder="1" topBorder="0" leftBorderColor="#000000" leftBorderStyle="solid" topBorderColor="#C0C0C0" topBorderStyle="solid" decimal="2" align="left" vAlign="middle" isProtected="false" isThousandSeparat="true" isRound="true" isPrint="true"/>
+			</DefaultTD>
+			<Other isShowZero="true" isRefOriPrecision="true" LineDistance="0" isRowHeightAutoExtendAble="true"/>
+		</Properties>
+		<Fonts>
+			<Font faceName="微软雅黑" charSet="134" height="-12" weight="400"/>
+			<Font faceName="微软雅黑" charSet="134" height="-21" weight="400"/>
+			<Font faceName="微软雅黑" charSet="134" height="-21" weight="700"/>
+			<Font faceName="微软雅黑" charSet="134" height="-14" weight="400"/>
+			<Font faceName="微软雅黑" charSet="134" height="-16" weight="400"/>
+			<Font faceName="微软雅黑" charSet="134" height="-11" underline="1" weight="400"/>
+			<Font faceName="微软雅黑" charSet="134" height="-11" weight="400"/>
+			<Font faceName="微软雅黑" charSet="134" height="-12" weight="700"/>
+			<Font faceName="微软雅黑" charSet="134" height="-22" weight="400"/>
+		</Fonts>
+		<Table>
+			<Col width="245"/>
+			<Col width="190"/>
+			<Col width="27"/>
+			<Col width="124"/>
+			<Col width="106"/>
+			<Col width="15"/>
+			<TR height="60" sequence="0">
+				<TD fontIndex="8" leftBorder="0" align="center">UPS COPY</TD>
+				<TD fontIndex="1" leftBorder="0" align="center">UPS COPY</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="2" leftBorder="0" align="center" datatype="1" maskid="1"/>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3" leftBorder="0"/>
+			</TR>
+			<TR height="23" sequence="1">
+				<TD fontIndex="3" textColor="#FFFFFF" bgColor="#000000" topBorder="1" topBorderColor="#000000">SHIPPER</TD>
+				<TD fontIndex="3" topBorder="1" topBorderColor="#000000"/>
+				<TD fontIndex="3" leftBorder="0" topBorder="1" topBorderColor="#000000"/>
+				<TD fontIndex="4" textColor="#FFFFFF" bgColor="#000000" topBorder="1" topBorderColor="#000000">UPS WAYBILL/TRACKING NUMBER</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="2">
+				<TD topBorder="1" topBorderColor="#000000" datatype="1" formula="=&apos;UPS Account Number: &apos;+data(&apos;ds1\shipper&apos;, 1, &apos;account&apos;)">account*</TD>
+				<TD fontIndex="3" topBorder="1" topBorderColor="#000000" datatype="1" formula="=data(&apos;ds1&apos;,1,&apos;service_name&apos;)">service_name*</TD>
+				<TD fontIndex="3" leftBorder="0" topBorder="1" topBorderColor="#000000" datatype="1" formula="=data(&apos;ds1&apos;,1,&apos;service&apos;)">service*</TD>
+				<TD topBorder="1" topBorderColor="#000000" datatype="1" formula="=data(&apos;ds1&apos;,1,&apos;tks&apos;)">tks*</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="3">
+				<TD>Tax ID/VAT No.:</TD>
+				<TD fontIndex="3" textColor="#FFFFFF" bgColor="#000000" topBorder="1" topBorderColor="#000000">SHIPMENT INFORMATION</TD>
+				<TD fontIndex="3" textColor="#FFFFFF" bgColor="#000000" topBorder="1"/>
+				<TD fontIndex="3" textColor="#FFFFFF" bgColor="#000000" topBorder="1" topBorderColor="#000000">UPS SHIPMENT ID</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="4">
+				<TD datatype="1" formula="=&apos;Contact: &apos;+data(&apos;ds1\shipper&apos;, 1, &apos;aname&apos;)">aname*</TD>
+				<TD topBorder="1" topBorderColor="#000000" datatype="1" formula="=&apos;Pkgs: &apos;+data(&apos;ds1&apos;, 1, &apos;itemcount&apos;)">itemcount*</TD>
+				<TD leftBorder="0" topBorder="1" topBorderColor="#000000"/>
+				<TD fontIndex="7" topBorder="1" topBorderColor="#000000" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;shipmentid&apos;)">shipmentid*</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="5">
+				<TD datatype="1" formula="=data(&apos;ds1\shipper&apos;, 1, &apos;name&apos;)">name*</TD>
+				<TD>Lg. Pkgs. 0</TD>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3" textColor="#FFFFFF" bgColor="#000000" topBorder="1" topBorderColor="#000000">SPECIAL INTRUCTIONS</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="6">
+				<TD datatype="1" formula="=&apos;Phone: &apos;+data(&apos;ds1\shipper&apos;, 1, &apos;phone&apos;)">phone*</TD>
+				<TD datatype="1" formula="=&apos;Actual Wt &apos;+data(&apos;ds1&apos;,1,&apos;total_weight&apos;)+&apos; Kg&apos;">total_weight*</TD>
+				<TD leftBorder="0"/>
+				<TD topBorder="1" topBorderColor="#000000" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;specialInstruction&apos;)">specialInstruction*</TD>
+				<TD leftBorder="0" topBorder="1"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="7">
+				<TD datatype="1" formula="=data(&apos;ds1\shipper&apos;, 1, &apos;address&apos;)">address*</TD>
+				<TD datatype="1" formula="=&apos;Billable Wt &apos;+data(&apos;ds1&apos;,1,&apos;total_weight&apos;)+&apos; Kg&apos;">total_weight*</TD>
+				<TD leftBorder="0"/>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="8">
+				<TD datatype="1" formula="=data(&apos;ds1\shipper&apos;, 1, &apos;postcode&apos;)">postcode*</TD>
+				<TD datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;documentOnly&apos;)">documentOnly*</TD>
+				<TD leftBorder="0"/>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="9">
+				<TD datatype="1" formula="=data(&apos;ds1\shipper&apos;, 1, &apos;city&apos;)">city*</TD>
+				<TD>Description of Goods:</TD>
+				<TD leftBorder="0"/>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="10">
+				<TD>CHINA, PEOPLE&apos;S REPUBLIC OF</TD>
+				<TD datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;description&apos;)">description*</TD>
+				<TD leftBorder="0"/>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="54" sequence="11">
+				<TD>CN</TD>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD align="center" datatype="1" formula="=&apos;http://wms.checkout2cn.com/link/barcode/html/image.php?filetype=PNG&amp;dpi=90&amp;scale=1&amp;rotation=0&amp;font_family=0&amp;font_size=8&amp;thickness=55&amp;start=A&amp;code=BCGcode128&amp;text=&apos; + data(&apos;ds1\tks&apos;, 1, &apos;item&apos;)" maskid="1"/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="12">
+				<TD fontIndex="3" textColor="#FFFFFF" bgColor="#000000" leftBorder="0" topBorder="1" topBorderColor="#000000">SHIP TO</TD>
+				<TD leftBorder="0"/>
+				<TD leftBorder="0"/>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="13">
+				<TD topBorder="1" topBorderColor="#000000" datatype="1" formula="=&apos;UPS Account Number: &apos; +data(&apos;ds1&apos;, 1, &apos;br_account&apos;)">br_account*</TD>
+				<TD>Declared Value for Carriage:</TD>
+				<TD leftBorder="0"/>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="14">
+				<TD>Tax ID/VAT No.:</TD>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3" textColor="#FFFFFF" bgColor="#000000" topBorder="1" topBorderColor="#000000">PAYMENT OF CHARGES</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="15">
+				<TD datatype="1" formula="=&apos;Contact: &apos;+data(&apos;ds1&apos;, 1, &apos;aname&apos;)">aname*</TD>
+				<TD>Additional Handling:</TD>
+				<TD leftBorder="0"/>
+				<TD fontIndex="6" topBorder="1" topBorderColor="#000000" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;poc_line1&apos;)">poc_line1*</TD>
+				<TD fontIndex="6" leftBorder="0" topBorder="1"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="16">
+				<TD datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;name&apos;)">name*</TD>
+				<TD>Residential: No</TD>
+				<TD leftBorder="0"/>
+				<TD fontIndex="6" vAlign="top" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;poc_line2&apos;)">poc_line2*</TD>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="17">
+				<TD datatype="1" formula="=&apos;Phone: &apos;+data(&apos;ds1&apos;, 1, &apos;phone&apos;)">phone*</TD>
+				<TD>Reference 1:</TD>
+				<TD leftBorder="0"/>
+				<TD fontIndex="6"/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="22" sequence="18">
+				<TD vAlign="top" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;address&apos;)">address*</TD>
+				<TD datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;ref1&apos;)">ref1*</TD>
+				<TD leftBorder="0"/>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="22" sequence="19">
+				<TD datatype="1"/>
+				<TD>Reference 2:</TD>
+				<TD leftBorder="0"/>
+				<TD datatype="1"/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="22" sequence="20">
+				<TD datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;postcode&apos;)">postcode*</TD>
+				<TD datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;ref2&apos;)">ref2*</TD>
+				<TD leftBorder="0"/>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="22" sequence="21">
+				<TD datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;state&apos;) + &apos;, &apos;+ data(&apos;ds1&apos;, 1, &apos;city&apos;)">state*,city*</TD>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="22" sequence="22">
+				<TD datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;countryname&apos;)">countryname*</TD>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD/>
+				<TD leftBorder="0"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="22" sequence="23">
+				<TD fontIndex="3" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;countrycode&apos;)">countrycode*</TD>
+				<TD fontIndex="3" textColor="#FFFFFF" bgColor="#000000">CARRIER USE</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3" textColor="#FFFFFF" bgColor="#000000" topBorder="1"/>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3" leftBorder="0"/>
+			</TR>
+			<TR height="21" sequence="24">
+				<TD fontIndex="3"/>
+				<TD topBorder="1" topBorderColor="#000000">Received for UPS by:</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD topBorder="1" topBorderColor="#000000">Date</TD>
+				<TD topBorder="1" topBorderColor="#000000">Time</TD>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="25">
+				<TD fontIndex="3"/>
+				<TD topBorder="1" topBorderColor="#000000"/>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD topBorder="1" topBorderColor="#000000"/>
+				<TD topBorder="1" topBorderColor="#000000"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="26">
+				<TD fontIndex="3"/>
+				<TD topBorder="1" topBorderColor="#000000">Amount Received:</TD>
+				<TD leftBorder="0" topBorder="1" topBorderColor="#000000"/>
+				<TD leftBorder="0" topBorder="1" topBorderColor="#000000">[ ] Cheque</TD>
+				<TD leftBorder="0" topBorder="1" topBorderColor="#000000">[ ] Cash</TD>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="23" sequence="27">
+				<TD fontIndex="3"/>
+				<TD topBorder="1" topBorderColor="#000000">No. of packages for which the Additional Handling charge applies:</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="28">
+				<TD fontIndex="3"/>
+				<TD topBorder="1" topBorderColor="#000000">Other Information:</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD leftBorder="0" topBorder="1" topBorderColor="#000000"/>
+				<TD leftBorder="0" topBorder="1" topBorderColor="#000000"/>
+				<TD fontIndex="3"/>
+			</TR>
+			<TR height="24" sequence="29">
+				<TD fontIndex="3" leftBorder="0" topBorder="1" topBorderColor="#000000">.....................................................................</TD>
+				<TD fontIndex="3" leftBorder="0" topBorder="1" topBorderColor="#000000">Fold Here and Place in Pouch</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3" leftBorder="0" topBorder="1" topBorderColor="#000000">.........................................................................</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3" leftBorder="0"/>
+			</TR>
+			<TR height="24" sequence="30">
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+			</TR>
+			<TR height="41" sequence="31">
+				<TD fontIndex="5" leftBorder="0">Tracking Numbers for additional packages in the shipment:</TD>
+				<TD fontIndex="3" topBorder="1"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+			</TR>
+			<TR height="25" sequence="32">
+				<TD fontIndex="3" leftBorder="0" datatype="1" formula="=datarow(&apos;ds1\subcode1\info&apos;)"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+			</TR>
+			<TR height="25" sequence="33">
+				<TD fontIndex="3" leftBorder="0" datatype="1"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+				<TD fontIndex="3" leftBorder="0"/>
+			</TR>
+		</Table>
+		<Merges>
+			<Range row1="3" col1="1" row2="3" col2="2"/>
+			<Range row1="24" col1="1" row2="24" col2="2"/>
+			<Range row1="1" col1="3" row2="1" col2="4"/>
+			<Range row1="3" col1="3" row2="3" col2="4"/>
+			<Range row1="4" col1="3" row2="4" col2="4"/>
+			<Range row1="2" col1="3" row2="2" col2="4"/>
+			<Range row1="14" col1="3" row2="14" col2="4"/>
+			<Range row1="27" col1="1" row2="27" col2="4"/>
+			<Range row1="29" col1="1" row2="29" col2="2"/>
+			<Range row1="29" col1="3" row2="29" col2="4"/>
+			<Range row1="31" col1="0" row2="31" col2="1"/>
+			<Range row1="5" col1="3" row2="5" col2="4"/>
+			<Range row1="23" col1="1" row2="23" col2="4"/>
+			<Range row1="25" col1="1" row2="25" col2="2"/>
+			<Range row1="28" col1="1" row2="28" col2="2"/>
+			<Range row1="15" col1="3" row2="15" col2="4"/>
+			<Range row1="16" col1="3" row2="19" col2="4"/>
+			<Range row1="6" col1="3" row2="6" col2="4"/>
+			<Range row1="18" col1="0" row2="19" col2="0"/>
+			<Range row1="11" col1="3" row2="13" col2="4"/>
+			<Range row1="0" col1="0" row2="0" col2="4"/>
+			<Range row1="32" col1="0" row2="32" col2="5"/>
+		</Merges>
+		<PrintPage>
+			<Paper>
+				<Margin left="3" top="3" right="3" bottom="3"/>
+			</Paper>
+			<Page align="center" isIgnoreValidBorder="false">
+				<PageCode isPrint="false"/>
+			</Page>
+		</PrintPage>
+	</WorkSheet>
+	<DataSources Version="255" isAutoCalculateWhenOpen="false" isSaveCalculateResult="false">
+		<DataSource type="4"><!-- Desc: Supcan Report Component DataSource Specification -->
+<Data>
+	<ID>ds1</ID>
+	<Version>2</Version>
+	<Type>4</Type>
+	<TypeMeaning>JSON</TypeMeaning>
+	<Source>_tmp/upload/1Z3X22910401527648.json</Source>
+	<XML_RecordAble_Nodes>
+		<Node>
+			<name/>
+		</Node>
+		<Node>
+			<name>invoice</name>
+		</Node>
+		<Node>
+			<name>invoice\items\jsonobject</name>
+		</Node>
+		<Node>
+			<name>shipmentCharge\ServiceOptionsCharges</name>
+		</Node>
+		<Node>
+			<name>shipmentCharge\TotalCharges</name>
+		</Node>
+		<Node>
+			<name>shipmentCharge\TransportationCharges</name>
+		</Node>
+		<Node>
+			<name>shipper</name>
+		</Node>
+		<Node>
+			<name>subcode1</name>
+		</Node>
+		<Node>
+			<name>subcode1\info</name>
+		</Node>
+		<Node>
+			<name>subcode2</name>
+		</Node>
+		<Node>
+			<name>subcode2\info</name>
+		</Node>
+	</XML_RecordAble_Nodes>
+	<Columns>
+		<Column>
+			<name>shipmentid</name>
+			<text>shipmentid</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>14</sequence>
+		</Column>
+		<Column>
+			<name>servicecode</name>
+			<text>servicecode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>17</sequence>
+		</Column>
+		<Column>
+			<name>service</name>
+			<text>service</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>service_name</name>
+			<text>service_name</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>documentOnly</name>
+			<text>documentOnly</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>8</sequence>
+		</Column>
+		<Column>
+			<name>specialInstruction</name>
+			<text>specialInstruction</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>9</sequence>
+		</Column>
+		<Column>
+			<name>taxddp</name>
+			<text>taxddp</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>18</sequence>
+		</Column>
+		<Column>
+			<name>itemcount</name>
+			<text>itemcount</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>15</sequence>
+		</Column>
+		<Column>
+			<name>dfu</name>
+			<text>dfu</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>10</sequence>
+		</Column>
+		<Column>
+			<name>br_account</name>
+			<text>br_account</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>19</sequence>
+		</Column>
+		<Column>
+			<name>br_postcode</name>
+			<text>br_postcode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>20</sequence>
+		</Column>
+		<Column>
+			<name>weight</name>
+			<text>weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>21</sequence>
+		</Column>
+		<Column>
+			<name>total_weight</name>
+			<text>total_weight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>7</sequence>
+		</Column>
+		<Column>
+			<name>description</name>
+			<text>description</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>22</sequence>
+		</Column>
+		<Column>
+			<name>aname</name>
+			<text>aname</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>23</sequence>
+		</Column>
+		<Column>
+			<name>name</name>
+			<text>name</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>24</sequence>
+		</Column>
+		<Column>
+			<name>email</name>
+			<text>email</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>phone</name>
+			<text>phone</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>25</sequence>
+		</Column>
+		<Column>
+			<name>countrycode</name>
+			<text>countrycode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>26</sequence>
+		</Column>
+		<Column>
+			<name>countryname</name>
+			<text>countryname</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>16</sequence>
+		</Column>
+		<Column>
+			<name>state</name>
+			<text>state</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>27</sequence>
+		</Column>
+		<Column>
+			<name>city</name>
+			<text>city</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>28</sequence>
+		</Column>
+		<Column>
+			<name>postcode</name>
+			<text>postcode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>29</sequence>
+		</Column>
+		<Column>
+			<name>ref1</name>
+			<text>ref1</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>30</sequence>
+		</Column>
+		<Column>
+			<name>ref2</name>
+			<text>ref2</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>31</sequence>
+		</Column>
+		<Column>
+			<name>address</name>
+			<text>address</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>32</sequence>
+		</Column>
+		<Column>
+			<name>freight</name>
+			<text>freight</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>tks</name>
+			<text>tks</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>poc_line1</name>
+			<text>poc_line1</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>11</sequence>
+		</Column>
+		<Column>
+			<name>poc_line2</name>
+			<text>poc_line2</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>12</sequence>
+		</Column>
+		<Column>
+			<name>poc_line3</name>
+			<text>poc_line3</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>13</sequence>
+		</Column>
+		<Column>
+			<name>poc_line2_cn</name>
+			<text>poc_line2_cn</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>invoice\total</name>
+			<text>total</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>invoice\items\jsonobject\iunits</name>
+			<text>iunits</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>invoice\items\jsonobject\ium</name>
+			<text>ium</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>invoice\items\jsonobject\idesc</name>
+			<text>idesc</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>invoice\items\jsonobject\ihc</name>
+			<text>ihc</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>invoice\items\jsonobject\icto</name>
+			<text>icto</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>invoice\items\jsonobject\iuv</name>
+			<text>iuv</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>invoice\items\jsonobject\itotal</name>
+			<text>itotal</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>7</sequence>
+		</Column>
+		<Column>
+			<name>invoice\items\jsonobject\icurrency</name>
+			<text>icurrency</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>8</sequence>
+		</Column>
+		<Column>
+			<name>shipmentCharge\ServiceOptionsCharges\CurrencyCode</name>
+			<text>CurrencyCode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>shipmentCharge\ServiceOptionsCharges\MonetaryValue</name>
+			<text>MonetaryValue</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>shipmentCharge\TotalCharges\CurrencyCode</name>
+			<text>CurrencyCode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>shipmentCharge\TotalCharges\MonetaryValue</name>
+			<text>MonetaryValue</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>shipmentCharge\TransportationCharges\CurrencyCode</name>
+			<text>CurrencyCode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>shipmentCharge\TransportationCharges\MonetaryValue</name>
+			<text>MonetaryValue</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>shipper\id</name>
+			<text>id</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>shipper\account</name>
+			<text>account</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>3</sequence>
+		</Column>
+		<Column>
+			<name>shipper\license</name>
+			<text>license</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>4</sequence>
+		</Column>
+		<Column>
+			<name>shipper\userid</name>
+			<text>userid</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>5</sequence>
+		</Column>
+		<Column>
+			<name>shipper\pwd</name>
+			<text>pwd</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>6</sequence>
+		</Column>
+		<Column>
+			<name>shipper\countrycode</name>
+			<text>countrycode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>7</sequence>
+		</Column>
+		<Column>
+			<name>shipper\state</name>
+			<text>state</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>8</sequence>
+		</Column>
+		<Column>
+			<name>shipper\city</name>
+			<text>city</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>9</sequence>
+		</Column>
+		<Column>
+			<name>shipper\postcode</name>
+			<text>postcode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>10</sequence>
+		</Column>
+		<Column>
+			<name>shipper\aname</name>
+			<text>aname</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>11</sequence>
+		</Column>
+		<Column>
+			<name>shipper\name</name>
+			<text>name</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>12</sequence>
+		</Column>
+		<Column>
+			<name>shipper\phone</name>
+			<text>phone</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>13</sequence>
+		</Column>
+		<Column>
+			<name>shipper\address</name>
+			<text>address</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>14</sequence>
+		</Column>
+		<Column>
+			<name>shipper\tp_account</name>
+			<text>tp_account</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>15</sequence>
+		</Column>
+		<Column>
+			<name>shipper\tp_countrycode</name>
+			<text>tp_countrycode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>16</sequence>
+		</Column>
+		<Column>
+			<name>shipper\tp_postalcode</name>
+			<text>tp_postalcode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>17</sequence>
+		</Column>
+		<Column>
+			<name>shipper\tp_cname</name>
+			<text>tp_cname</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>18</sequence>
+		</Column>
+		<Column>
+			<name>shipper\available</name>
+			<text>available</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>subcode1\waybillcode</name>
+			<text>waybillcode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>subcode1\info\subcode</name>
+			<text>subcode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>subcode2\waybillcode</name>
+			<text>waybillcode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+		<Column>
+			<name>subcode2\info\subcode</name>
+			<text>subcode</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+	</Columns>
+</Data>
+
+		</DataSource>
+	</DataSources>
+	<Masks>
+		<mask id="1" datatype="1">picture()</mask>
+	</Masks>
+</Report>

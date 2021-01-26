@@ -1,0 +1,114 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    <?php //head title 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<form method="POST" id="searchForm">
+	<div class="FarSearch" >
+		<table>
+			<tbody>
+				<tr>
+				    <th>
+					<?php
+                            echo Q::control ( 'dropdownlist', 'type', array (
+                            'items'=>array('warehouse_confirm_time'=>'核查日','record_order_date'=>'发件日'),
+                            'value' => request('type'),
+                            'style'=>'width:90px'
+                         ) )?>
+				    </th>
+					<td>
+						<?php
+						echo Q::control ( "datebox", "date", array (
+							"value" => request ( "date" ,date('Y-m-d',time())),
+							"style"=>"width:90px"
+						) )?>
+					</td>
+					<td>
+					   <button class="btn btn-primary btn-small">
+			             <i class="icon-search"></i>
+			                                       搜索
+		               </button>
+					   <a class="btn btn-info btn-small" href="javascript:void(0)" onclick="recalculation()">
+			             <i class="icon-cog"></i>
+			                                        重新计算
+		               </a>
+					  </td>
+				</tr>           
+			</tbody>           
+		</table>  
+	</div>
+	<table class="FarTable" style="width:60%">
+            <thead>
+        		<tr>
+        		    <th><input type="checkbox" id="checkall"
+						onclick="SelectAll(this,'checkbox_');getIds();"></th>
+        			<th>序号</th>
+    				<th>阿里订单号</th>
+    				<th width="90px">核查时间</th>
+    				<th>应收总和</th>
+    				<th width="90px">发件日</th>
+    				<th>应付总和</th>
+    			</tr>
+    		</thead>
+    		<tbody>
+            	<?php $i=1;?>
+            	<?php foreach ($orders as $p):?>
+    		    <tr>
+    		    <td style="text-align: center"><input type="checkbox"  class="checkbox_"  value="<?php echo $p['order_id'] ?>" /></td>
+    			<td><?php echo $i++ ?></td>
+    			<td><a  target="_blank" href="<?php echo url('order/detail', array('order_id' => $p['order_id']))?>"> <?php echo $p['ali_order_no'] ?>
+            		</a>
+            	</td>
+    			<td><?php echo Helper_Util::strDate('Y-m-d', $p['warehouse_confirm_time'])?></td>
+    			<td><?php echo $p['receivable_amount']?></td>
+    			<td><?php echo Helper_Util::strDate('Y-m-d', $p['record_order_date'])?></td>
+    			<td ><?php echo $p['payment_amount']?></td>
+        		</tr>
+        	    <?php endforeach;?>
+    		</tbody>
+    	</table>
+    	<input type="hidden" id="order_ids" name="order_ids" />
+</form>
+<script type="text/javascript">
+/**
+ * 获取订单id
+ */
+function getIds(){
+	var ids = "";
+	$(".checkbox_:checked").each(function (obj){
+		ids += $(this).val() + ",";
+	});
+	ids = ids.substr(0,ids.length-1);
+	$("#order_ids").val(ids);
+}
+/**
+ * 选择数据
+ */
+$(".checkbox_").click(function(e){
+	getIds();
+	e.stopPropagation();
+});
+/**
+ * 重新计算
+ */
+function recalculation(){
+	//检查是否勾选
+	if($("#order_ids").val()){
+		$.ajax({
+			url:'<?php echo url('/newfee')?>',
+			data:{order_ids:$("#order_ids").val()},
+			type:'post',
+			success:function(data){
+				$("form").submit();
+			}
+		});
+	}else{
+		$.messager.alert('重新计算','请先勾选订单数据');
+	}
+}
+</script>
+<?PHP $this->_endblock();?>
+

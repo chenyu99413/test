@@ -1,0 +1,30 @@
+<?php
+class Controller_Customer extends Controller_Abstract{
+    /**
+     * 检索
+     */
+    function actionSearch(){
+        $this->_view['customers'] = Customer::find()->getAll();
+    }
+    /**
+     * 客户编辑
+     */
+    function actionEdit(){
+	    $customer = Customer::find('customer_id = ?',request('customer_id'))->getOne();
+	    if(request_is_post()){
+	        //判断供应商名称是否存在
+	        $customer_check=Customer::find('customer = ?',request('customer'))->getOne();
+	        if(!$customer_check->isNewRecord() && ($customer_check->customer_id!=request('customer_id'))){
+	            return $this->_redirectMessage('客户编辑失败', '客户名称已存在', url('/edit',array('customer_id'=>$customer->customer_id)),2);
+	        }else{
+	            $customer=Customer::find('customer_id = ?',request('customer_id'))->getOne();
+	            $customer->customer = request('customer');
+	            $customer->save();
+	            return $this->_redirectMessage('客户编辑', '客户编辑成功', url('/edit',array('customer_id'=>$customer->customer_id)));
+	        }
+	    }
+	    $this->_view['customer']=$customer;
+	}
+}
+
+?>

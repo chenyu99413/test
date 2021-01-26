@@ -1,0 +1,151 @@
+<?PHP $this->_extends('_layouts/modal_layout'); ?>
+<?PHP $this->_block('head');?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('container_main');?>
+<div style="width: 450px;">
+	<form style="margin-bottom: 0px;" id="edit-currency-form">
+		<span>提示：比如1USD=7.0906CNY,汇率填7.0906。</span>
+		<table class="table table-bordered table-condensed">
+			<colgroup>
+				<col style="width: 80px;">
+				<col style="width: 200px;">
+			</colgroup>
+			<tbody>
+				<tr>
+					<th class="required-title">代码</th>
+					<td>
+						<input required="required" type="text" name="code" id="code" value="<?php echo $currency->code?>"  />
+						<input type="hidden" name="currency_id"
+							value="<?php echo request('currency_id')?>" />
+					</td>
+				</tr>
+				<tr>
+					<th class="required-title">名称</th>
+					<td>
+						<input type="text" name="name" value="<?php echo $currency->name?>"
+							required="required" />
+					</td>
+				</tr>
+				<tr>
+					<th class="required-title">汇率</th>
+					<td>
+						<input required="required" type="text" name="rate" id="rate" value="<?php echo $currency->code=='CNY'?1:$currency->rate?>"  />
+					</td>
+				</tr>
+				<tr>
+					<th class="required-title">汇率时间区间</th>
+					<td>
+						<input type="text" data-options = "" class="easyui-datebox" id="s_modifyDateStart" name="start_date"
+							value="<?php echo $currency->start_date?date('Y-m-d',$currency->start_date):''?>" style="width: 120px;" >
+					到
+						<input type="text" data-options = "" class="easyui-datebox" id="s_modifyDateEnd" name="end_date"
+							value="<?php echo $currency->end_date?date('Y-m-d',$currency->end_date):''?>" style="width: 120px;" >
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<div class="form-actions">
+			<button type="button" class="btn btn-primary" onclick="checkdata()">
+				<i class="icon-save"></i>
+				保存
+			</button>
+		</div>
+		<?php if (count($logs)){?>
+		<div>
+    		<table class="table table-bordered table-condensed">
+    			<caption>操作日志</caption>
+        		<thead>
+            		<tr>
+            			<th style="width:40px">操作人</th>
+            			<th style="width:80px">时间</th>
+            			<th style="width:100px">日志</th>
+        			</tr>
+        		</thead>
+        		<tbody>
+        			<?php foreach ( $logs as $log):?>
+            		<tr>
+            			<td><?php echo $log->staff_name;?></td>
+            			<td><?php echo date('Y-m-d H:i:s',$log->create_time);?></td>
+            			<td><?php echo $log->comment;?></td>
+        			</tr>
+        			<?php endforeach;?>
+        		</tbody>
+    		</table>
+		</div>
+		<?php }?>
+	</form>
+</div>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('page_js');?>
+<script type="text/javascript">
+//检查数据
+function checkdata(){
+	result = true;
+	var code = $("#code").val();
+	var name = $("#name").val();
+	var rate = $("#rate").val();
+	var start = $("input[name='start_date']").val();
+	var end = $("input[name='end_date']").val();
+	if(code == "" || rate == "" || name == "" || start.length<1 ||end.length<1){
+	    result = false;
+	}
+	
+	if(start.length<1||end.length<1){
+		alert('请设置汇率时间区间');
+		result = false;
+	}
+	if(result){
+    	var saveload = layer.load(1);
+    	var index = parent.layer.getFrameIndex(window.name);
+    	var form_data = $('#edit-currency-form').serialize();
+    	$.ajax({
+    		url: '<?php echo url("codecurrency/editsave")?>',
+    		type: 'POST',
+    		dataType: 'json',
+    		data: form_data,
+    	})
+    	.done(function(data) {
+    		layer.close(saveload);
+    		parent.layer.msg(data.message);
+    		if (data.success) {
+    			parent.layer.close(index);
+    			parent.$('#search-currency-btn').click();
+    		}
+    	})
+    	.fail(function(data) {
+    		layer.close(saveload);
+    		parent.layer.alert('发生内部错误，暂时无法修改');
+    	});
+	}
+	return result;
+}
+$(function(){
+	var html = '<td style="width:33%"><a class="current-month">当月</a></td>';
+	$('.combo-arrow').on('click',function(){
+		if($('.datebox-button table tbody tr:eq(0)').find('td').size()<3){
+    		$('.datebox-button').find('table tbody tr td').css('width','33%');
+    		$('.datebox-button').find('table tbody tr').append(html);
+		}
+	})
+	// 给按钮添加事件
+    $(".datebox-button").on("click",".current-month",function(){
+    	$('#s_modifyDateStart').datebox('setValue',time(1));
+		$('#s_modifyDateEnd').datebox('setValue',time(0));
+		$(this).closest("div.combo-panel").panel("close");
+    });
+});
+//设月底跟月头时间
+function time(number){
+	var date=new Date();
+	var strDate=date.getFullYear()+"-";
+	if(number==0){ //0 为月底
+    	strDate+=date.getMonth()+2+"-";
+    	strDate+=number;
+	}else{
+    	strDate+=date.getMonth()+1+"-";
+    	strDate+=number;
+	}
+	return strDate;
+}
+</script>
+<?PHP $this->_endblock();?>

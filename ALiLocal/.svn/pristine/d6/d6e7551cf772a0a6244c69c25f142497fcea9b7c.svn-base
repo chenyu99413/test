@@ -1,0 +1,101 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?php $this->_block('title'); ?>
+客户编辑
+<?php $this->_endblock(); ?>
+<?PHP $this->_block('contents');?>
+<?php
+if (request('customer_id') != null) {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'客户管理' => '',
+			'客户列表' => url ( 'customer/search' ),
+			'客户编辑' => url ( 'customer/edit', array (
+				'customer_id' => $customer->customer_id 
+			) ) 
+		) 
+	) );
+} else {
+	echo Q::control ( 'path', '', array (
+		'path' => array (
+			'客户管理' => '',
+			'客户列表' => url ( 'customer/search' ),
+			'新建客户' => url ( 'customer/edit' ) 
+		) 
+	) );
+}
+?>
+<form method="post">
+	<div class="FarSearch span10" style="padding:5px;">
+	<div class="span5">
+		<table>
+			<tbody>
+				<tr>
+					<th class="required-title">客户代码</th>
+    				<td>
+    					<input name="customs_code" id="customs_code" type="text" style="width: 150px" required="required" value="<?php echo $customer->customs_code?>">
+    				</td>
+				</tr>
+				<tr>
+					<th class="required-title">客户名称</th>
+    				<td>
+    					<input name="customer" id="customer" type="text" style="width: 150px" required="required" value="<?php echo $customer->customer?>">
+    				</td>
+    				<td>
+        				<a class="btn btn-mini btn-success" href="javascript:void(0);" onclick="add(this);" style="margin-left:5px;">
+                    		<i class="icon-plus"></i>
+                    		<?php echo '添加账单抬头'?>
+                    	</a>
+                	</td>
+				</tr>
+				<?php if($title):?>
+				<?php foreach ($title as $t):?>
+				<tr>
+				    <th class="required-title">账单抬头</th>
+    				<td>
+    					<input name="title_name[]" type="text" style="width: 150px" required="required" value="<?php echo $t['name']?>">
+    				</td>
+    				<td>
+        				<a class="btn btn-mini btn-danger" href="javascript:void(0);" onclick="deleteWares(this);" style='margin-left:5px;'>
+                		  <?php echo '删除'?>
+                	    </a>
+    				</td>
+				</tr>
+				<?php endforeach;?>
+				<?php else :?>
+				<tr>
+				    <th class="required-title">账单抬头</th>
+    				<td>
+    					<input name="title_name[]" type="text" style="width: 150px" required="required" value="">
+    				</td>
+				</tr>
+				<?php endif;?>
+			</tbody>
+		</table>
+		</div>
+    	<div class="FarTool span10" style="text-align: center">
+    		<a class="btn btn-inverse" href="<?php echo url('customer/search')?>">
+    			<i class="icon-reply"></i> 返回
+    		</a>
+    		<button type="submit" class="btn btn-primary">
+    			<i class="icon-save"></i> 保存
+    		</button>
+    	</div>
+    </div>
+</form>
+<script type="text/javascript">
+    /**
+     * 添加商品页面
+     */
+	function add(obj){
+	    var tr="<tr><th class='required-title'>账单抬头</th><td><input name='title_name[]' type='text' style='width: 150px' required='required' value=''></td><td><a class='btn btn-mini btn-danger' href='javascript:void(0);' onclick='deleteWares(this);' style='margin-left:5px;'><?php echo '删除'?></a></td></tr>";
+	    $(obj).parent().parent().parent().append(tr);
+	}
+	 
+     /**
+      * 删除商品信息
+      */
+      function deleteWares(obj){
+    	  $(obj).parent().parent().remove();   
+      }
+</script>
+<?PHP $this->_endblock();?>

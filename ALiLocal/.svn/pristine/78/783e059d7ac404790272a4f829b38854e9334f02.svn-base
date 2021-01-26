@@ -1,0 +1,69 @@
+<?php
+
+class Controller_CodeCurrency extends Controller_Abstract {
+	function actionSearch() {
+	}
+	function actionList() {
+		$page = intval ( request ( 'page', 1 ) );
+		$page_size = intval ( request ( 'page_size', 30 ) );
+		$pagination = null;
+	
+		$select = CodeCurrency::find ();
+	
+		if (request ( 'code' )) {
+			$code = request ( 'code' );
+			$select->where ( 'code = ?', $code );
+		}
+		if (request ( 'name' )) {
+			$name = request ( 'name' );
+			$select->where ( 'name like ?', "%{$name}%" );
+		}
+	
+		$currencys = $select->limitPage ( $page, $page_size )
+		->fetchPagination ( $pagination )
+		->getAll ();
+	
+		$this->_view ['currencys'] = $currencys;
+		$this->_view ['pagination'] = $pagination;
+	}
+	function actionEditModal() {
+		$currency = CodeCurrency::find ( 'id = ?', request ( 'currency_id' ) )->getOne ();
+		$this->_view ['currency'] = $currency;
+	}
+	function actionEditSave() {
+		if (! request_is_ajax ()) {
+			return $this->_redirectAjax ( false );
+		}
+		// 数据重复检查
+		foreach ( array (
+			'code' => '代码',
+			'name' => '名称'
+		) as $key => $value ) {
+			if (request ( $key )) {
+				$select = CodeCurrency::find ( $key . ' = ?', request ( $key ) );
+				if (request ( 'currency_id' )) {
+					$select->where ( 'id <> ?', request ( 'currency_id' ) );
+				}
+				if (! $select->getOne ()
+					->isNewRecord ()) {
+						return $this->_redirectAjax ( false, $value . '已存在' );
+					}
+			}
+		}
+	
+		// 保存数据
+		$currency = new CodeCurrency();
+		if (request ( 'currency_id' )) {
+			$currency = CodeCurrency::find ( 'id = ?', request ( 'currency_id' ) )->getOne ();
+			if ($currency->isNewRecord ()) {
+				return $this->_redirectAjax ( false, '数据错误' );
+			}
+		}
+		$currency->code = request ( 'code' );
+		$currency->name = request ( 'name' );
+		$currency->save ();
+		return $this->_redirectAjax ( true, '保存成功' );
+	}
+}
+
+?>

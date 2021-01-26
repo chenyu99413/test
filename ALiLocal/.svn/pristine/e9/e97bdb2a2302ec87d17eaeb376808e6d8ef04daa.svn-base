@@ -1,0 +1,67 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+  代码管理
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<div class="row">
+	<div class="span2" id="code_left">
+		<ul class="nav nav-list nav-sidenav">
+			<li id="left_logistics">
+				<a href="" data-url="<?php echo url('codeLogistics/search')?>">
+					<i class="icon-chevron-right"></i>
+					国内快递
+				</a>
+			</li>
+			<li id="left_countrygroup">
+				<a href="" data-url="<?php echo url('codeCountryGroup/search')?>">
+					<i class="icon-chevron-right"></i>
+					国家组
+				</a>
+			</li>
+			<li id="left_countrygroup">
+				<a href="" data-url="<?php echo url('codeCurrency/search')?>">
+					<i class="icon-chevron-right"></i>
+					币种
+				</a>
+			</li>
+		</ul>
+	</div>
+	<div class="span10" id="code_right"></div>
+</div>
+<script type="text/javascript">
+$(function () {
+	// 点击加载
+	$('#code_left').find('a').on('click', function (e) {
+		e.preventDefault();
+		var url = $(this).data('url');
+		$('#code_left').find('li').removeClass('active');
+		$(this).closest('li').addClass('active');
+		var load_search = layer.load(1);
+		$('#code_right').load(url, function () {
+			layer.close(load_search);
+		});
+	});
+	// 加载
+	var type = '<?php echo request('type','logistics')?>';
+	$('#left_'+type).addClass('active').find('a').click();// 要在 on 绑定 click 事件后 调用
+
+	$('body').on('click', '.edit-modal', function (e) {
+		e.preventDefault();
+		var url = $(this).data('url');
+		var w = $(this).data('w');
+		var h = $(this).data('h');
+		layer.open({
+			type: 2,
+			title: '编辑',
+			maxmin: true,
+			shadeClose: true,
+			area: [w, h],
+			content: url
+		});
+	});
+});
+</script>
+<?PHP $this->_endblock();?>
+

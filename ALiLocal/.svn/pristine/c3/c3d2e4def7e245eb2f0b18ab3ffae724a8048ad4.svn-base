@@ -1,0 +1,130 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<!--By Supcan Report -->
+<Report>
+	<WorkSheet name="Sheet">
+		<Properties>
+			<BackGround bgColor="#FFFFFF"/>
+			<DefaultTD>
+				<TD fontIndex="0" textColor="#000000" transparent="true" leftBorder="0" topBorder="0" leftBorderColor="#C0C0C0" leftBorderStyle="solid" topBorderColor="#C0C0C0" topBorderStyle="solid" decimal="2" align="left" vAlign="middle" isProtected="false" isThousandSeparat="true" isRound="true" isPrint="true"/>
+			</DefaultTD>
+			<Other isShowZero="true" isRefOriPrecision="true" AutoBreakLine="2" LineDistance="0" isRowHeightAutoExtendAble="true"/>
+		</Properties>
+		<Fonts>
+			<Font faceName="Microsoft YaHei UI" charSet="134" height="-14" weight="400"/>
+			<Font faceName="Microsoft YaHei UI" charSet="134" height="-22" weight="400"/>
+		</Fonts>
+		<Table>
+			<Col width="23"/>
+			<Col width="35"/>
+			<Col width="38"/>
+			<Col width="38"/>
+			<Col width="38"/>
+			<Col width="38"/>
+			<Col width="38"/>
+			<Col width="38"/>
+			<Col width="35"/>
+			<Col width="26"/>
+			<Col width="15"/>
+			<TR height="16" sequence="0">
+			</TR>
+			<TR height="28" sequence="1">
+			</TR>
+			<TR height="29" sequence="2">
+			</TR>
+			<TR height="29" sequence="3">
+			</TR>
+			<TR height="30" sequence="4">
+				<TD col="1" fontIndex="1" align="center" datatype="1"/>
+			</TR>
+			<TR height="38" sequence="5">
+			</TR>
+			<TR height="45" sequence="6">
+				<TD col="1" fontIndex="1" align="center" datatype="1" formula="=data(&apos;ds1&apos;, 1,  &apos;parent_bag_no&apos;)">parent_bag_no*</TD>
+			</TR>
+			<TR height="38" sequence="7">
+			</TR>
+			<TR height="38" sequence="8">
+				<TD col="1" align="center" datatype="1" formula="=&apos;http://wms.checkout2cn.com/link/barcode/html/image.php?filetype=PNG&amp;dpi=90&amp;scale=1&amp;rotation=0&amp;font_family=0&amp;font_size=8&amp;thickness=50&amp;start=C&amp;code=BCGcode128&amp;text=&apos;+data(&apos;ds1&apos;, 1, &apos;parent_bag_no&apos;)" maskid="1">parent_bag_no*</TD>
+			</TR>
+			<TR height="38" sequence="9">
+				<TD col="1" align="center" datatype="1" maskid="1"/>
+				<TD col="2"/>
+				<TD col="3"/>
+				<TD col="4"/>
+				<TD col="5"/>
+				<TD col="6"/>
+				<TD col="7"/>
+				<TD col="8"/>
+				<TD col="9"/>
+			</TR>
+			<TR height="38" sequence="10">
+				<TD col="1" fontIndex="1" align="center" datatype="1"/>
+				<TD col="2"/>
+				<TD col="3"/>
+				<TD col="4"/>
+				<TD col="5"/>
+				<TD col="6"/>
+				<TD col="7"/>
+				<TD col="8"/>
+				<TD col="9"/>
+			</TR>
+			<TR height="38" sequence="11">
+				<TD col="1" fontIndex="1" align="center" datatype="1" formula="=data(&apos;ds1&apos;, 1, &apos;route&apos;)">route*</TD>
+			</TR>
+			<TR height="38" sequence="12">
+				<TD col="1" fontIndex="1" align="center" datatype="1"/>
+			</TR>
+			<TR height="15" sequence="13">
+			</TR>
+		</Table>
+		<Merges>
+			<Range row1="8" col1="1" row2="10" col2="9"/>
+			<Range row1="6" col1="1" row2="6" col2="9"/>
+			<Range row1="11" col1="1" row2="11" col2="9"/>
+		</Merges>
+		<PrintPage>
+			<Paper paperNumber="260" paperName="新卷">
+				<Margin left="1" top="1" right="1" bottom="1"/>
+			</Paper>
+			<Page isIgnoreValidBorder="false">
+				<PageCode isPrint="false"/>
+			</Page>
+		</PrintPage>
+	</WorkSheet>
+	<DataSources Version="255" isAutoCalculateWhenOpen="false" isSaveCalculateResult="false">
+		<DataSource type="4"><!-- Desc: Supcan Report Component DataSource Specification -->
+<Data>
+	<ID>ds1</ID>
+	<Version>2</Version>
+	<Type>4</Type>
+	<TypeMeaning>JSON</TypeMeaning>
+	<Source>index.php?controller=chinamerica&amp;action=printparentbagno&amp;parent_bag_no=F20170629020&amp;route=AAA</Source>
+	<XML_RecordAble_Nodes>
+		<Node>
+			<name/>
+		</Node>
+	</XML_RecordAble_Nodes>
+	<Columns>
+		<Column>
+			<name>parent_bag_no</name>
+			<text>parent_bag_no</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>2</sequence>
+		</Column>
+		<Column>
+			<name>route</name>
+			<text>route</text>
+			<type>string</type>
+			<visible>true</visible>
+			<sequence>1</sequence>
+		</Column>
+	</Columns>
+</Data>
+
+		</DataSource>
+	</DataSources>
+	<Masks>
+		<mask id="1" datatype="1">picture()</mask>
+	</Masks>
+</Report>

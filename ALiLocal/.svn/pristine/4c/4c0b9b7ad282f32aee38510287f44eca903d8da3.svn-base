@@ -1,0 +1,208 @@
+<?php
+class Helper_Label_Runfeng{
+	/**
+	 * @todo   润峯账号渠道
+	 * @author stt
+	 * @since  2020-09-09
+	 * @link   #82496
+	 */
+	static function runfeng($order){
+		//登录润峯API
+		$account='18962528018@159.com';//登录名
+		$pwd='123456';//登录密码
+		$api_url='www.runforint.com:8000';//api url地址
+		$login_resquest=array(
+			'Name'=>$account,
+			'Pwd'=>md5($pwd)
+		);
+		$tks=array();
+		$login_response=Helper_Curl::post($api_url.'/api/Login', json_encode($login_resquest),array(
+			'Content-Type: application/json'
+		));
+		$login_response=json_decode($login_response,true);
+		if(!isset($login_response['Token'])){
+			$view['errormessage']='API认证失败！请联系管理员！';
+		}else{
+			$token=$login_response['Token'];
+			//润峯WayBillUnite API
+			$items=array();
+			$invoice=array('items'=>array(),'total'=>'');
+			//获取总重量
+			$total_weight=$order->weight_actual_out;
+			$quantity=0;
+			foreach ($order->product as $value){
+				$quantity+=$value->product_quantity;
+			}
+			foreach ($order->product as $v){
+				//传给润峯的商品信息
+				$items[]=array(
+					'Goods'=>$v->product_name_en_far,
+					'GoodsCn'=>$v->product_name_far,
+					'Currency'=>$order->currency_code,
+					'Count'=>$v->product_quantity,
+					'UnitPrice'=>$v->declaration_price,
+					'SubWeight'=>$quantity>0?(floor($total_weight/$quantity*10000))/10000*$v->product_quantity:"0.1",
+					'HsCode'=>$v->hs_code_far,
+					'Label'=>'',
+					'Sku'=>'',
+				);
+				//FAR做Invoice
+				$name = $v->product_name_en_far;
+				$material = $v->material_use;
+				if(strpos(strtolower($v->product_name_en_far), 'mask') !== false){
+					$brand = chr(rand(97,122)).chr(rand(97,122)).chr(rand(97,122)).chr(rand(97,122)).chr(rand(97,122));
+					$name .= ' // brand:'.$brand.' // type no:'.rand(10, 100);
+					$material .= ' Civil';
+				}
+				$invoice['items'][]=array(
+					'quantity'=>$v->product_quantity,
+					'unit'=>$v->product_unit,
+					'name'=>$name,
+					'hscode'=>$v->hs_code_far,
+					'country'=>'CN',
+					'price'=>$v->declaration_price,
+					'itotal'=>round($v->product_quantity*$v->declaration_price,2).' '.$order->currency_code,
+					'material'=>$material,
+				);
+				$invoice['total']+=round($v->product_quantity*$v->declaration_price,2);
+			}
+			//获取包裹类型
+			$package_type=$order->packing_type;
+			$state='';
+			//判断收件国家是否是US和CA
+			if($order->consignee_country_code=='US' || $order->consignee_country_code=='CA'){
+				//将收件人州转为二字码
+				$states=Uscaprovince::find('province_name=? or province_code_two=?',strtolower(str_replace(' ','',$order->consignee_state_region_code)),strtoupper(str_replace(' ','',$order->consignee_state_region_code)))->getOne();
+				if($states->isNewRecord()){
+					$view['errormessage']=$order->consignee_country_code.'中不存在'.$order->consignee_state_region_code.'州/省';
+					return $view;
+				}else{
+					$state=$states->province_code_two;
+				}
+			}else{
+				$state=$order->consignee_country_code;
+			}
+			//判断收件人税号是否存在
+			$vat='';
+			if($order->tax_payer_id){
+				$vat=' VAT:'.$order->tax_payer_id;
+			}
+			$far_package_count=Faroutpackage::find('order_id=?',$order->order_id)->sum('quantity_out','sum_quantity')->getAll();
+			$waybill_request=array(
+				"Token"=>$token,
+				"WayBillUniteRequestData"=>array(
+					'LogisticalName'=>$package_type=='DOC'?'UPS文件':'UPS红单01',
+					'IsPackage'=>$package_type=='DOC'?'0':'1',
+					'Country'=>$order->consignee_country_code,
+					'RepertoryName'=>'义乌仓',
+					'ReferNum'=>'',
+					'Email'=>$order->consignee_email,
+					'Province'=>$state,
+					'City'=>$order->consignee_city,
+					'ContactName'=>trim($order->consignee_name1),
+					'PostCode'=>$order->consignee_postal_code,
+					'ContactAddress'=>trim($order->consignee_street1.' '.$order->consignee_street2.$vat),
+					'ContactTel'=>$order->consignee_mobile,
+					'ContactCompany'=>trim($order->consignee_name2)?trim($order->consignee_name2):trim($order->consignee_name1),
+					'PackageCount'=>$far_package_count['sum_quantity'],
+					'IsDeclare'=>'0',
+					'WayBillUniteRequestInfoDatas'=>$items,
+				),
+			);
+		}
+		QLog::log($order->ali_order_no.json_encode($waybill_request));
+		$waybill_response=Helper_Curl::post($api_url.'/api/WayBillUnite', json_encode($waybill_request),array(
+			'Content-Type: application/json'
+		));
+		$waybill_response=json_decode($waybill_response,true);
+		if($waybill_response['Code']=='1'){
+			$tks[]=$waybill_response['WayBillUniteResponseData']['LogisticalNum'];
+			$dir=Q::ini('upload_tmp_dir');
+			@Helper_Filesys::mkdirs($dir);
+			$target=$dir.DS.$waybill_response['WayBillUniteResponseData']['LogisticalNum'].'.pdf';
+			//将面单存储到本地
+			$source=trim(file_get_contents('http://www.runforint.com:8000/api/PrintFile?fileurl='.$waybill_response['WayBillUniteResponseData']['LogisticalNumUrl'].'&token='.$token.'&size=0'));
+			file_put_contents($target,$source);
+			$png_target=$dir.DS.$tks[0].'.png';
+			$source=trim(file_get_contents('http://kuaijian.far800.com/public/barcode/html/image.php?filetype=PNG&dpi=90&scale=20&rotation=0&font_family=0&font_size=0&thickness=70&start=C&code=BCGcode128&text='.$tks[0]));
+			file_put_contents($png_target,$source);
+			Helper_PDF::split($target,$target.'.pdf','F','O',array('chapter3'=>$png_target));
+			exec("/usr/bin/convert -density 300 -depth 8 -quality 85 {$target}.pdf -append {$target}.pdf.jpg");
+			$watermarkpath=array('chapter1'=>_INDEX_DIR_.'/public/img/chapter1.gif','chapter2'=>_INDEX_DIR_.'/public/img/chapter2.gif');
+			Helper_PDF::split($target,$target,'F','H',$watermarkpath);//保留一半的面单
+			//将pdf转为jpg格式
+			exec("/usr/bin/convert -density 300 -depth 8 -quality 85 {$target} -append {$target}.jpg");
+			//扫描图片中条形码获取物流单号
+			$image = new ZBarCodeImage($target.'.jpg');
+			$scanner = new ZBarCodeScanner();
+			$barcode = $scanner->scan($image);
+			$barcode=Helper_Array::getCols($barcode, 'data');
+			$barcode=array_unique(array_reverse($barcode));
+			//存入sub_code表中
+			//删除原有的子单
+			Subcode::find('order_id=?',$order->order_id)->getAll()->destroy();
+			foreach ($barcode as $temp){
+				if(strlen($temp)=='18'){
+					$order_subcode=new Subcode();
+					$order_subcode->changeProps(array(
+						'order_id'=>$order->order_id,
+						'sub_code'=>$temp
+					));
+					$order_subcode->save();
+				}
+			}
+			//将tracking_number存入order中
+			$order->tracking_no=$tks[0];
+			$order->save();
+			//将invoice存储到本地
+			$jsonFile=$dir.DS.$waybill_response['WayBillUniteResponseData']['LogisticalNum'].'.json';
+			$shipper=array(
+				'account'=>'4F1R24',
+				'aname'=>'RunFeng Network Technology Co.',
+				'name'=>'SuZhou RunFeng Network Technology Co., Ltd.（YiWu branch）',
+				'address'=>'No. 41 HanChun Two area BeiYuan Street Yiwu',
+				'city'=>'YIWU',
+				'postcode'=>'322000',
+				'phone'=>'17802119771'
+			);
+			$chapter1='http://'.$_SERVER["HTTP_HOST"].'/public/img/chapter1.gif';
+			$chapter2='http://'.$_SERVER["HTTP_HOST"].'/public/img/chapter2.gif';
+			$copy_label='http://'.$_SERVER["HTTP_HOST"].'/_tmp/upload/'.$tks[0].'.pdf.pdf.jpg';
+			file_put_contents($jsonFile, json_encode(array(
+				'invoice'=>$invoice,
+				'shipmentid'=>Helper_Common::creatShipid($tks[0]),
+				'shipper'=>$shipper,
+				'itemcount'=>$far_package_count['sum_quantity'],
+				'br_account'=>'',
+				'weight'=>$total_weight,
+				'total_weight'=>$total_weight,
+				'aname'=>trim($order->consignee_name1),
+				'name'=>trim($order->consignee_name2)?trim($order->consignee_name2):trim($order->consignee_name1),
+				'email'=>$order->consignee_email,
+				'phone'=>$order->consignee_mobile,
+				'countrycode'=>$order->consignee_country_code,
+				'countryname'=>Country::find('code_word_two=?',$order->consignee_country_code)->getOne()->english_name,
+				'state'=>$state,
+				'city'=>$order->consignee_city,
+				'postcode'=>$order->consignee_postal_code,
+				'address'=>$order->consignee_street1.' '.$order->consignee_street2.$vat,
+				'chapter1'=>$chapter1,
+				'chapter2'=>$chapter2,
+				'copy_label'=>$copy_label,
+				'freight'=>'0',
+				'ref1'=>'',
+				'ref2'=>'',
+				'poc_line1'=>'',
+				'poc_line2'=>'',
+				'poc_line3'=>'',
+				'tks'=>$tks[0],
+				'ali_order_no'=>$order->ali_order_no
+			)));
+			$view['errormessage']='';
+			$view['account']='RF';
+		}else{
+			$view['errormessage']=$waybill_response['WayBillUniteResponseError']['Info'];
+		}
+		return $view;
+	}
+}

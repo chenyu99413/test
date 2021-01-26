@@ -1,0 +1,215 @@
+<?php
+class Controller_Api extends Controller_Abstract{
+    /**
+     * Order Booking
+     */
+    function actionOrderbooking(){
+        QLog::log('API1'.file_get_contents ( "php://input" ));
+        $info=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('API1.1'.$info['bookingOrderDTO']);
+        $data=json_decode($info['bookingOrderDTO'],true);
+        //判断ali订单号是否已存在
+        $order=Order::find('ali_order_no=?',$data['aliOrderNo'])->getOne();
+        if(!$order->isNewRecord()){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '订单已存在'
+            ));
+        }
+        $conn = QDB::getConn ();
+        $conn->startTrans ();
+        $now='FAREX'.date('Ym');
+        $seq = Helper_Seq::nextVal ( $now );
+        if ($seq < 1) {
+            Helper_Seq::addSeq ( $now );
+            $seq = 1;
+        }
+        $seq=str_pad($seq,6,"0",STR_PAD_LEFT);
+        $far_no=$now.$seq.'YQ';
+        //将数据存入数据库
+        $order->ali_order_no=$data['aliOrderNo'];
+        $order->reference_no=$data['referenceNo'];
+        $order->far_no=$far_no;
+        $order->service_code=$data['serviceCode'];
+        $order->sender_mobile=$data['consignor']['mobile'];
+        $order->sender_telephone=$data['consignor']['telephone'];
+        $order->sender_email=$data['consignor']['email'];
+        $order->sender_name1=$data['consignor']['name1'];
+        $order->sender_name2=$data['consignor']['name2'];
+        $order->sender_street1=$data['consignor']['street1'];
+        $order->sender_street2=$data['consignor']['street2'];
+        $order->sender_country_code=$data['consignor']['countryCode'];
+        $order->sender_city=$data['consignor']['city'];
+        $order->sender_postal_code=$data['consignor']['postalCode'];
+        $order->sender_state_region_code=$data['consignor']['stateRegionCode'];
+        $order->consignee_mobile=$data['consignee']['mobile'];
+        $order->consignee_telephone=$data['consignee']['telephone'];
+        $order->consignee_email=$data['consignee']['email'];
+        $order->consignee_name1=$data['consignee']['name1'];
+        $order->consignee_name2=$data['consignee']['name2'];
+        $order->consignee_street1=$data['consignee']['street1'];
+        $order->consignee_street2=$data['consignee']['street2'];
+        $order->consignee_country_code=$data['consignee']['countryCode'];
+        $order->consignee_city=$data['consignee']['city'];
+        $order->consignee_postal_code=$data['consignee']['postalCode'];
+        $order->cosignee_state_region_code=$data['consignee']['stateRegionCode'];
+        $order->declaration_type=$data['customsDeclaration']['declarationType'];
+        $order->total_amount=$data['customsDeclaration']['totalAmount'];
+        $order->currency_code=$data['customsDeclaration']['currencyCode'];
+        $order->need_insurance=$data['needInsurance'];
+        $order->tax_payer_id=$data['taxpayerId'];
+        $order->remarks=$data['remarks'];
+        $order->order_status='1';
+        $order->need_pick_up=$data['needPickUp'];
+        $order->warehouse_code=$data['warehouse']['code'];
+        $order->warehouse_name=$data['warehouse']['name'];
+        $order->save();
+        //存入product信息
+        foreach ($data['products'] as $order_product){
+            $product=new Orderproduct();
+            $product->changeProps(array(
+                'order_id'=>$order->id(),
+                'product_name'=>$order_product['productName'],
+                'product_name_en'=>$order_product['productNameEn'],
+                'product_quantity'=>$order_product['productQuantity'],
+                'product_unit'=>$order_product['productUnit'],
+                'hs_code'=>$order_product['hsCode'],
+                'declaration_price'=>$order_product['declarationPrice'],
+                'has_battery'=>$order_product['hasBattery'],
+            ));
+            $product->save();
+        }
+        //存入package信息
+        foreach ($data['packages'] as $order_package){
+            $package=new Orderpackage();
+            $package->changeProps(array(
+                'order_id'=>$order->id(),
+                'package_type'=>$order_package['packageType'],
+                'quantity'=>$order_package['quantity'],
+                'unit'=>$order_package['unit'],
+                'length'=>$order_package['length'],
+                'width'=>$order_package['width'],
+                'height'=>$order_package['height'],
+                'weight'=>$order_package['weight'],
+                'weight_unit'=>$order_package['weightUnit'],
+            ));
+            $package->save();
+        }
+        $conn->completeTrans ();
+        //返回泛远单号
+        return json_encode(array (
+            'isSuccess' => true,'message' => '' ,'result'=>array('aspOrderNo'=>$far_no)
+        ));
+    }
+    /**
+     * Order Cancel
+     */
+    function actionOrdercancel(){
+        QLog::log('API2'.file_get_contents ( "php://input" ));
+        $info=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('API2.1'.$info['cancelOrderDTO']);
+        $data=json_decode($info['cancelOrderDTO'],true);
+        $order=Order::find('ali_order_no=?',$data['aliOrderNo'])->getOne();
+        if($order->isNewRecord()){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '订单不存在'
+            ));
+        }
+        $order->reason_code=$data['reasonCode'];
+        $order->reason_name=$data['reasonName'];
+        $order->reason_remark=$data['remark'];
+        $order->order_status="2";
+        $order->save();
+        //返回结果
+        return json_encode(array (
+            'isSuccess' => true,'message' => ''
+        ));
+    }
+    /**
+     * Order Return
+     */
+    function actionOrderreturn(){
+        QLog::log('API3'.file_get_contents ( "php://input" ));
+        $info=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('API3.1'.$info['returnDTO']);
+        $data=json_decode($info['returnDTO'],true);
+        $order=Order::find('ali_order_no=?',$data['aliOrderNo'])->getOne();
+        if($order->isNewRecord()){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '订单不存在'
+            ));
+        }
+        $order->reason_code=$data['reasonCode'];
+        $order->reason_name=$data['reasonName'];
+        $order->reason_remark=$data['remark'];
+        $order->return_type=$data['returnType'];
+        $order->order_status='3';
+        //判断returnType
+        if($data['returnType']=='WAREHOUSE_RETURN'){
+            $order->return_mobile=$data['contact']['mobile'];
+            $order->return_telephone=$data['contact']['telephone'];
+            $order->return_email=$data['contact']['email'];
+            $order->return_name1=$data['contact']['name1'];
+            $order->return_name2=$data['contact']['name2'];
+            $order->return_street1=$data['contact']['street1'];
+            $order->return_street2=$data['contact']['street2'];
+            $order->return_country_code=$data['contact']['countryCode'];
+            $order->return_city=$data['contact']['city'];
+            $order->return_postal_code=$data['contact']['postalCode'];
+            $order->return_state_region_code=$data['contact']['stateRegionCode'];
+    
+        }
+        $order->save();
+        //返回结果
+        return json_encode(array (
+            'isSuccess' => true,'message' => ''
+        ));
+    }
+    /**
+     * Order notifyPaid
+     */
+    function actionOrdernotifyPaid(){
+        QLog::log('API4'.file_get_contents ( "php://input" ));
+        $info=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('API4.1'.$info['notifyPaidDTO']);
+        $data=json_decode($info['notifyPaidDTO'],true);
+        $order=Order::find('ali_order_no=?',$data['aliOrderNo'])->getOne();
+        if($order->isNewRecord()){
+            return json_encode(array (
+                'isSuccess' => false,'message' => '订单不存在'
+            ));
+        }
+        $order->order_status='4';
+        $order->save();
+        //返回结果
+        return json_encode(array (
+            'isSuccess' => true,'message' => ''
+        ));
+    }
+    /**
+     * Order verifyPickupAddress
+     */
+    function actionOrderverifyPickupAddress(){
+        QLog::log('API5'.file_get_contents ( "php://input" ));
+        $info=json_decode(file_get_contents ( "php://input" ),true);
+        QLog::log('API5.1'.$info['pickupAddressDTO']);
+        $data=json_decode($info['pickupAddressDTO'],true);
+        //判断zip_code位数是否为6位
+        if(strlen($data['zip'])!='6'){
+            return json_encode(array (
+                'isSuccess' => true,'message' => '邮编不在取件范围内','result'=>array('canPickUp'=>false)
+            ));
+        }
+        //查询数据中邮编是否在数据库区间
+        $zip_code=Zipcode::find('zip_code_low<=? and zip_code_high>=?',$data['zip'],$data['zip'])->getOne();
+        if($zip_code->isNewRecord()){//不可揽收
+            return json_encode(array (
+                'isSuccess' => true,'message' => '邮编不在取件范围内','result'=>array('canPickUp'=>false)
+            ));
+        }else{//可揽收
+            //返回结果
+            return json_encode(array (
+                'isSuccess' => true,'message' => '','result'=>array('canPickUp'=>true)
+            ));
+        }
+    }
+}

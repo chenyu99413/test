@@ -1,0 +1,2909 @@
+<?php
+class Controller_Balance extends Controller_Abstract {
+	
+	/**
+	 */
+	function actionIndex() {
+	}
+	/**
+	 * 业务同步，仅用于 A000123帐号
+	 */
+	function actionSync(){
+		session_write_close();
+		set_time_limit(0);
+		ini_set("memory_limit", "3072M");
+		if (!MyApp::isShadow()){
+			exit('无权限操作');
+		}
+		if (request_is_post()){
+			$wbs=Waybill::find('record_order_date >=? and record_order_date <=?',request('start_date'),request('end_date',date('Y-m-d')).' 23:59:59')
+			->getAll();
+			foreach ($wbs as $wb){
+				$bbs=Waybillbalance::meta()->destroyWhere('waybill_id=?',$wb->waybill_id);
+			}
+			foreach ($wbs as $wb){
+				$wb->destroy();
+			}
+			//同步数据
+			$select3=ShadowWB::find('record_order_date>=? and record_order_date <=?',request('start_date'),request('end_date',date('Y-m-d')).' 23:59:59')
+				->asArray()
+				->getAll();
+			$fee_count=0;
+			foreach ($select3 as $row){
+				Helper_Array::removeEmpty($row);
+				try {
+					Waybill::meta()->table->insert($row);
+					//仅同步业务数据，不同步费用记录
+					if (!request('justDelete',0)){
+						$wbbs=ShadowB::find('waybill_id=?',$row['waybill_id'])->asArray()->getAll();
+						foreach ($wbbs as $b){
+							unset($b['waybill_balance_id']);
+							Waybillbalance::meta()->table->insert($b);
+						}
+					}
+					$fee_count+=count($wbbs);
+				}catch (QDB_Exception $ex){
+					QLog::log('fail');
+					QLog::log(var_export($row,true));
+				}
+			}
+			$this->_view['waybill_count']=count($select3);
+			$this->_view['balance_count']=$fee_count;
+		}
+		
+	}
+	/**
+	 * 导入费用,仅用于 A000123帐号
+	 */
+	function actionImportFee(){
+		session_write_close();
+		set_time_limit(0);
+		
+		if (!MyApp::isShadow()){
+			exit('无权限操作');
+		}
+		if(request_is_post()){
+			ini_set("memory_limit", "3072M");
+			$uploader = new Helper_Uploader ();
+			if (! $uploader->existsFile ( 'file' )) {
+				exit ( '请上传表格' );
+			}
+			$file = $uploader->file ( 'file' );
+			$des_dir = Q::ini ( 'upload_tmp_dir' );
+			$filename = $des_dir . DS . date ( 'YmdHis' ) . 'Importfee.' . $file->extname ();
+			$file->move ( $filename );
+			$xls = Helper_Excel::readFile ( $filename );
+			$sheet = Helper_Array::groupBy($xls->toHeaderMap (),"运单号");
+			$balance_type=request("balance_type");
+			//无效的单号
+			$arr_way=array();
+			//无效的费用
+			$arr_bal=array();
+			foreach ($sheet as $key=>$value){
+				if (strlen($key)){
+					$w=Waybill::find("waybill_code=? ",(string)$key)->getOne();
+					if($w->isNewRecord()){
+						//如果有原始单号，自动复制
+						$org=ShadowWB::find('waybill_code=?',(string)$key)->asArray()->getOne();
+						if (!empty($org['waybill_id'])){
+							try {
+								Waybill::meta()->table->insert($org);
+							}catch (QDB_Exception $ex){
+								Waybill::meta()->deleteWhere('waybill_id =?',$org['waybill_id']);
+								Waybill::meta()->table->insert($org);
+							}
+							$w=Waybill::find("waybill_code=? ",(string)$key)->getOne();
+						}
+					}
+					if($w->isNewRecord()){
+						array_push($arr_way, $key);
+						continue;
+					}else{
+						if (request('act') !=2){
+							Waybillbalance::meta()->destroyWhere("waybill_id=? and balance_type=? ",$w->waybill_id,$balance_type);
+						}
+						foreach ($value as $v){
+							$customs_id=0;
+							$customs_abbreviation='';
+							$channel_id=0;
+							$channel_name='';
+							$customs=Customs::find("customs_abbreviation=?",$v["客户"])->getOne();
+							if($customs->isNewRecord()){
+								$channel=Channel::find("channel_name=?",$v["客户"])->getOne();
+								if($channel->isNewRecord()){
+									array_push($arr_bal, $v);
+									continue;
+								}else{
+									$channel_id=$channel->channel_id;
+									$channel_name=$v["客户"];
+								}
+							}else{
+								$customs_id=$customs->customs_id;
+								$customs_abbreviation=$customs->customs_abbreviation;
+								if($balance_type =="I" && $w->customs_abbreviation !=$v["客户"]){
+								    $w->customs_id=$customs_id;
+								    $w->customs_abbreviation=$v["客户"];
+								    $w->save();
+								}
+							}
+							$waybill_balance= new Waybillbalance();
+							$waybill_balance->changeProps(array(
+								"waybill_id"=> $w->waybill_id,
+								"channel_id"=>$channel_id,
+								"channel_name"=>$channel_name,
+								"customs_id"=>$customs_id,
+								"customs_abbreviation"=>$customs_abbreviation,
+								"fee_category"=>"快件费",
+								"balance_type"=>$balance_type,
+								"should_balance"=>$v["金额"],
+								"rating_date"=>date("Y-m-d",strtotime($v["登帐日"])),
+								"invoice_code"=>$v["发票号"],
+								"invoice_date"=>strlen($v["开票日期"])?date("Y-m-d",strtotime($v["开票日期"])):null,
+								"voucher_code"=>$v["凭证号"],
+								"offs_date"=>strlen($v["销账日期"])?date("Y-m-d",strtotime($v["销账日期"])):null,
+								"waybill_title"=>$v["账单抬头"],
+								"create_date"=>date('Y-m-d H:i:s',strtotime($v["创建日期"]))
+							));
+							if ($w->sign_date){
+								if (strtotime($w->sign_date)> strtotime($v['登帐日'])){
+									$waybill_balance->sign_date =$w->sign_date;
+								}else {
+									$waybill_balance->sign_date =$waybill_balance->rating_date;
+								}
+							}
+							$waybill_balance->save();
+							//保存历史记录
+							if(Helper_Shadow::getEndfix() !=''){
+								$type=$balance_type=='I'?'应收':'应付';
+								$waybill_record = new Waybillrecord ();
+								$waybill_record->waybill_id = $w->waybill_id;
+								$waybill_record->waybill_status=$waybill_balance->waybill_balance_id;
+								$waybill_record->modifier = $v["创建人"];
+								$waybill_record->modifier_content = '新建'.$type.' 「」->「快件费」  '.$v["金额"];
+								$waybill_record->record_date = date('Y-m-d H:i:s',strtotime($v["创建日期"]));
+								$waybill_record->save ();
+							}
+						}
+					}
+				}else{
+					foreach ($value as $v){
+						$department=Department::find("abbreviation=? ",$v["部门"])->getOne();
+						if($department->isNewRecord() || ($v["付款方式"]!='杂收' && $v["付款方式"]!='杂支') ){
+							array_push($arr_bal, $v);
+							continue;
+						}else{
+							$mis=new MiscellaneousBalance();
+							$mis->changeProps(array(
+								"department_id"=>$department->department_id,
+								"balance_unit"=>$v["客户"],
+								"balance_type"=>$balance_type,
+								"amount"=>$v["金额"],
+								"balance_date"=>date("Y-m-d",strtotime($v["登帐日"])),
+								"invoice_code"=>$v["发票号"],
+								"invoice_date"=>strlen($v["开票日期"])?date("Y-m-d",strtotime($v["开票日期"])):null,
+								"voucher_code"=>$v["凭证号"],
+								"offs_date"=>strlen($v["销账日期"])?date("Y-m-d",strtotime($v["销账日期"])):null,
+								"waybill_title"=>$v["账单抬头"],
+								'recorder'=>$v['创建人']
+							));
+							$mis->save();
+						}
+					}
+				}
+			}
+			$this->_view['OK']='OK';
+			$this->_view["arr_way"]=$arr_way;
+			$this->_view["arr_bal"]=$arr_bal;
+		}
+	}
+	/**
+	 * 调账记录
+	 */
+	function actionRecord() {
+		$users=User::find('department_id =?',MyApp::currentUser('department_id'))
+			->setColumns('user_name')
+			->asArray()
+			->getAll();
+		$logs=WaybillRecord::find('[waybill.department_id] =?',MyApp::currentUser('department_id'))
+			->where('modifier not in (?)',Helper_Array::getCols($users, 'user_name'))
+			->where('modifier_content like ? or modifier_content like ? or modifier_content like ?','%应收%','%应付%','%退佣%')
+			->limitPage(request('page',1))
+			->order('create_date desc ,waybill_id ' )
+			->fetchPagination($this->_view['pagination'])
+			->getAll();
+		$this->_view['logs']=$logs;
+	}
+	/**
+	 * 收款页面
+	 */
+	function actionReceivable() {
+		$select = $this->createWaybillbalanceSQL ( "I" );
+		if (request ( "department_ids" )) {
+			$select->where ( "[waybill.department_id] IN (?)", Q::normalize ( request ( "department_ids" ) ) );
+		}
+		//开票确认,但是没有发票号
+		if(request("confirm_billing_flag")){
+			$select->where(Waybillbalance::meta()->table->name.".confirm_billing_flag='1' AND (invoice_code is null or invoice_code ='')");	
+		}
+		
+		//来源
+		if(request("source")){
+			$select->where ( "[waybill.source] =?", request("source") );
+		}
+		$select->where ( Waybillbalance::meta()->table->name.".channel_id = 0 OR ".Waybillbalance::meta()->table->name.".channel_id IS NULL" );
+		$select->setColumns ( Waybillbalance::meta()->table->name.".customs_id AS id,".Waybillbalance::meta()->table->name.".customs_abbreviation AS text" );
+		$sql = " SELECT temp_waybill_balance.id";
+		$sql .= "      ,temp_waybill_balance.text";
+		$sql .= "  FROM (" . $select . ") AS temp_waybill_balance";
+		$sql .= " GROUP BY temp_waybill_balance.id";
+		$sql .= " ORDER BY CONVERT(temp_waybill_balance.text USING gbk) ASC";
+		$this->_view ["customs"] = QDB::getConn ()->execute ( $sql )
+			->fetchAll ();
+		
+		$select = $this->createWaybillbalanceSQL ( "I" );
+		if (request ( "department_ids" )) {
+			$select->where ( "[waybill.department_id] IN (?)", Q::normalize ( request ( "department_ids" ) ) );
+		}
+		//开票确认，但是没有发票号
+		if(request("confirm_billing_flag")){
+			$select->where(Waybillbalance::meta()->table->name.".confirm_billing_flag='1' AND (invoice_code is null or invoice_code ='')");
+		}
+		
+		//来源
+		if(request("source")){
+			$select->where ( "[waybill.source] =?", request("source") );
+		}
+		
+		$select->where ( Waybillbalance::meta()->table->name.".customs_id = 0 OR ".Waybillbalance::meta()->table->name.".customs_id IS NULL" );
+		$select->setColumns ( Waybillbalance::meta()->table->name.".channel_id AS id,".Waybillbalance::meta()->table->name.".channel_name AS text" );
+		$sql = " SELECT temp_waybill_balance.id";
+		$sql .= "      ,temp_waybill_balance.text";
+		$sql .= "  FROM (" . $select . ") AS temp_waybill_balance";
+		$sql .= " GROUP BY temp_waybill_balance.id";
+		$sql .= " ORDER BY CONVERT(temp_waybill_balance.text USING gbk) ASC";
+		$this->_view ["channel"] = QDB::getConn ()->execute ( $sql )
+			->fetchAll ();
+	}
+	
+	/**
+	 * 收款表格页面
+	 */
+	function actionReceivabletable() {
+		$total = array (
+			"sum_should_balance" => "0" 
+		);
+		$waybillBalances = array ();
+		$pagination = null;
+		$waybilltitle = array ();
+		$item = request ( "item" );
+		
+		$select = $this->createWaybillbalanceSQL ( "I" );
+		if (request ( "department_ids_" )) {
+			$select->where ( "[waybill.department_id] IN (?)", Q::normalize ( request ( "department_ids_" ) ) );
+		}
+		//开票确认,但是没有发票号
+		if(request("confirm_billing_flag_")){
+			$select->where(Waybillbalance::meta()->table->name.".confirm_billing_flag='1' AND (invoice_code is null or invoice_code ='')");
+		}
+		
+		//来源
+		if(request("source")){
+			$select->where ( "[waybill.source] =?", request("source") );
+		}
+		if ($item) {
+			$id = substr ( $item, 3 );
+			if (strstr ( $item, "CU_" )) {
+				if($id=="all"){
+					$select->where ( Waybillbalance::meta()->table->name.".channel_id = 0 OR ".Waybillbalance::meta()->table->name.".channel_id IS NULL" );
+				}else{
+					$select->where ( Waybillbalance::meta()->table->name.".customs_id = ? AND (".Waybillbalance::meta()->table->name.".channel_id = 0 OR ".Waybillbalance::meta()->table->name.".channel_id IS NULL)", $id );
+					$waybilltitle = WayBillTitle::find ( "customs_id = ?", $id );
+				}
+			} else {
+				if($id=="all"){
+					$select->where ( Waybillbalance::meta()->table->name.".customs_id = 0 OR ".Waybillbalance::meta()->table->name.".customs_id IS NULL" );
+				}else{
+					$select->where ( Waybillbalance::meta()->table->name.".channel_id = ? AND (".Waybillbalance::meta()->table->name.".customs_id = 0 OR ".Waybillbalance::meta()->table->name.".customs_id IS NULL)", $id );
+					$waybilltitle = WayBillTitle::find ( "channel_id = ?", $id );
+				}
+			}
+			if($id!="all"){
+				$waybilltitle = $waybilltitle->getAll ();
+			}
+			
+			//汇总
+			$temp_select = clone $select;
+			$match_select = clone $select;
+			$total = $temp_select->sum ( "should_balance", "sum_should_balance" )
+				->getAll ();
+			
+			// 分页
+			$select->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), 100 );
+			$select->fetchPagination ( $pagination );
+			$waybillBalances = $select->getAll ();
+			//如果搜索了运单号，提示匹配度。有效运单号多少个，匹配多少个，匹配失败是哪些跟踪号
+			if (count ( MyApp::$static_message ) && request("save_flag")=="") {
+				$r = MyApp::$static_message;
+				$wbids = array ();
+				foreach ( $r as $row ) {
+					//去掉金额
+					$row = explode ( "\t", $row );
+					$row = reset ( $row );
+					$wbids [] = $row;
+				}
+				//判断有效跟踪号的个数
+				$validNum = Waybill::find ( 'waybill_code in(?)', $wbids )->getCount ();
+				//判断匹配个数
+				$matchIds = $match_select->getAll ();
+				$matchIds = Helper_Array::getCols ( $matchIds, 'waybill_id' );
+				$matchIds = Waybill::find ( 'waybill_id in(?)', $matchIds )->asArray ()
+					->setColumns ( 'waybill_code' )
+					->getAll ();
+				$matchIds = Helper_Array::getCols ( $matchIds, 'waybill_code' );
+				$unMatchs = array_diff ( $wbids, $matchIds );
+				$this->_view ['validNum'] = $validNum;
+				$this->_view ['unMatchs'] = $unMatchs;
+			}
+		}
+		
+		$this->_view ["waybillTitles"] = $waybilltitle;
+		$this->_view ["total"] = $total;
+		$this->_view ["waybillBalances"] = $waybillBalances;
+		$this->_view ["pagination"] = $pagination;
+	}
+	
+	/**
+	 * 应收销账页面保存按钮操作
+	 *
+	 * @return QView_Redirect
+	 */
+	function actionEdit() {
+		if (request_is_post ()) {
+			// 开始事务
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			$waybill_balance_id = post ( 'waybill_balance_id' );
+			// 单选时 发票号 发票日期 开票日期都可以改
+			// 多选时 发票号为空时 不修改发票号跟发票日期
+			$waybillbalances = Waybillbalance::find ( 'waybill_balance_id in (?)', $waybill_balance_id )->getAll ();
+			// 判断有几条数据
+			if (count ( $waybillbalances ) > 0) {
+			    if(MyApp::checkVisible ( "unlock-fee" )){
+			        // 一条
+			        if (count ( $waybillbalances ) == 1) {
+			            foreach ( $waybillbalances as $waybillbalance ) {
+			                if (post ( 'invoice_code' ) != null) {
+			                    if (post ( 'invoice_code' ) != $waybillbalance->invoice_code) {
+			                        $waybillbalance->invoice_date = date ( 'Y-m-d' );
+			                    }
+			                } else {
+			                    $waybillbalance->invoice_date = "";
+			                }
+			                // 发票号改
+			                $waybillbalance->invoice_code = post ( 'invoice_code' );
+			                // 如果凭证号不为空，凭证号赋值 销账日期也赋值
+			                if (! is_null ( post ( 'voucher_code' ) )) {
+			                    if($waybillbalance->voucher_code !=post ( 'voucher_code' )){
+			                        $waybillbalance->offs_date = date ( 'Y-m-d' );
+			                    }
+			                    $waybillbalance->voucher_code = post ( 'voucher_code' );
+			                    //记录最后一次填写的凭证号
+			                    MyApp::setDate ( 'lastVcode', post ( 'voucher_code' ) );
+			                    //$waybillbalance->offs_date = date ( 'Y-m-d' );
+			                }
+			                // 开票日期赋值 备注赋值
+			                $waybillbalance->billing_date = post ( 'billing_date' );
+			                $waybillbalance->remark = post ( 'remark' );
+			                $waybillbalance->waybill_title = post ( 'waybill_title' );
+			                $waybillbalance->confirm_billing_flag = post ( 'confirm_billing_flag' );
+			                // 保存
+			                $waybillbalance->save ();
+			            }
+			        } else {
+			            // 多条数据
+			            foreach ( $waybillbalances as $waybillbalance ) {
+			                // 先判断发票号是否为空
+			                if (post ( 'invoice_code' ) != null) {
+			                    // 发票号改
+			                    $waybillbalance->invoice_code = post ( 'invoice_code' );
+			                    $waybillbalance->invoice_date = date ( 'Y-m-d' );
+			                }
+			                // 判断开票日期是否为空
+			                if (post ( 'billing_date' ) != null) {
+			                    $waybillbalance->billing_date = post ( 'billing_date' );
+			                }
+			                // 如果凭证号不为空，凭证号赋值 销账日期也赋值
+			                if (post ( 'voucher_code' ) != null) {
+			                    if($waybillbalance->voucher_code !=post ( 'voucher_code' )){
+			                        $waybillbalance->offs_date = date ( 'Y-m-d' );
+			                    }
+			                    $waybillbalance->voucher_code = post ( 'voucher_code' );
+			                    //记录最后一次填写的凭证号
+			                    MyApp::setDate ( 'lastVcode', post ( 'voucher_code' ) );
+			                    //$waybillbalance->offs_date = date ( 'Y-m-d' );
+			                }
+			                if (strlen(post('remark'))){
+			                    $waybillbalance->remark = post ( 'remark' );
+			                }
+			                if (strlen(post ( 'waybill_title' ))){
+			                    $waybillbalance->waybill_title = post ( 'waybill_title' );
+			                }
+			                if(strlen(post ( 'confirm_billing_flag' ))){
+			                    $waybillbalance->confirm_billing_flag = post ( 'confirm_billing_flag' );
+			                }
+			                // 保存
+			                $waybillbalance->save ();
+			            }
+			        }
+			    }else{
+			        // 一条
+			        if (count ( $waybillbalances ) == 1) {
+			            foreach ( $waybillbalances as $waybillbalance ) {
+			                if($waybillbalance->unlock_flag!='1'){
+			                    if(!$waybillbalance->invoice_code){
+			                        if (post ( 'invoice_code' ) != null) {
+			                            if (post ( 'invoice_code' ) != $waybillbalance->invoice_code) {
+			                                $waybillbalance->invoice_date = date ( 'Y-m-d' );
+			                            }
+			                        } else {
+			                            $waybillbalance->invoice_date = "";
+			                        }
+			                        // 发票号改
+			                        $waybillbalance->invoice_code = post ( 'invoice_code' );
+			                        $waybillbalance->billing_date = post ( 'billing_date' );
+			                    }
+			                    if(!$waybillbalance->voucher_code){
+			                        // 如果凭证号不为空，凭证号赋值 销账日期也赋值
+			                        if (! is_null ( post ( 'voucher_code' ) )) {
+			                            if($waybillbalance->voucher_code !=post ( 'voucher_code' )){
+			                                $waybillbalance->offs_date = date ( 'Y-m-d' );
+			                            }
+			                            $waybillbalance->voucher_code = post ( 'voucher_code' );
+			                            //记录最后一次填写的凭证号
+			                            MyApp::setDate ( 'lastVcode', post ( 'voucher_code' ) );
+			                            //$waybillbalance->offs_date = date ( 'Y-m-d' );
+			                        }
+			                    }
+			                    //备注赋值
+			                    $waybillbalance->remark = post ( 'remark' );
+			                    $waybillbalance->waybill_title = post ( 'waybill_title' );
+			                    $waybillbalance->confirm_billing_flag = post ( 'confirm_billing_flag' );
+			                    // 保存
+			                    $waybillbalance->save ();
+			                }else{
+			                    if (post ( 'invoice_code' ) != null) {
+			                        if (post ( 'invoice_code' ) != $waybillbalance->invoice_code) {
+			                            $waybillbalance->invoice_date = date ( 'Y-m-d' );
+			                        }
+			                    } else {
+			                        $waybillbalance->invoice_date = "";
+			                    }
+			                    // 发票号改
+			                    $waybillbalance->invoice_code = post ( 'invoice_code' );
+			                    // 如果凭证号不为空，凭证号赋值 销账日期也赋值
+			                    if (! is_null ( post ( 'voucher_code' ) )) {
+			                        if($waybillbalance->voucher_code !=post ( 'voucher_code' )){
+			                            $waybillbalance->offs_date = date ( 'Y-m-d' );
+			                        }
+			                        $waybillbalance->voucher_code = post ( 'voucher_code' );
+			                        //记录最后一次填写的凭证号
+			                        MyApp::setDate ( 'lastVcode', post ( 'voucher_code' ) );
+			                        //$waybillbalance->offs_date = date ( 'Y-m-d' );
+			                    }
+			                    // 开票日期赋值 备注赋值
+			                    $waybillbalance->billing_date = post ( 'billing_date' );
+			                    $waybillbalance->remark = post ( 'remark' );
+			                    $waybillbalance->waybill_title = post ( 'waybill_title' );
+			                    $waybillbalance->confirm_billing_flag = post ( 'confirm_billing_flag' );
+			                    // 保存
+			                    $waybillbalance->save ();
+			                }
+			            }
+			        } else {
+			            // 多条数据
+			            foreach ( $waybillbalances as $waybillbalance ) {
+			                if($waybillbalance->unlock_flag!='1'){
+			                    if(!$waybillbalance->invoice_code){
+			                        // 先判断发票号是否为空
+			                        if (post ( 'invoice_code' ) != null) {
+			                            // 发票号改
+			                            $waybillbalance->invoice_code = post ( 'invoice_code' );
+			                            $waybillbalance->invoice_date = date ( 'Y-m-d' );
+			                        }
+			                        // 判断开票日期是否为空
+			                        if (post ( 'billing_date' ) != null) {
+			                            $waybillbalance->billing_date = post ( 'billing_date' );
+			                        }
+			                    }
+			                    if(!$waybillbalance->voucher_code){
+			                        // 如果凭证号不为空，凭证号赋值 销账日期也赋值
+			                        if (post ( 'voucher_code' ) != null) {
+			                            if($waybillbalance->voucher_code !=post ( 'voucher_code' )){
+			                                $waybillbalance->offs_date = date ( 'Y-m-d' );
+			                            }
+			                            $waybillbalance->voucher_code = post ( 'voucher_code' );
+			                            //记录最后一次填写的凭证号
+			                            MyApp::setDate ( 'lastVcode', post ( 'voucher_code' ) );
+			                            //$waybillbalance->offs_date = date ( 'Y-m-d' );
+			                        }
+			                    }
+			                    if (strlen(post('remark'))){
+			                        $waybillbalance->remark = post ( 'remark' );
+			                    }
+			                    if (strlen(post ( 'waybill_title' ))){
+			                        $waybillbalance->waybill_title = post ( 'waybill_title' );
+			                    }
+			                    if(strlen(post ( 'confirm_billing_flag' ))){
+			                        $waybillbalance->confirm_billing_flag = post ( 'confirm_billing_flag' );
+			                    }
+			                    // 保存
+			                    $waybillbalance->save ();
+			                }else{
+			                    // 先判断发票号是否为空
+			                    if (post ( 'invoice_code' ) != null) {
+			                        // 发票号改
+			                        $waybillbalance->invoice_code = post ( 'invoice_code' );
+			                        $waybillbalance->invoice_date = date ( 'Y-m-d' );
+			                    }
+			                    // 判断开票日期是否为空
+			                    if (post ( 'billing_date' ) != null) {
+			                        $waybillbalance->billing_date = post ( 'billing_date' );
+			                    }
+			                    // 如果凭证号不为空，凭证号赋值 销账日期也赋值
+			                    if (post ( 'voucher_code' ) != null) {
+			                        if($waybillbalance->voucher_code !=post ( 'voucher_code' )){
+			                            $waybillbalance->offs_date = date ( 'Y-m-d' );
+			                        }
+			                        $waybillbalance->voucher_code = post ( 'voucher_code' );
+			                        //记录最后一次填写的凭证号
+			                        MyApp::setDate ( 'lastVcode', post ( 'voucher_code' ) );
+			                        //$waybillbalance->offs_date = date ( 'Y-m-d' );
+			                    }
+			                    if (strlen(post('remark'))){
+			                        $waybillbalance->remark = post ( 'remark' );
+			                    }
+			                    if (strlen(post ( 'waybill_title' ))){
+			                        $waybillbalance->waybill_title = post ( 'waybill_title' );
+			                    }
+			                    if(strlen(post ( 'confirm_billing_flag' ))){
+			                        $waybillbalance->confirm_billing_flag = post ( 'confirm_billing_flag' );
+			                    }
+			                    // 保存
+			                    $waybillbalance->save ();
+			                }
+			            }
+			        }
+			    }
+			}
+			// 结束事务
+			$conn->completeTrans ();
+			echo json_encode ( Waybillbalance::find ( 'waybill_balance_id in (?)', $waybill_balance_id )->asArray ()
+				->getAll () );
+			exit ();
+		}
+	}
+	
+	/**
+	 * 收付统计开票确认和取消开票确认
+	 *
+	 * @return QView_Redirect
+	 */
+	function actionConfirm() {
+		if (request_is_post ()) {
+			// 开始事务
+			$conn = QDB::getConn ();
+			$conn->startTrans ();
+			$waybill_balance_id = post ( 'waybill_balance_id' );
+			$waybillbalances = Waybillbalance::find ( 'waybill_balance_id in (?)', $waybill_balance_id )->getAll ();
+			// 判断有几条数据
+			if (count ( $waybillbalances ) > 0) {
+				//取消开票确认
+				if(post("amount")=="1" && post("confirm_billing_flag")==''){
+					foreach ($waybillbalances as $waybill){
+						$waybill->confirm_billing_flag='';
+						$waybill->save();
+					}
+				}elseif (post("amount")=="0" && post("confirm_billing_flag")=='1'){
+					//全部开票确认
+					foreach ($waybillbalances as $waybill){
+						$waybill->confirm_billing_flag='1';
+						$waybill->save();
+					}
+				}
+			}
+			// 结束事务
+			$conn->completeTrans ();
+			echo json_encode ( Waybillbalance::find ( 'waybill_balance_id in (?)', $waybill_balance_id )->asArray ()
+				->getAll () );
+			exit ();
+		}
+	}
+	
+	/**
+	 * 付款页面
+	 */
+	function actionPayment() {
+		$select = $this->createWaybillbalanceSQL ( "O" );
+		$select->where ( Waybillbalance::meta()->table->name.".channel_id = 0 OR ".Waybillbalance::meta()->table->name.".channel_id IS NULL" );
+		$select->setColumns ( Waybillbalance::meta()->table->name.".customs_id AS id,".Waybillbalance::meta()->table->name.".customs_abbreviation AS text" );
+		$sql = " SELECT temp_waybill_balance.id";
+		$sql .= "      ,temp_waybill_balance.text";
+		$sql .= "  FROM (" . $select . ") AS temp_waybill_balance";
+		$sql .= " GROUP BY temp_waybill_balance.id";
+		$sql .= " ORDER BY CONVERT(temp_waybill_balance.text USING gbk) ASC";
+		$this->_view ["customs"] = QDB::getConn ()->execute ( $sql )
+			->fetchAll ();
+		
+		$select = $this->createWaybillbalanceSQL ( "O" );
+		$select->where ( Waybillbalance::meta()->table->name.".customs_id = 0 OR ".Waybillbalance::meta()->table->name.".customs_id IS NULL" );
+		$select->setColumns ( Waybillbalance::meta()->table->name.".channel_id AS id,".Waybillbalance::meta()->table->name.".channel_name AS text" );
+		$sql = " SELECT temp_waybill_balance.id";
+		$sql .= "      ,temp_waybill_balance.text";
+		$sql .= "  FROM (" . $select . ") AS temp_waybill_balance";
+		$sql .= " GROUP BY temp_waybill_balance.id";
+		$sql .= " ORDER BY CONVERT(temp_waybill_balance.text USING gbk) ASC";
+		$this->_view ["channel"] = QDB::getConn ()->execute ( $sql )
+			->fetchAll ();
+	}
+	
+	/**
+	 * 付款表格页面
+	 */
+	function actionPaymenttable() {
+		$total = array (
+			"sum_should_balance" => "0" 
+		);
+		$waybillBalances = array ();
+		$pagination = null;
+		$waybilltitle = array ();
+		$item = request ( "item" );
+		$select = $this->createWaybillbalanceSQL ( "O" );
+		if ($item) {
+			$id = substr ( $item, 3 );
+			if (strstr ( $item, "CU_" )) {
+				if($id=="all"){
+					$select->where ( Waybillbalance::meta()->table->name.".channel_id = 0 OR ".Waybillbalance::meta()->table->name.".channel_id IS NULL");
+				}else{
+					$select->where ( Waybillbalance::meta()->table->name.".customs_id = ? AND (".Waybillbalance::meta()->table->name.".channel_id = 0 OR ".Waybillbalance::meta()->table->name.".channel_id IS NULL)", $id );
+					$waybilltitle = WayBillTitle::find ( "customs_id = ?", $id );
+				}
+			} else {
+				if($id=="all"){
+					$select->where ( Waybillbalance::meta()->table->name.".customs_id = 0 OR ".Waybillbalance::meta()->table->name.".customs_id IS NULL" );
+				}else{
+					$select->where ( Waybillbalance::meta()->table->name.".channel_id = ? AND (".Waybillbalance::meta()->table->name.".customs_id = 0 OR ".Waybillbalance::meta()->table->name.".customs_id IS NULL)", $id );
+					$waybilltitle = WayBillTitle::find ( "channel_id = ?", $id );
+				}
+			}
+			if($id!="all"){
+				$waybilltitle = $waybilltitle->getAll ();
+			}
+			//汇总
+			$temp_select = clone $select;
+			$match_select = clone $select;
+			$total = $temp_select->sum ( "should_balance", "sum_should_balance" )
+				->getAll ();
+			
+			// 分页
+			$select->limitPage (  request ( "page", 1 ), count ( MyApp::$static_message ) ? 999 : 100 );
+			$select->fetchPagination ( $pagination );
+			$waybillBalances = $select->getAll ();
+			//如果搜索了运单号，提示匹配度。有效运单号多少个，匹配多少个，匹配失败是哪些跟踪号
+			if (count ( MyApp::$static_message )) {
+				$r = MyApp::$static_message;
+				$wbids = array ();
+				foreach ( $r as $row ) {
+					//去掉金额
+					$row = explode ( "\t", $row );
+					$row = reset ( $row );
+					$wbids [] = $row;
+				}
+				//判断有效跟踪号的个数
+				$validNum = Waybill::find ( 'waybill_code in(?)', $wbids )->getCount ();
+				//判断匹配个数
+				$matchIds = $match_select->getAll ();
+				if (count ( $matchIds )) {
+					$matchIds = Helper_Array::getCols ( $matchIds, 'waybill_id' );
+					$matchIds = Waybill::find ( 'waybill_id in(?)', $matchIds )->asArray ()
+						->setColumns ( 'waybill_code' )
+						->getAll ();
+					$matchIds = Helper_Array::getCols ( $matchIds, 'waybill_code' );
+				}
+				
+				$unMatchs = array_diff ( $wbids, $matchIds );
+				$this->_view ['validNum'] = $validNum;
+				$this->_view ['unMatchs'] = $unMatchs;
+			}
+		}
+		
+		$this->_view ["waybillTitles"] = $waybilltitle;
+		$this->_view ["total"] = $total;
+		$this->_view ["waybillBalances"] = $waybillBalances;
+		$this->_view ["pagination"] = $pagination;
+	}
+	
+	/**
+	 * 黑名单一览
+	 */
+	function actionBlack() {
+		//新建黑名单
+		if (request_is_post () && request ( "account" )) {
+			$blacklist = Blacklist::find ( "account = ? and waybill_code is null", request ( "account" ) )->getOne ();
+			$department=Department::find('department_id=?',MyApp::currentUser("department_id"))->getOne();
+			if ($blacklist->isNewRecord ()) {
+				$blacklist->account = request ( "account" );
+				$blacklist->remark=request("remark");
+				$blacklist->enable_flag = "1";
+				$blacklist->operator = MyApp::currentUser("user_name");
+				$blacklist->department_abbreviation=$department->abbreviation;
+				$blacklist->save ();
+				echo ("true");
+			} else {
+				echo ("false");
+			}
+			exit ();
+		}
+		
+		// 查询黑名单记录表
+		$select = Blacklist::find ();
+		if (strlen ( request ( 'waybill_code' ) )) {
+			$select->where ( 'waybill_code = ?', request ( 'waybill_code' ) );
+		}
+		if (strlen ( request ( 'consignee_account' ) )) {
+			$select->where ( 'account = ?', request ( 'consignee_account' ) );
+		}
+		$blacklists = $select->getAll ();
+		$this->_view ['blacklists'] = $blacklists;
+	}
+	
+	/**
+	 * 删除黑名单
+	 */
+	function actionAuthorize() {
+		if (request ( "blacklist_id" ) != null) {
+			$blacklist = Blacklist::find ( 'blacklist_id = ?', request ( "blacklist_id" ) )->getOne ();
+			if($blacklist->isNewRecord()){
+			    echo '2';
+			    exit();
+			}
+			$blacklist->destroy();
+			echo '1';
+		}
+		exit();
+	}
+	
+	/**
+	 * 条件查询
+	 */
+	function actionSearch() {
+		header("Content-type:text/html;charset=utf-8");
+		set_time_limit(0);
+		ini_set("memory_limit", "3072M");
+		$waybillbalances = array ();
+		$waybillbalances_all= array ();
+		$pagination=null;
+		if (request ( 'headquarters_voucher_code' ) || request ( 'voucher_code' ) || request ( 'invoice_code' ) || request ( 'waybill_title' ) || request("invoice_codes")) {
+			$select = Waybillbalance::find (/* "[waybill.enable_flag] != '0'" */"[waybill.department_id] IN (?)", RelevantDepartment::departmentids () );
+			if (request ( 'headquarters_voucher_code' )) {
+				$select->where ( 'headquarters_voucher_code LIKE ?', "%" . request ( 'headquarters_voucher_code' ) . "%" );
+			}
+			if (request ( 'voucher_code' )) {
+				$select->where ( 'voucher_code LIKE ?', "%" . request ( 'voucher_code' ) . "%" );
+			}
+			if (request ( 'invoice_code' )) {
+				$select->where ( 'invoice_code LIKE ?', "%" . request ( 'invoice_code' ) . "%" );
+			}
+			if (request ( "balance_type" )) {
+				$select->where ( "balance_type = ?", request ( "balance_type" ) );
+			}
+			if (request ( "waybill_title" )) {
+				$select->where ( "waybill_title LIKE ?", "%" . request ( "waybill_title" ) . "%" );
+			}
+			if (request ( 'invoice_code' )==''){//如果invoice_code为空时
+				//高级搜索
+				if(request("invoice_codes")){
+					$invoicecodesArray = str_replace ( array ("\r"," "), "", request ( "invoice_codes" ) );
+					$invoicecodesArray = explode ( "\n", $invoicecodesArray );
+					$invoicecodesArray = array_filter(array_unique ( $invoicecodesArray ));
+					$select->where("invoice_code in (?)",$invoicecodesArray);
+				}
+			}
+			$select_all=clone $select;
+			$waybillbalances_all = $select_all->getAll ();
+			$select->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), 20 )->fetchPagination ( $pagination );
+			$waybillbalances = $select->getAll ();
+		}
+		if (request ( 'do' ) == 'export') {
+			$header = array (
+				'类型','运单号','发件日','登帐日期','客户/渠道','部门','金额','费用项目','发票号','发票日期',
+				'分公司凭证号','分公司凭证日期','总部凭证号','总部凭证日期','账单抬头' 
+			);
+			$sheet = array (
+				$header 
+			);
+			$total = 0;
+			foreach ( $waybillbalances_all as $waybillbalance ) {
+				$sheet [] = array (
+					str_replace ( array (
+						'I','O','T' 
+					), array (
+						'应收','应付','其他' 
+					), $waybillbalance->balance_type ),
+					"'" . $waybillbalance->waybill->waybill_code,
+					Helper_Util::strDate ( 'Y-m-d', $waybillbalance->waybill->record_order_date ),
+					Helper_Util::strDate ( 'Y-m-d', $waybillbalance->rating_date ),
+					($waybillbalance->channel_id != null && $waybillbalance->channel_id != '0') && ($waybillbalance->channel_name != null && $waybillbalance->channel_name != '') ? $waybillbalance->channel_name : $waybillbalance->customs_abbreviation,
+					$waybillbalance->waybill->department_abbreviation,
+					sprintf ( "%.2f", $waybillbalance->should_balance ),
+					$waybillbalance->fee_category,
+					"'" . $waybillbalance->invoice_code,
+					Helper_Util::strDate ( 'Y-m-d', $waybillbalance->invoice_date ),
+					"'" . $waybillbalance->voucher_code,
+					Helper_Util::strDate ( 'Y-m-d', $waybillbalance->offs_date ),
+					$waybillbalance->headquarters_voucher_code,
+					Helper_Util::strDate ( 'Y-m-d', $waybillbalance->headquarters_offs_date ),
+					$waybillbalance->waybill_title
+				);
+				$total += $waybillbalance->should_balance;
+			}
+			$sheet [] = array (
+				'总计','','','','','',$total 
+			);
+			Helper_ExcelX::array2xlsx ( $sheet, '条件查询' );
+			exit ();
+		} elseif (request ( 'do' ) == 'export2') {
+			$header = array (
+				'运单号','部门','发件日','客户/渠道','发票抬头','重量',				//客重
+'金额','目的地',
+				'分区','服务','发票号' 
+			);
+			$sheet = array (
+				$header 
+			);
+			$total = 0;
+			foreach ( $waybillbalances_all as $waybillbalance ) {
+				$sheet [] = array (
+					"'" . $waybillbalance->waybill->waybill_code,
+					$waybillbalance->waybill->department_abbreviation,
+					Helper_Util::strDate ( 'Y-m-d', $waybillbalance->waybill->record_order_date ),
+					($waybillbalance->channel_id != null && $waybillbalance->channel_id != '0') && ($waybillbalance->channel_name != null && $waybillbalance->channel_name != '') ? $waybillbalance->channel_name : $waybillbalance->customs_abbreviation,
+					$waybillbalance->waybill_title,
+					$waybillbalance->waybill->commission_weight,
+					sprintf ( "%.2f", $waybillbalance->should_balance ),
+					$waybillbalance->waybill->destination,
+					$waybillbalance->waybill->partition_code,
+					$waybillbalance->waybill->service_code,
+					"'" . $waybillbalance->invoice_code 
+				);
+				$total += $waybillbalance->should_balance;
+			}
+			$sheet [] = array (
+				'总计','','','','','',$total 
+			);
+			Helper_ExcelX::array2xlsx ( $sheet, '条件查询' );
+			exit ();
+		}
+		if (count($waybillbalances_all)){
+		    $array=Helper_Array::groupBy($waybillbalances_all, 'balance_type');
+		    $sum= array('应收'=>'0','应付'=>'0','其他'=>'0');
+		    foreach ($array as $v){
+		        if($v[0]['balance_type']=='O'){
+		            $sum['应付']=Helper_Array::sumBy($v, "should_balance");
+		        }elseif ($v[0]['balance_type']=='I'){
+		            $sum['应收']=Helper_Array::sumBy($v, "should_balance");
+		        }else{
+		            $sum['其他']=Helper_Array::sumBy($v, "should_balance");
+		        }
+		    }
+		    $this->_view ['sum'] = $sum;
+		}
+		$this->_view ['pagination'] = $pagination;
+		$this->_view ['waybillbalances'] = $waybillbalances;
+		$this->_view ['waybillbalances_all'] = $waybillbalances_all;
+	}
+	
+	/**
+	 * 收款导出
+	 */
+	function actionReceivableExport() {
+		$item = request ( "item" );
+		$select = $this->createWaybillbalanceSQL ( "I" );
+		if (request ( "department_ids_" )) {
+			$select->where ( "[waybill.department_id] IN (?)", Q::normalize ( request ( "department_ids_" ) ) );
+		}
+		//开票确认,但是没有发票号
+		if(request("confirm_billing_flag")){
+			$select->where(Waybillbalance::meta()->table->name.".confirm_billing_flag='1' AND (invoice_code is null or invoice_code ='')");
+		}
+		if (! request ( "headquarters_voucher_code" ) && ! request ( "invoice_code" ) && ! request ( "waybill_code" ) && ! request ( "voucher_code" )) {
+			if ($item) {
+				$id = substr ( $item, 3 );
+				if ($id!='all'){
+				    if (strstr ( $item, "CU_" )) {
+				        $select->where ( Waybillbalance::meta()->table->name.".customs_id = ?", $id );
+				        $waybilltitle = WayBillTitle::find ( "customs_id = ?", $id );
+				    } else {
+				        $select->where ( Waybillbalance::meta()->table->name.".channel_id = ?", $id );
+				        $waybilltitle = WayBillTitle::find ( "channel_id = ?", $id );
+				    }
+				}
+			}
+		}
+		$waybillbalance = $select->getAll ();
+		
+		$conn = QDB::getConn ();
+		$conn->startTrans ();
+		$sheet = array (
+			array (
+				'运单号',"原单号",'发件日','登帐日期','客户/渠道','账单抬头','类型','部门','目的地','分区',
+				'包装','产品','金额','收据号','凭证号','总部凭证号','客重','结算重','备注','确认开票' 
+			) 
+		);
+		
+		$sum_should_balance = 0;
+		$commission_weight_arr = array ();
+		foreach ( $waybillbalance as $value ) {
+			$commission_weight_arr [$value->waybill->waybill_code] = array (
+				"commission_weight" => $value->waybill->commission_weight,
+				"clearing_weight" => $value->waybill->clearing_weight 
+			);
+			$sum_should_balance += sprintf ( '%.2f', $value->should_balance );
+			if (($value->channel_id != null && $value->channel_id != '0') && ($value->channel_name != null && $value->channel_name != '')) {
+				$channelorcustoms = $value->channel_name;
+			} else {
+				$channelorcustoms = $value->customs_abbreviation;
+			}
+			array_push ( $sheet, array (
+				"'" . $value->waybill->waybill_code,
+				"'" . $value->waybill->former_waybill_code,
+				substr ( $value->waybill->record_order_date, 0, 10 ),
+				substr ( $value->rating_date, 0, 10 ),$channelorcustoms,
+				$value->waybill_title,$value->fee_category,
+				$value->waybill->department_abbreviation,
+				$value->waybill->destination,$value->waybill->partition_code,
+				$value->waybill->boxing_category,$value->waybill->product_name,
+				sprintf ( '%.2f', $value->should_balance ),$value->invoice_code,
+				$value->voucher_code,$value->headquarters_voucher_code,
+				sprintf ( '%.2f', $value->waybill->commission_weight ),
+				sprintf ( '%.2f', $value->waybill->clearing_weight ),
+				$value->remark,$value->confirm_billing_flag == '1' ? '是':'否'
+			) );
+		}
+		array_push ( $sheet, array (
+			'总计：',"",'','','','','','','','','','',$sum_should_balance,'','','',
+			Helper_Array::sumBy ( $commission_weight_arr, "commission_weight" ),
+			Helper_Array::sumBy ( $commission_weight_arr, "clearing_weight" ),'' 
+		) );
+		$objExcel = Helper_ExcelX::array2xlsx ( $sheet, '财务模块-收款记录' );
+		exit ();
+	}
+	
+	/**
+	 * 付款导出
+	 */
+	function actionPaymentExport() {
+		$item = request ( "item" );
+		$select = $this->createWaybillbalanceSQL ( "O" );
+		if (! request ( "headquarters_voucher_code" ) && ! request ( "invoice_code" ) && ! request ( "waybill_code" ) && ! request ( "voucher_code" )) {
+			if ($item) {
+				$id = substr ( $item, 3 );
+				if($id!='all'){
+				    if (strstr ( $item, "CU_" )) {
+				        $select->where ( Waybillbalance::meta()->table->name.".customs_id = ?", $id );
+				        $waybilltitle = WayBillTitle::find ( "customs_id = ?", $id );
+				    } else {
+				        $select->where ( Waybillbalance::meta()->table->name.".channel_id = ?", $id );
+				        $waybilltitle = WayBillTitle::find ( "channel_id = ?", $id );
+				    }
+				}
+			}
+		}
+		$waybillbalance = $select->getAll ();
+		
+		$conn = QDB::getConn ();
+		$conn->startTrans ();
+		$sheet = array (
+			array (
+				'运单号','发件日','登帐日期','客户/渠道','账单抬头','类型','客户简称','拒付状态',"税金",'部门','目的地',
+				'分区','包装','产品','金额','收据号','凭证号','客重','委托公开价','结算重','结算公开价','备注' 
+			) 
+		);
+		
+		$sum_should_balance = 0;
+		$commission_weight_arr = array ();
+		foreach ( $waybillbalance as $value ) {
+			$commission_weight_arr [$value->waybill->waybill_code] = array (
+				"commission_weight" => $value->waybill->commission_weight,
+				"clearing_weight" => $value->waybill->clearing_weight 
+			);
+			$sum_should_balance += sprintf ( '%.2f', $value->should_balance );
+			if (($value->channel_id != null && $value->channel_id != '0') && ($value->channel_name != null && $value->channel_name != '')) {
+				$channelorcustoms = $value->channel_name;
+			} else {
+				$channelorcustoms = $value->customs_abbreviation;
+			}
+			array_push ( $sheet, array (
+				"'" . $value->waybill->waybill_code,
+				substr ( $value->waybill->record_order_date, 0, 10 ),
+				substr ( $value->rating_date, 0, 10 ),$channelorcustoms,
+				$value->waybill_title,$value->fee_category,
+				$value->waybill->customs_abbreviation,
+				$value->waybill->abnormal_state,
+				$value->waybill->tax_flag == "1" ? "是" : "否",
+				$value->waybill->department_abbreviation,
+				$value->waybill->destination,$value->waybill->partition_code,
+				$value->waybill->boxing_category,$value->waybill->product_name,
+				sprintf ( '%.2f', $value->should_balance ),$value->invoice_code,
+				$value->voucher_code,
+				sprintf ( '%.2f', $value->waybill->commission_weight ),
+				sprintf('%.2f',$value->waybill->customs_public_price),
+				sprintf ( '%.2f', $value->waybill->clearing_weight ),
+				sprintf('%.2f',$value->waybill->product_public_price),
+				$value->remark 
+			) );
+		}
+		array_push ( $sheet, array (
+			'总计：','','','','','','','','','','','','','',$sum_should_balance,'','',
+			Helper_Array::sumBy ( $commission_weight_arr, "commission_weight" ),'',
+			Helper_Array::sumBy ( $commission_weight_arr, "clearing_weight" ),'','' 
+		) );
+		$objExcel = Helper_ExcelX::array2xlsx ( $sheet, '财务模块-付款记录' );
+		exit ();
+	}
+	
+	/**
+	 * 表格导入
+	 */
+	function actionImport() {
+	}
+	
+	/**
+	 * 批量导入发票号
+	 */
+	function actionImportInvoiceNo() {
+		if (! request_is_post ()) {
+			exit ( '请上传表格' );
+		}
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'file' )) {
+			exit ( '请上传表格' );
+		}
+		$file = $uploader->file ( 'file' );
+		$required_fields = array (
+			'运单号','金额','发票号','渠道' 
+		);
+		$des_dir = Q::ini ( 'upload_tmp_dir' );
+		$filename = $des_dir . DS . date ( 'YmdHis' ) . 'invocieno.' . $file->extname ();
+		$file->move ( $filename );
+		$xls = Helper_Excel::readFile ( $filename );
+		$sheet = $xls->toHeaderMap ();
+		foreach ( $sheet as &$row ) {
+			$r = self::checkRequired ( $required_fields, $row );
+			if (! $r) {
+				$row ['结果'] = '失败，有必填内容没有填写';
+				continue;
+			}
+			$wb = Waybill::find ( 'waybill_code=? and enable_flag="1"', $row ['运单号'] )->getOne ();
+			if ($wb->isNewRecord ()) {
+				$row ['结果'] = '失败，运单号不存在';
+				continue;
+			}
+			$channel=Channel::find('channel_name=?',$row ['渠道'])->getOne();
+			if($channel->isNewRecord()){
+				$row ['结果'] = '失败，渠道不存在';
+				continue;
+			}elseif (strlen($row ['账单抬头'])) {
+				$title=WayBillTitle::find('channel_id=? and name=?',$channel->channel_id,$row ['账单抬头'])->getOne();
+				if($title->isNewRecord()){
+					$row ['结果'] = '失败，账单抬头不存在';
+					continue;
+				}
+			}
+			//暂时只支持 应付和其他的费用项目
+			$wbls = Waybillbalance::find ( "waybill_id =? and should_balance =?  and balance_type in ('O','T') and channel_name=?", $wb->waybill_id, $row ['金额'],$row ['渠道'] )->getAll ();
+			if (count ( $wbls ) == 0) {
+				$row ['结果'] = '失败，费用记录不存在';
+				continue;
+			}
+			if (count ( $wbls ) > 1) {
+				$row ['结果'] = '失败，费用记录>1条';
+				continue;
+			}
+			//如果已经存在发票号了，就不能导入了
+			if (! empty ( $wbls [0] ['invoice_code'] )) {
+				$row ['结果'] = '已有发票号' . $wbls [0] ['invoice_code'];
+				continue;
+			}
+			//更新数据,
+			$wbls [0] ['invoice_code'] = $row ['发票号'];
+			$wbls [0] ['invoice_date'] = date ( 'Y-m-d H:i:s' );
+			if (! empty ( $row ['备注'] )) {
+				$wbls [0] ['remark'] = $row ['备注'];
+			}
+			if(strlen($row ['账单抬头'])){
+				$wbls [0] ['waybill_title'] = $row ['账单抬头'];
+			}
+			$wbls [0]->save ();
+			$row ['结果'] = '成功';
+		}
+		$this->_view ['sheet'] = $sheet;
+	}
+	/**
+	 * 涨重导入（原来的费用保留，新增费用作为涨重费用）
+	 */
+	function actionImportAWeight(){
+		if (! request_is_post ()) {
+			exit ( '请上传表格' );
+		}
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'file' )) {
+			exit ( '请上传表格' );
+		}
+		$fee_type=request('fee_type','涨重费');
+		
+		$file = $uploader->file ( 'file' );
+		$required_fields = array (
+			'运单号','结算重量','差额','登账日期'
+		);
+		$des_dir = Q::ini ( 'upload_tmp_dir' );
+		$filename = $des_dir . DS . date ( 'YmdHis' ) . 'ImportCCWeight.' . $file->extname ();
+		$file->move ( $filename );
+		$xls = Helper_Excel::readFile ( $filename );
+		$sheet = $xls->toHeaderMap ();
+		foreach ( $sheet as &$row ) {
+			$r = self::checkRequired ( $required_fields, $row );
+			if (! $r) {
+				$row ['结果'] = '失败，有必填内容没有填写';
+				continue;
+			}
+			$wb = Waybill::find ( 'waybill_code=? and enable_flag="1" ', $row ['运单号'] )->getOne ();
+			if ($wb->isNewRecord ()) {
+				$row ['结果'] = '失败，运单号不存在';
+				continue;
+			}
+			//检查登账日期是否关账
+			if($row ['登账日期']<Config::cbDate()){
+				$row ['结果'] = '失败，登账日期不能早于'.Config::cbDate();
+				continue;
+			}
+			$channel_id='';
+			$channel_name='';
+			if(strlen($row ['渠道'])){
+				$channel=Channel::find('channel_name=?',$row ['渠道'])->getOne();
+				if ($channel->isNewRecord ()) {
+					$row ['结果'] = '失败，渠道不存在';
+					continue;
+				}else{
+					$channel_id=$channel->channel_id;
+					$channel_name=$channel->channel_name;
+				}
+			}
+			$wb->clearing_weight=$row['结算重量'];
+			//产品--价格-偏派-分区
+			$productprp=Productprp::find("product_id= ? and effective_date<=? and fail_date>=? ",$wb->product_id,$wb->record_order_date,$wb->record_order_date)->getOne();
+			if($productprp->isNewRecord()){
+				$wb->product_public_price=0;
+			}else{
+				$wb->product_public_price = Price::public_price ( $productprp->price_manage_id, $row ['结算重量'], $wb->partition_code, $wb->boxing_category );
+			}
+			$wb->save();
+			//增加费用
+			$wbl = new Waybillbalance ();
+			$wbl->changeProps ( array (
+				'waybill_id' => $wb->waybill_id,
+				'channel_id' => strlen($channel_id)?$channel_id:$wb->channel_id,
+				'channel_name' => strlen($channel_name)?$channel_name:$wb->channel_name,
+				'should_balance' => $row ['差额'],
+				'balance_type' => 'O',
+				'fee_category' => $fee_type,
+				'rating_date' => date ( 'Y-m-d', strtotime ( $row ['登账日期'] ) ),
+				'remark'=>$row['备注'],
+			) );
+			$wbl->save ();
+			//重新计算毛利
+			$wb->calProfitField2 ();
+			$wb->save ();
+			$row['结果']='成功';
+		}
+		$this->_view['sheet']=$sheet;
+	}
+	/**
+	 * 到付重量更改导入
+	 */
+	function actionImportCCWeight() {
+		if (! request_is_post ()) {
+			exit ( '请上传表格' );
+		}
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'file' )) {
+			exit ( '请上传表格' );
+		}
+		$file = $uploader->file ( 'file' );
+		$required_fields = array (
+			'运单号','重量','应收退佣金额' 
+		);
+		$des_dir = Q::ini ( 'upload_tmp_dir' );
+		$filename = $des_dir . DS . date ( 'YmdHis' ) . 'ImportCCWeight.' . $file->extname ();
+		$file->move ( $filename );
+		$xls = Helper_Excel::readFile ( $filename );
+		$sheet = $xls->toHeaderMap ();
+		foreach ( $sheet as &$row ) {
+			$r = self::checkRequired ( $required_fields, $row );
+			if (! $r) {
+				$row ['结果'] = '失败，有必填内容没有填写';
+				continue;
+			}
+			$wb = Waybill::find ( 'waybill_code=? and payment_mode !="PP" and enable_flag="1"', $row ['运单号'] )->getOne ();
+			if ($wb->isNewRecord ()) {
+				$row ['结果'] = '失败，运单号不存在';
+				continue;
+			}
+			//检查是否承运人对账完成，如果已经对账完成，就不能导入
+			if ($wb->channel_confirm) {
+				$row ['结果'] = '渠道对账完成，禁止批量更新信息';
+				continue;
+			}
+			//检查是否有已经关账的费用
+			$fees=Waybillbalance::find( 'waybill_id =? and channel_id =? and balance_type in("I","T")', $wb->waybill_id, $wb->channel_id );
+			if (Config::closeBalance()){
+				$fees->where('rating_date <?',date('Y-m-d',strtotime('first day of this month')));
+			}else {
+				$fees->where('rating_date <?',date('Y-m-d',strtotime('first day of last month')));
+			}
+			if ($fees->getCount()){
+				$row ['结果'] = '部分费用已关账';
+				continue;
+			}
+			//删除之前的成本记录，应收渠道退佣
+			Waybillbalance::meta ()->destroyWhere ( 'waybill_id =? and channel_id =? and balance_type="I"', $wb->waybill_id, $wb->channel_id );
+			$wbl = new Waybillbalance ();
+			$wbl->changeProps ( array (
+				'waybill_id' => $wb->waybill_id,'channel_id' => $wb->channel_id,
+				'channel_name' => $wb->channel_name,'fee_category' => '退佣',
+				'should_balance' => $row ['应收退佣金额'],'balance_type' => 'I',
+				'rating_date' => $wb->record_order_date,'remark' => $row ['备注'] 
+			) );
+			$wbl->save ();
+			
+			//应付客户退佣
+			if ($row ['应付客户退佣'] > 0) {
+				Waybillbalance::meta ()->destroyWhere ( 'waybill_id =? and customs_id =? and balance_type="T"', $wb->waybill_id, $wb->customs_id );
+				$wbl = new Waybillbalance ();
+				$wbl->changeProps ( array (
+					'waybill_id' => $wb->waybill_id,
+					'customs_id' => $wb->customs_id,
+					'customs_abbreviation' => $wb->customs_abbreviation,
+					'should_balance' => $row ['应付客户退佣'],'balance_type' => 'T',
+					'fee_category' => '退佣',
+					'rating_date' => $wb->record_order_date,
+					'remark' => $row ['备注'] 
+				) );
+				$wbl->save ();
+			}
+			//修改重量
+			$wb->clearing_weight = $row ['重量'];
+			$wb->commission_weight = $row ['重量'];
+			
+			//重新计算公开价
+			if (! empty ( $row ['公开价'] )) {
+				$wb->product_public_price = $row ['公开价'];
+			} else {
+				//产品--价格-偏派-分区
+				$productprp=Productprp::find("product_id= ? and effective_date<=? and fail_date>=? ",$wb->product_id,$wb->record_order_date,$wb->record_order_date)->getOne();
+				if($productprp->isNewRecord()){
+					$wb->product_public_price=0;
+				}else{
+					$wb->product_public_price = Price::public_price ( $productprp->price_manage_id, $row ['重量'], $wb->partition_code, $wb->boxing_category );
+				}
+				$row ['公开运价'] = $wb->product_public_price;
+			}
+			$wb->customs_public_price = $wb->product_public_price;
+			
+			//重新计算 毛利
+			$wb->calProfitField ();
+			$wb->save ();
+			$row ['结果'] = '成功';
+		}
+		$this->_view ['sheet'] = $sheet;
+	}
+	
+	/**
+	 * 批量对账完成
+	 */
+	function actionImportCompleteOutgoing() {
+		if (! request_is_post ()) {
+			exit ( '请上传表格' );
+		}
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'file' )) {
+			exit ( '请上传表格' );
+		}
+		$file = $uploader->file ( 'file' );
+		$required_fields = array (
+			'运单号' 
+		);
+		$des_dir = Q::ini ( 'upload_tmp_dir' );
+		$filename = $des_dir . DS . date ( 'YmdHis' ) . 'ImportCCWeight.' . $file->extname ();
+		$file->move ( $filename );
+		$xls = Helper_Excel::readFile ( $filename );
+		$sheet = $xls->toHeaderMap ();
+		foreach ( $sheet as &$row ) {
+			$r = self::checkRequired ( $required_fields, $row );
+			if (! $r) {
+				$row ['结果'] = '失败，有必填内容没有填写';
+				continue;
+			}
+			$wb = Waybill::find ( 'waybill_code=? and enable_flag="1"', $row ['运单号'] )->getOne ();
+			if ($wb->isNewRecord ()) {
+				$row ['结果'] = '失败，运单号不存在';
+				continue;
+			}
+			if ($wb->channel_confirm) {
+				$row ['结果'] = '失败，运单已对账完成';
+				continue;
+			}
+			$wb->channel_confirm = 1;
+			$wb->save ();
+			$row ['结果'] = '成功';
+		}
+		$this->_view ['sheet'] = $sheet;
+	}
+	
+	/**
+	 * 批量修改发件日
+	 */
+	function actionImportRDate() {
+		if (! request_is_post ()) {
+			exit ( '请上传表格' );
+		}
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'file' )) {
+			exit ( '请上传表格' );
+		}
+		$file = $uploader->file ( 'file' );
+		$required_fields = array (
+			'运单号','发件日' 
+		);
+		$des_dir = Q::ini ( 'upload_tmp_dir' );
+		$filename = $des_dir . DS . date ( 'YmdHis' ) . 'ImportRDate.' . $file->extname ();
+		$file->move ( $filename );
+		$xls = Helper_Excel::readFile ( $filename );
+		$sheet = $xls->toHeaderMap ();
+		foreach ( $sheet as &$row ) {
+			$r = self::checkRequired ( $required_fields, $row );
+			if (! $r) {
+				$row ['结果'] = '失败，有必填内容没有填写';
+				continue;
+			}
+			$wb = Waybill::find ( 'waybill_code=? and enable_flag="1"', $row ['运单号'] )->getOne ();
+			if ($wb->isNewRecord ()) {
+				$row ['结果'] = '失败，运单号不存在';
+				continue;
+			}
+			if (strtotime ( $row ['发件日'] ) < strtotime ( '2014-01-01' ) || strtotime ( $row ['发件日'] ) > time ()) {
+				$row ['结果'] = '发件日日期格式填写不正确';
+				continue;
+			} else {
+				$row ['发件日'] = date ( 'Y-m-d', strtotime ( $row ['发件日'] ) );
+			}
+			$wb->record_order_date = $row ['发件日'];
+			$wb->save ();
+			//费用登帐日期同时修改
+			Waybillbalance::meta ()->updateWhere ( array (
+				'rating_date' => $row ['发件日'] 
+			), 'waybill_id=?', $wb->waybill_id );
+			
+			$row ['结果'] = '成功';
+		}
+		$this->_view ['sheet'] = $sheet;
+	}
+	
+	/**
+	 * 预付重量更改
+	 */
+	function actionImportPPWeight() {
+		if (! request_is_post ()) {
+			exit ( '请上传表格' );
+		}
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'file' )) {
+			exit ( '请上传表格' );
+		}
+		$file = $uploader->file ( 'file' );
+		$required_fields = array (
+			'运单号','重量','成本金额' 
+		);
+		$des_dir = Q::ini ( 'upload_tmp_dir' );
+		$filename = $des_dir . DS . date ( 'YmdHis' ) . 'ImportCCWeight.' . $file->extname ();
+		$file->move ( $filename );
+		$xls = Helper_Excel::readFile ( $filename );
+		$sheet = $xls->toHeaderMap ();
+		foreach ( $sheet as &$row ) {
+			$r = self::checkRequired ( $required_fields, $row );
+			if (! $r) {
+				$row ['结果'] = '失败，有必填内容没有填写';
+				continue;
+			}
+			$wb = Waybill::find ( 'waybill_code=? and payment_mode ="PP" and enable_flag="1"', $row ['运单号'] )->getOne ();
+			if ($wb->isNewRecord ()) {
+				$row ['结果'] = '失败，运单号不存在';
+				continue;
+			}
+			//检查是否承运人对账完成，如果已经对账完成，就不能导入
+			if ($wb->channel_confirm) {
+				$row ['结果'] = '渠道对账完成，禁止批量更新信息';
+				continue;
+			}
+			if (! empty ( $row ['登帐日期'] ) && (strtotime ( $row ['登帐日期'] ) < strtotime ( '2014-01-01' ) || strtotime ( $row ['登帐日期'] ) > time ())) {
+				$row ['结果'] = '登帐日期格式不正确';
+				continue;
+			} else {
+				if (! empty ( $row ['登帐日期'] )) {
+					$row ['登帐日期'] = date ( 'Y-m-d', strtotime ( $row ['登帐日期'] ) );
+				}
+			}
+			//检查关账
+			$fees=Waybillbalance::find( 'waybill_id =? and channel_id =? and balance_type="O" and channel_id !=56 and length(ifnull(invoice_code,""))=0', $wb->waybill_id, $wb->channel_id );
+			if (Config::closeBalance()){
+				$fees->where('rating_date <?',date('Y-m-d',strtotime('first day of this month')));
+			}else {
+				$fees->where('rating_date <?',date('Y-m-d',strtotime('first day of last month')));
+			}
+			if ($fees->getCount()){
+				$row ['结果'] = '部分费用已关账';
+				continue;
+			}
+			//应付渠道
+			Waybillbalance::meta ()->destroyWhere ( 'waybill_id =? and channel_id =? and balance_type="O" and channel_id !=56 and length(ifnull(invoice_code,""))=0', $wb->waybill_id, $wb->channel_id );
+			
+			$wbl = new Waybillbalance ();
+			$wbl->changeProps ( array (
+				'waybill_id' => $wb->waybill_id,'channel_id' => $wb->channel_id,
+				'channel_name' => $wb->channel_name,
+				'should_balance' => $row ['成本金额'],'balance_type' => 'O',
+				'fee_category' => '快件费',
+				'rating_date' => empty ( $row ['登帐日期'] ) ? $wb->record_order_date : $row ['登帐日期'],
+				'remark' => $row ['备注'] 
+			) );
+			$wbl->save ();
+			//修改重量
+			$wb->clearing_weight = $row ['重量'];
+			
+			//重新计算公开价
+			if (! empty ( $row ['公开价'] )) {
+				$wb->product_public_price = $row ['公开价'];
+			} else {
+				//产品--价格-偏派-分区
+				$productprp=Productprp::find("product_id= ? and effective_date<=? and fail_date>=? ",$wb->product_id,$wb->record_order_date,$wb->record_order_date)->getOne();
+				if($productprp->isNewRecord()){
+					$wb->product_public_price=0;
+				}else{
+					$wb->product_public_price = Price::public_price ( $productprp->price_manage_id, $row ['重量'], $wb->partition_code, $wb->boxing_category );
+				}
+				$row ['公开运价'] = $wb->product_public_price;
+			}
+			
+			//重新计算 毛利
+			$wb->calProfitField2 ();
+			$wb->save ();
+			$row ['结果'] = '成功';
+		}
+		$this->_view ['sheet'] = $sheet;
+	}
+	
+	/**
+	 * 三方重量更改
+	 */
+	function actionImportTWeight() {
+		if (! request_is_post ()) {
+			exit ( '请上传表格' );
+		}
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'file' )) {
+			exit ( '请上传表格' );
+		}
+		$file = $uploader->file ( 'file' );
+		$required_fields = array (
+			'运单号','结算重量','应收退佣金额','应付金额' 
+		);
+		$des_dir = Q::ini ( 'upload_tmp_dir' );
+		$filename = $des_dir . DS . date ( 'YmdHis' ) . 'ImportCCWeight.' . $file->extname ();
+		$file->move ( $filename );
+		$xls = Helper_Excel::readFile ( $filename );
+		$sheet = $xls->toHeaderMap ();
+		foreach ( $sheet as &$row ) {
+			$r = self::checkRequired ( $required_fields, $row );
+			if (! $r) {
+				$row ['结果'] = '失败，有必填内容没有填写';
+				continue;
+			}
+			$wb = Waybill::find ( 'waybill_code=? and enable_flag="1"', $row ['运单号'] )->getOne ();
+			if ($wb->isNewRecord ()) {
+				$row ['结果'] = '失败，运单号不存在';
+				continue;
+			}
+			//检查是否承运人对账完成，如果已经对账完成，就不能导入
+			if ($wb->channel_confirm) {
+				$row ['结果'] = '渠道对账完成，禁止批量更新信息';
+				continue;
+			}
+			//删除之前的成本记录，应收渠道退佣，渠道id不是票件的渠道ID
+			$cc = ChannelCost::find ( 'channel_id=? and product_id =?', $wb->channel_id, $wb->product_id )->getOne ();
+			$cct = ChannelCostType::find ( 'channel_cost_id =? and boxing_type=?', $cc->channel_cost_id, Product::boxingType ( $wb->boxing_category ) )->getOne ();
+			//三方退佣，退佣渠道
+			if ($cct->isNewRecord () || $cct->paymentfor < 1) {
+				$channelGet = $wb->channel_id;
+			} else {
+				$channelGet = $cct->paymentfor;
+			}
+			//检查是否有已经关账的费用
+			$fees=Waybillbalance::find( 'waybill_id =? and channel_id =? and balance_type="I"', $wb->waybill_id, $channelGet );
+			if (Config::closeBalance()){
+				$fees->where('rating_date <?',date('Y-m-d',strtotime('first day of this month')));
+			}else {
+				$fees->where('rating_date <?',date('Y-m-d',strtotime('first day of last month')));
+			}
+			if ($fees->getCount()){
+				$row ['结果'] = '部分费用已关账';
+				continue;
+			}
+			$fees=Waybillbalance::find('waybill_id =? and channel_id =? and balance_type="O" and channel_id !=56', $wb->waybill_id, $wb->channel_id );
+			if (Config::closeBalance()){
+				$fees->where('rating_date <?',date('Y-m-d',strtotime('first day of this month')));
+			}else {
+				$fees->where('rating_date <?',date('Y-m-d',strtotime('first day of last month')));
+			}
+			if ($fees->getCount()){
+				$row ['结果'] = '部分费用已关账';
+				continue;
+			}
+				
+			
+			Waybillbalance::meta ()->destroyWhere ( 'waybill_id =? and channel_id =? and balance_type="I"', $wb->waybill_id, $channelGet );
+			$wbl = new Waybillbalance ();
+			$wbl->changeProps ( array (
+				'waybill_id' => $wb->waybill_id,'channel_id' => $channelGet,
+				'channel_name' => Channel::find ( 'channel_id=?', $channelGet )->getOne ()->channel_name,
+				'fee_category' => '退佣','should_balance' => $row ['应收退佣金额'],
+				'balance_type' => 'I','rating_date' => $wb->record_order_date,
+				'remark' => $row ['备注'] 
+			) );
+			$wbl->save ();
+			
+			//应付运费
+			Waybillbalance::meta ()->destroyWhere ( 'waybill_id =? and channel_id =? and balance_type="O" and channel_id !=56', $wb->waybill_id, $wb->channel_id );
+			$wbl = new Waybillbalance ();
+			$wbl->changeProps ( array (
+				'waybill_id' => $wb->waybill_id,'channel_id' => $wb->channel_id,
+				'channel_name' => $wb->channel_name,
+				'should_balance' => $row ['应付金额'],'balance_type' => 'O',
+				'fee_category' => '快件费','rating_date' => $wb->record_order_date,
+				'remark' => $row ['备注'] 
+			) );
+			$wbl->save ();
+			//修改重量
+			$wb->clearing_weight = $row ['结算重量'];
+			
+			//重新计算公开价
+			if (! empty ( $row ['公开价'] )) {
+				$wb->product_public_price = $row ['公开价'];
+			} else {
+				//产品--价格-偏派-分区
+				$productprp=Productprp::find("product_id= ? and effective_date<=? and fail_date>=? ",$wb->product_id,$wb->record_order_date,$wb->record_order_date)->getOne();
+				if($productprp->isNewRecord()){
+					$wb->product_public_price=0;
+				}else{
+					$wb->product_public_price = Price::public_price ( $productprp->price_manage_id, $row ['结算重量'], $wb->partition_code, $wb->boxing_category );
+				}
+				$row ['公开运价'] = $wb->product_public_price;
+			}
+			
+			//重新计算 毛利
+			$wb->calProfitField2 ();
+			$wb->save ();
+			$row ['结果'] = '成功';
+		}
+		$this->_view ['sheet'] = $sheet;
+	}
+	/**
+	 * 差额导入（原来的费用保留，新增费用作为差额费用）
+	 */
+	function actionImportBalance() {
+		if (! request_is_post ()) {
+			exit ( '请上传表格' );
+		}
+		ini_set("memory_limit", "3072M");
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'file' )) {
+			exit ( '请上传表格' );
+		}
+		$file = $uploader->file ( 'file' );
+		$required_fields = array (
+			'运单号','重量'
+		);
+		$des_dir = Q::ini ( 'upload_tmp_dir' );
+		$filename = $des_dir . DS . date ( 'YmdHis' ) . 'ImportBalance.' . $file->extname ();
+		$file->move ( $filename );
+		$xls = Helper_Excel::readFile ( $filename );
+		$sheet = $xls->toHeaderMap ();
+		foreach ( $sheet as &$row ) {
+			if(!strlen($row ['运单号'])){
+				continue;
+			}
+			$r = self::checkRequired ( $required_fields, $row );
+			if (! $r) {
+				$row ['结果'] = '失败，有必填内容没有填写';
+				continue;
+			}
+			$wb = Waybill::find ( 'waybill_code=? and enable_flag="1"', $row ['运单号'] )->getOne ();
+			if ($wb->isNewRecord ()) {
+				$row ['结果'] = '失败，运单号不存在';
+				continue;
+			}
+			//检查登账日期是否关账
+			if($row['应收退佣差额']  || $row['应付客户退佣差额']){
+				if($row ['登账日期']<Config::cbDate()){
+					$row ['结果'] = '失败，登账日期不能早于'.Config::cbDate();
+					continue;
+				}
+			}
+			//委托重量
+			$wb->commission_weight=$row ['重量'];
+			//结算重量
+			$wb->clearing_weight=$row ['重量'];
+			//重新计算结算公开运价
+			//产品--价格-偏派-分区
+			$productprp=Productprp::find("product_id= ? and effective_date<=? and fail_date>=? ",$wb->product_id,$wb->record_order_date,$wb->record_order_date)->getOne();
+			if($productprp->isNewRecord()){
+				$wb->product_public_price=0;
+			}else{
+				$wb->product_public_price = Price::public_price ( $productprp->price_manage_id, $row ['重量'], $wb->partition_code, $wb->boxing_category );
+			}
+			
+			//重新计算委托公开价
+			$wb->customs_public_price = $wb->product_public_price;
+			$wb->save ();
+			if($row['应收退佣差额']!=''){
+				//增加应收退佣费用
+				$waybillblance=new Waybillbalance();
+				//渠道id
+				$waybillblance->channel_id =$wb->channel_id;
+				//渠道名称
+				$waybillblance->channel_name =$wb->channel_name;
+				//运单id
+				$waybillblance->waybill_id =$wb->waybill_id;
+				//费用名称
+				$waybillblance->fee_category ='退佣';
+				//应收退佣差额
+				$waybillblance->should_balance=$row['应收退佣差额'];
+				//收付类型
+				$waybillblance->balance_type ='I';
+				//登账日期
+				$waybillblance->rating_date =date ( 'Y-m-d', strtotime ( $row ['登账日期'] ) );
+				//备注
+				$waybillblance->remark =$row ['备注'];
+				$waybillblance->save();
+			}
+			if($row['应付客户退佣差额']!=''){
+				//增加应退退佣费用
+				$waybillblance=new Waybillbalance();
+				//客户id
+				$waybillblance->customs_id =$wb->customs_id;
+				//客户简称
+				$waybillblance->customs_abbreviation =$wb->customs_abbreviation;
+				//运单id
+				$waybillblance->waybill_id =$wb->waybill_id;
+				//费用名称
+				$waybillblance->fee_category ='退佣';
+				//应付客户退佣差额
+				$waybillblance->should_balance=$row['应付客户退佣差额'];
+				//收付类型
+				$waybillblance->balance_type ='T';
+				//登账日期
+				$waybillblance->rating_date =date ( 'Y-m-d', strtotime ( $row ['登账日期'] ) );
+				//备注
+				$waybillblance->remark =$row ['备注'];
+				$waybillblance->save();
+			}
+			//重新计算毛利
+			$wb->calProfitField ();
+			$wb->save ();
+			$row ['结果'] = '成功';
+		}
+		$this->_view ['sheet'] = $sheet;
+	}
+	
+	/**
+	 * 开票税更改
+	 */
+	function actionImportTax() {
+		if (! request_is_post ()) {
+			exit ( '请上传表格' );
+		}
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'file' )) {
+			exit ( '请上传表格' );
+		}
+		$file = $uploader->file ( 'file' );
+		$required_fields = array (
+			'运单号','成本金额','登帐日期'
+		);
+		$des_dir = Q::ini ( 'upload_tmp_dir' );
+		$filename = $des_dir . DS . date ( 'YmdHis' ) . 'Importtax.' . $file->extname ();
+		$file->move ( $filename );
+		$xls = Helper_Excel::readFile ( $filename );
+		$sheet = $xls->toHeaderMap ();
+		foreach ( $sheet as &$row ) {
+			$r = self::checkRequired ( $required_fields, $row );
+			if (! $r) {
+				$row ['结果'] = '失败，有必填内容没有填写';
+				continue;
+			}
+			$wb = Waybill::find ( 'waybill_code=?  and enable_flag="1"', $row ['运单号'] )->getOne ();
+			if ($wb->isNewRecord ()) {
+				$row ['结果'] = '失败，运单号不存在';
+				continue;
+			}
+			//应付渠道
+			$w=Waybillbalance::find('waybill_id =? and channel_id =56 and balance_type="O"  and length(ifnull(invoice_code,""))=0', $wb->waybill_id)->getOne();
+			if(!$w->isNewRecord()){
+				Waybillbalance::meta ()->destroyWhere ( 'waybill_id =? and channel_id =56 and balance_type="O" and length(ifnull(invoice_code,""))=0', $wb->waybill_id );
+				$wbl = new Waybillbalance ();
+				$wbl->changeProps ( array (
+					'waybill_id' => $wb->waybill_id,'channel_id' => 56,
+					'channel_name' => '泛远财务中心',
+					'should_balance' => $row ['成本金额'],'balance_type' => 'O',
+					'fee_category' => '税',
+					'rating_date' => $row ['登帐日期'],
+					'remark' => $row ['备注']
+				) );
+				$wbl->save ();
+				//重新计算 毛利
+				$wb->calProfitField ();
+				$wb->save ();
+				$row ['结果'] = '成功';
+			}else{
+				$row ['结果'] = '有发票号或者费用不存在';
+			}
+		}
+		$this->_view ['sheet'] = $sheet;
+	}
+	
+	/**
+	 * 到付拒付导入
+	 */
+	function actionImportDishonor() {
+		if (! request_is_post ()) {
+			exit ( '请上传表格' );
+		}
+		$uploader = new Helper_Uploader ();
+		if (! $uploader->existsFile ( 'file' )) {
+			exit ( '请上传表格' );
+		}
+		$file = $uploader->file ( 'file' );
+		$required_fields = array (
+			'运单号','重量','费用名称','金额','登账日期'
+		);
+		$des_dir = Q::ini ( 'upload_tmp_dir' );
+		$filename = $des_dir . DS . date ( 'YmdHis' ) . 'ImportDishonor.' . $file->extname ();
+		$file->move ( $filename );
+		$xls = Helper_Excel::readFile ( $filename );
+		$sheet = $xls->toHeaderMap ();
+		$sheet=Helper_Array::groupBy($sheet, "运单号");
+		foreach ( $sheet as $key=>$value ) {
+			if(!strlen($key)){
+				continue;
+			}
+			$line='';
+			foreach ($value as $k=> $row){
+				$r = self::checkRequired ( $required_fields, $row );
+				if (! $r) {
+					$line='错误';
+					break;
+				}
+			}
+			if($line){
+				foreach ($value as $k=> $row){
+					$sheet[$key][$k]['结果']='失败，有必填内容没有填写';
+					continue;
+				}
+				continue;
+			}
+			$wb = Waybill::find ( 'waybill_code=? and enable_flag="1"', $key )->getOne ();
+			if ($wb->isNewRecord ()) {
+				foreach ($value as $k=> $row){
+					$sheet[$key][$k]['结果']='失败，运单号不存在或已作废';
+					continue;
+				}
+				continue;
+			}elseif ($wb->payment_mode=="PP"){
+				foreach ($value as $k=> $row){
+					$sheet[$key][$k]['结果']='失败，付款方式是PP';
+					continue;
+				}
+				continue;
+			}else{
+				$feetypes=Helper_Array::getCols($value, '费用名称');
+				$feetypes_all=Helper_Array::getCols(FeeType::find()->asArray()->getAll(), 'fee_type_name');
+				$err='';
+				foreach ($feetypes as $f){
+					if(!in_array($f, $feetypes_all)){
+						$err='错误';
+						break;
+					}
+				}
+				if(strlen($err)){
+					foreach ($value as $k=> $row){
+						$sheet[$key][$k]['结果']='失败，费用名称可能不存在';
+						continue;
+					}
+					continue;
+				}
+				//委托重量
+				$wb->commission_weight=$value[0] ['重量'];
+				//结算重量
+				$wb->clearing_weight=$value[0] ['重量'];
+				if (! empty ( $value[0] ['公开运价'] )) {
+					$wb->product_public_price= $value[0] ['公开运价'];
+					$wb->customs_public_price = $value[0] ['公开运价'];
+				}else{
+					//重新计算结算公开运价
+					//产品--价格-偏派-分区
+					$productprp=Productprp::find("product_id= ? and effective_date<=? and fail_date>=? ",$wb->product_id,$wb->record_order_date,$wb->record_order_date)->getOne();
+					if($productprp->isNewRecord()){
+						$wb->product_public_price=0;
+					}else{
+						$wb->product_public_price = Price::public_price ( $productprp->price_manage_id, $value[0] ['重量'], $wb->partition_code, $wb->boxing_category );
+					}
+					//重新计算委托公开价
+					$wb->customs_public_price = $wb->product_public_price;
+					foreach ($value as $k=> $row){
+						$sheet[$key][$k]['公开运价']=$wb->product_public_price;
+					}
+				}
+				if(strlen($value[0] ['运单备注'])){
+					$wb->remark.="\n".$value[0] ['运单备注'];
+				}
+				$wb->abnormal_state="到付拒付";
+				$wb->payment_mode="PP";
+				$wb->save ();
+				foreach ($value as $k=> $row){
+					//检查登账日期是否关账
+					if($row ['登账日期']<Config::cbDate()){
+						$row ['结果'] = '失败，登账日期不能早于'.Config::cbDate();
+						continue;
+					}
+					//增加应付费用
+					$waybillblance=new Waybillbalance();
+					//渠道id
+					$waybillblance->channel_id =$wb->channel_id;
+					//渠道名称
+					$waybillblance->channel_name =$wb->channel_name;
+					//运单id
+					$waybillblance->waybill_id =$wb->waybill_id;
+					//费用名称
+					$waybillblance->fee_category =$row ['费用名称'];
+					//收付类型
+					$waybillblance->balance_type ='O';
+					//费用金额
+					$waybillblance->should_balance =$row ['金额'];
+					//到付拒付标记
+					$waybillblance->no_pay_flag ='1';
+					//登账日期
+					$waybillblance->rating_date =date ( 'Y-m-d', strtotime ( $row ['登账日期'] ) );
+					$waybillblance->save();
+					$sheet[$key][$k]['结果']="成功";
+				}
+				//重新计算毛利
+				$wb->calProfitField ();
+				$wb->save ();
+			}			
+		}
+		$this->_view ['sheet'] = $sheet;
+	}
+	
+	/**
+	 * 检查$row 里面的必填字段是否为空
+	 *
+	 * @param array $required_fields        	
+	 * @param hashmap $row        	
+	 * @return boolean
+	 */
+	static function checkRequired($required_fields, $row) {
+		foreach ( $required_fields as $field ) {
+			if (empty ( $row [$field] )) {
+				return false;
+			}
+		}
+		return true;
+	}
+	/**
+	 * 其他账单对账
+	 */
+	function actionOtherInvoice() {
+		set_time_limit ( 1000 );
+		if (request_is_post ()) {
+			$uploader = new Helper_Uploader ();
+			if ($uploader->existsFile ( 'file' )) {
+				$des_dir = Q::ini ( 'upload_tmp_dir' );
+				$file = $uploader->file ( 'file' );
+				$filename = 'other_invoice_' . date ( 'YmdHis' ) . '.' . $file->extname ();
+				$file->move ( $des_dir . DS . $filename );
+				return $this->_redirect ( url ( '/otherinvoice', array (
+					'f' => $filename,'channel_id' => request ( 'channel_id' ),
+					'end_date' => request ( 'end_date' ) 
+				) ) );
+			}
+		}
+		if (request ( 'f' )) {
+			ini_set("memory_limit", "3072M");
+			$filename = Q::ini ( 'upload_tmp_dir' ) . DS . request ( 'f' );
+			$xls = Helper_Excel::readFile ( $filename );
+			$ppData = $xls->toHeaderMap ();
+			//整理数据
+			$ppData = Helper_Array::sortByCol ( $ppData, 'track_no' );
+			$ppData = Helper_Array::groupBy ( $ppData, 'track_no' );
+			$newData = array ();
+			foreach ( $ppData as $track_no => $rows ) {
+				$newRow = array ();
+				foreach ( $rows as $row ) {
+					foreach ( $row as $colName => $colValue ) {
+						if (empty ( $newRow [$colName] ) && $colName != 'ar') {
+							$newRow [$colName] = $colValue;
+						}
+					}
+					@$newRow ['ar'] += str_replace ( ',', '', $row ['ar'] );
+				}
+				$newData [] = $newRow;
+			}
+// 			array_shift ( $newData );
+			//检查错误
+			$existingWIDs = array ();
+			foreach ( $newData as &$row ) {
+				$wb = Waybill::find ( 'waybill_code =? and enable_flag="1"', trim ( $row ['track_no'] ) )->getOne ();
+				$existingWIDs [] = $wb->waybill_id;
+				$ar = '';
+				do {
+					$error = array ();
+					if ($wb->isNewRecord ()) {
+						$wb_temp = Waybill::find ( 'waybill_code =? and enable_flag="0"', trim ( $row ['track_no'] ) )->getOne ();
+						if(!$wb_temp->isNewRecord()){
+							$error [] = '运单作废';
+						}else{
+							$error [] = '无运单';
+						}
+						break;
+					}
+					$row ['件数'] = $wb->item_count;
+					$row ['部门'] = $wb->department->abbreviation;
+					$row ['产品'] = $wb->product_name;
+					$row ['客户'] = $wb->customs_abbreviation;
+					$row ['RS件'] = $wb->rs_flag ? 'Y' : '';
+					$row ['发件日'] = Helper_Util::strDate ( 'Y-m-d', $wb->record_order_date );
+					$row ['渠道'] = $wb->channel_name;
+					$row ['燃油'] = $wb->fuel_surcharge;
+					$row ['分区'] = $wb->partition_code;
+					$row ['大货价费率'] = $wb->large_commodity_price_rates;
+					
+					if ((in_array ( $wb->boxing_category, array (
+						'P1','P2' 
+					) ) && in_array ( $row ['package'], array (
+						'P1','P2' 
+					) )) || (in_array ( $wb->boxing_category, array (
+						'L','D' 
+					) ) && in_array ( $row ['package'], array (
+						'L','D' 
+					) ))) {
+					} else {
+						$error [] = '包装';
+					}
+					$row ['包装'] = $wb->boxing_category;
+					
+					if ($wb->destination != $row ['dest_ctry']) {
+						$row ['目的地'] = $wb->destination;
+						$error [] = '目的地';
+					}
+					//bill_wt 核对
+					if ($wb->clearing_weight != $row ['bill_wt']) {
+						$row ['系统重'] = $wb->clearing_weight;
+						$row ['客重'] = $wb->commission_weight;
+						
+						$error [] = '重量';
+					}
+					
+					$select = Waybillbalance::find ( 'waybill_id =? and channel_id =? and rating_date<=? and (invoice_code is null or invoice_code="") ', $wb->waybill_id, request ( 'channel_id' ), request ( 'end_date' ) );
+					if(request ( 'channel_id' )==26){
+						$select->where ( 'fee_category ="快件费" ' );
+					}
+					$select->where ( 'balance_type ="O"' );
+					$wbs = $select->getAll ();
+					$ar = Helper_Array::sumBy ( $wbs, 'should_balance' );
+					$row ['ar'] = round ( $row ['ar'], 2 );
+					if ($ar != $row ['ar']) {
+						$row ['金额'] = $ar;
+						$error [] = '金额';
+					}
+					// @todo 退佣金额也要计算，给客户的
+					$select = Waybillbalance::find ( 'waybill_id =? and customs_id =? and rating_date<=? ', $wb->waybill_id, $wb->customs_id, request ( 'end_date' ) );
+					$select->where ( 'balance_type ="T"' );
+					$wbs = $select->getAll ();
+					if (count ( $wbs )) {
+						$ar_t = Helper_Array::sumBy ( $wbs, 'should_balance' );
+						$row ['退'] = $ar_t;
+					} else {
+						$row ['退'] = 0;
+					}
+				} while ( false );
+				$row ['异常'] = implode ( "\n", $error );
+			}
+			//补充无账单数据
+			$select = Waybillbalance::find ( '[channel_id] =? and rating_date<=? ', request ( 'channel_id' ), request ( 'end_date' ) );
+			if(request ( 'channel_id' )==26){
+				$select->where ( 'fee_category ="快件费" ' );
+			}
+			$select->where ( 'balance_type="O" ' );
+			$wbs = $select->setColumns ( 'waybill_id' )
+				->distinct ()
+				->getAll ();
+			$wbs = Helper_Array::getCols ( $wbs, 'waybill_id' );
+			$noInvoices = array_diff ( $wbs, $existingWIDs );
+			if (count ( $noInvoices )) {
+				foreach ( $noInvoices as $wbid ) {
+					$wb = Waybill::find ( 'waybill_id=?', $wbid )->getOne ();
+					$row2 = array (
+						'件数' => $wb->item_count,
+						'部门' => $wb->department->abbreviation,
+						'客户' => $wb->customs_abbreviation,
+						'RS件' => $wb->rs_flag ? 'Y' : '',
+						'billTermReclass' => $wb->payment_mode,
+						'ac_no' => $wb->product_name,
+						'exp_dt' => Helper_Util::strDate ( 'm-d-y', $wb->record_order_date ),
+						'track_no' => $wb->waybill_code,
+						'发件日' => Helper_Util::strDate ( 'Y-m-d', $wb->record_order_date ),
+						'燃油' => $wb->fuel_surcharge,
+						'分区' => $wb->partition_code,
+						'异常' => '无账单' 
+					);
+					//渠道成本、退佣
+					$select = Waybillbalance::find ( 'waybill_id =? and channel_id =? and rating_date<=? and (invoice_code is null or invoice_code="") ', $wb->waybill_id, request ( 'channel_id' ), request ( 'end_date' ) );
+					if(request ( 'channel_id' )==26){
+						$select->where ( 'fee_category ="快件费" ' );
+					}
+					$select->where ( 'balance_type ="O"' );
+					
+					$wbs = $select->getAll ();
+					$ar = Helper_Array::sumBy ( $wbs, 'should_balance' );
+					$row2 ['金额'] = $ar;
+					// @todo 退佣金额也要计算，给客户的
+					$select = Waybillbalance::find ( 'waybill_id =? and customs_id =? and rating_date<=? ', $wb->waybill_id, $wb->customs_id, request ( 'end_date' ) );
+					$select->where ( 'balance_type ="T"' );
+					$wbs = $select->getAll ();
+					if (count ( $wbs )) {
+						$ar_t = Helper_Array::sumBy ( $wbs, 'should_balance' );
+						$row2 ['退'] = $ar_t;
+					} else {
+						$row2 ['退'] = 0;
+					}
+					$newData [] = $row2;
+				}
+			}
+			if (request ( 'export' )) {
+				$tableHead = array (
+					'异常','部门','客户','ar','金额','退','RS件','track_no','件数','package','包装',
+					'bill_wt','系统重','客重','dest_ctry','目的地','产品','大货价费率','发件日','燃油','分区' 
+				);
+				$newSheet = array (
+					$tableHead 
+				);
+				foreach ( $newData as &$row3 ) {
+					if (empty ( $row ['track_no'] )) {
+						continue;
+					}
+					$newRow = array ();
+					foreach ( $tableHead as $col ) {
+						if ($col == 'track_no') {
+							$newRow [] = "'" . @$row3 [$col];
+						} else {
+							$newRow [] = @$row3 [$col];
+						}
+					}
+					$newSheet [] = $newRow;
+				}
+				Helper_ExcelX::array2xlsx ( $newSheet, '其他账单核对导出' );
+				exit;
+			}
+			$this->_view ['ppData'] = $ppData;
+			$this->_view ['newData'] = $newData;
+		}
+	}
+	/**
+	 * UPS账单对账
+	 */
+	function actionUpsInvoice() {
+		ini_set ( 'max_execution_time', '0' );
+		if (request_is_post ()) {
+			$uploader = new Helper_Uploader ();
+			if ($uploader->existsFile ( 'file' )) {
+				$des_dir = Q::ini ( 'upload_tmp_dir' );
+				$file = $uploader->file ( 'file' );
+				$filename = 'ups_invoice_' . date ( 'YmdHis' ) . '.' . $file->extname ();
+				$file->move ( $des_dir . DS . $filename );
+				return $this->_redirect ( url ( '/upsinvoice', array (
+					'f' => $filename,'channel_id' => request ( 'channel_id' ),
+					'start_date' => request ( 'start_date' ),
+					'end_date' => request ( 'end_date' ) 
+				) ) );
+			}
+		}
+		if (request ( 'f' )) {
+			ini_set("memory_limit", "3072M");
+			$filename = Q::ini ( 'upload_tmp_dir' ) . DS . request ( 'f' );
+			try {
+				$xls = Helper_Excel::readFile ( $filename );
+				if (request ( 'cc' )) {
+					$ppData = $xls->toHeaderMap ( 'FC' );
+				} else {
+					$ppData = $xls->toHeaderMap ( 'pp' );
+				}
+			} catch ( Exception $ex ) {
+				return $this->_redirectMessage ( '文件错误', '请确认您的excel文件是否正确', url ( '/upsInvoice' ), 3 );
+			}
+			//整理数据
+			$ppData = Helper_Array::sortByCol ( $ppData, 'track_no' );
+			
+			$ppData = Helper_Array::groupBy ( $ppData, 'track_no' );
+			$newData = array ();
+			foreach ( $ppData as $track_no => $rows ) {
+				$newRow = array ();
+				foreach ( $rows as $row ) {
+					if (request ( 'cc' )) {
+						$row ['inv_total'] = $row ['compensation'];
+					}
+					foreach ( $row as $colName => $colValue ) {
+						if (empty ( $newRow [$colName] ) && $colName != 'inv_total') {
+							$newRow [$colName] = $colValue;
+						}
+					}
+					@$newRow ['inv_total'] += str_replace ( ',', '', $row ['inv_total'] );
+				}
+				$newData [] = $newRow;
+			}
+			//array_shift ( $newData );
+			//检查错误
+			$existingWIDs = array ();
+			foreach ( $newData as &$row ) {
+				$wb = Waybill::find ( 'waybill_code =? and enable_flag="1"', $row ['track_no'] )->getOne ();
+				$existingWIDs [] = $wb->waybill_id;
+				self::upsInvoiceCheckError ( $row, $wb );
+			}
+			//补充无账单数据
+			$select = Waybillbalance::find ( '[channel_id] =? and rating_date>=? and rating_date<=? ', request ( 'channel_id' ), request ( 'start_date' ), request ( 'end_date' ) );
+			if (request ( 'cc' )) {
+				$select->where ( 'balance_type="I" and [waybill.payment_mode]!="PP"' );
+			} else {
+				$select->where ( 'balance_type="O" and [waybill.payment_mode]="PP"' );
+			}
+			$select->where('[waybill.channel_confirm]=0');
+			
+			$wbs = $select->setColumns ( 'waybill_id' )
+				->distinct ()
+				->getAll ();
+			$wbs = Helper_Array::getCols ( $wbs, 'waybill_id' );
+			$noInvoices = array_diff ( $wbs, $existingWIDs );
+			if (count ( $noInvoices )) {
+				foreach ( $noInvoices as $wbid ) {
+					$wb = Waybill::find ( 'waybill_id=?', $wbid )->getOne ();
+					$row2 = array (
+						'部门' => $wb->department->abbreviation,
+						'客户' => $wb->customs_abbreviation,
+						'RS件' => $wb->rs_flag ? 'Y' : '',
+						'billTermReclass' => $wb->payment_mode,
+// 						'ac_no' => $wb->product_name,
+						'产品' => $wb->product_name,
+						'exp_dt' => Helper_Util::strDate ( 'm-d-y', $wb->record_order_date ),
+						'track_no' => $wb->waybill_code,'异常' => '无账单' 
+					);
+					//渠道成本、退佣
+					$select = Waybillbalance::find ( 'waybill_id =? and channel_id =? and rating_date>=?  and rating_date<=? and (invoice_code is null or invoice_code="") ', $wb->waybill_id, request ( 'channel_id' ), request ( 'start_date' ), request ( 'end_date' ) );
+					if (request ( 'cc' )) {
+						$select->where ( 'balance_type ="I"' );
+					} else {
+						$select->where ( 'balance_type ="O"' );
+					}
+					$wbs = $select->getAll ();
+					$ar = Helper_Array::sumBy ( $wbs, 'should_balance' );
+					$row2 ['金额'] = $ar;
+					// @todo 退佣金额也要计算，给客户的
+					$select = Waybillbalance::find ( 'waybill_id =? and customs_id =? and rating_date>=?  and rating_date<=? ', $wb->waybill_id, $wb->customs_id, request ( 'start_date' ), request ( 'end_date' ) );
+					$select->where ( 'balance_type ="T"' );
+					$wbs = $select->getAll ();
+					if (count ( $wbs )) {
+						$ar_t = Helper_Array::sumBy ( $wbs, 'should_balance' );
+						$row2 ['退'] = $ar_t;
+					} else {
+						$row2 ['退'] = 0;
+					}
+					$newData [] = $row2;
+				}
+			}
+			if (request ( 'export' )) {
+				$tableHead = array (
+					'异常','部门','客户','inv_total','金额','退','RS件','billTermReclass','ac_no',
+					'产品','exp_dt','track_no','productReclass','zone','package',
+					'件数','inv_type','bill_wt','系统重','客重','freight',
+					'fuel_surcharge','other_surcharge','dest_ctry','目的地',
+					'service','服务','Fuel','AgentType','大货价费率','渠道' 
+				);
+				$newSheet = array (
+					$tableHead 
+				);
+				foreach ( $newData as &$row3 ) {
+					if (empty ( $row ['track_no'] )) {
+						continue;
+					}
+					$newRow = array ();
+					foreach ( $tableHead as $col ) {
+						$newRow [] = @$row3 [$col];
+					}
+					$newSheet [] = $newRow;
+				}
+				Helper_Excel::array2xls ( $newSheet, 'UPS对账单核对结果' . (request ( 'cc' ) ? '到付' : '预付') . date ( 'Ymd' ) . '.xls' );
+			}
+			$this->_view ['ppData'] = $ppData;
+			$this->_view ['newData'] = $newData;
+		}
+	}
+	
+	/**
+	 * 检查错误
+	 *
+	 * @param array $row        	
+	 * @param Waybill $wb        	
+	 */
+	static function upsInvoiceCheckError(&$row, $wb) {
+		do {
+			$error = array ();
+			$ar = '';
+			if ($wb->isNewRecord ()) {
+				$wb_temp = Waybill::find ( 'waybill_code =? and enable_flag="0"', trim ( $row ['track_no'] ) )->getOne ();
+				if(!$wb_temp->isNewRecord()){
+					$error [] = '运单作废';
+				}else{
+					$error [] = '无运单';
+				}
+				break;
+			}
+			$row ['部门'] = $wb->department->abbreviation;
+			$row ['客户'] = $wb->customs_abbreviation;
+			$row ['RS件'] = $wb->rs_flag ? 'Y' : '';
+			$row ['渠道'] = $wb->channel_name;
+			$row ['大货价费率'] = $wb->large_commodity_price_rates;
+			$row ['产品'] = $wb->product_name;
+			$row ['exp_dt'] = Helper_Util::strDate ( 'm-d-y', $wb->record_order_date );
+			$row ['ac_no'] = substr ( $row ['ac_no'], 4 );
+			
+			if (self::boxing ( $wb->boxing_category ) != $row ['productReclass']) {
+				$row ['包装'] = $wb->boxing_category;
+				$error [] = '包装';
+			}
+			if ($wb->destination != $row ['dest_ctry']) {
+				$row ['目的地'] = $wb->destination;
+				$error [] = '目的地';
+			}
+			if ($wb->partition_code != intval ( $row ['zone'] ) && request ( 'cc' ) != 1) {
+				$row ['分区'] = $wb->partition_code;
+				$error [] = '分区';
+			}
+			//bill_wt 核对
+			if ($wb->clearing_weight != $row ['bill_wt']) {
+				$row ['系统重'] = $wb->clearing_weight;
+				$row ['客重'] = $wb->commission_weight;
+				
+				$error [] = '重量';
+			}
+			//service 1+ Express Plus,ESF 是 Express Saver Freight
+			
+
+			if ($wb->boxing_category == 'ESF' && $row ['service'] != 'WW Express Saver Freight') {
+				$row ['服务'] = $wb->service_code;
+				$error [] = '服务类别';
+			} else {
+				switch ($wb->service_code) {
+					case '1' :
+						if ($row ['service'] != 'WW Express') {
+							$row ['服务'] = $wb->service_code;
+							$error [] = '服务类别';
+						}
+						break;
+					case '1P' :
+						if ($row ['service'] != 'WW Express Saver') {
+							$row ['服务'] = $wb->service_code;
+							$error [] = '服务类别';
+						}
+						break;
+					case '1+' :
+						if ($row ['service'] != 'WW Express Plus') {
+							$row ['服务'] = $wb->service_code;
+							$error [] = '服务类别';
+						}
+						break;
+					case '2' :
+						if ($row ['service'] != 'WW Expedited') {
+							$row ['服务'] = $wb->service_code;
+							$error [] = '服务类别';
+						}
+						break;
+				}
+			}
+			//package
+			if ($wb->item_count != $row ['package']) {
+				$row ['件数'] = $wb->item_count;
+				$error [] = '件数';
+			}
+			//ar 付款，费用记录里面承运人一样的金额加起来与 ar运单号一样的加起来对比
+			//加入渠道筛选项
+			
+
+			$select = Waybillbalance::find ( 'waybill_id =? and channel_id =? and rating_date<=? and (invoice_code is null or invoice_code="") ', $wb->waybill_id, request ( 'channel_id' ), request ( 'end_date' ) );
+			if (request ( 'cc' )) {
+				$select->where ( 'balance_type ="I"' );
+			} else {
+				$select->where ( 'balance_type ="O"' );
+			}
+			$wbs = $select->getAll ();
+			$ar = Helper_Array::sumBy ( $wbs, 'should_balance' );
+			$row ['inv_total'] = round ( $row ['inv_total'], 2 );
+			if ($ar != $row ['inv_total']) {
+				$row ['金额'] = $ar;
+				$error [] = '金额';
+			}
+			// @todo 退佣金额也要计算，给客户的
+			$select = Waybillbalance::find ( 'waybill_id =? and customs_id =? and rating_date<=? ', $wb->waybill_id, $wb->customs_id, request ( 'end_date' ) );
+			$select->where ( 'balance_type ="T"' );
+			$wbs = $select->getAll ();
+			if (count ( $wbs )) {
+				$ar_t = Helper_Array::sumBy ( $wbs, 'should_balance' );
+				$row ['退'] = $ar_t;
+			} else {
+				$row ['退'] = 0;
+			}
+			
+			// pp sheet 是预付的，不能有到付件
+			if (($row ['billTermReclass'] == 'P/P' && $wb->payment_mode != 'PP') || ($row ['billTermReclass'] == 'F/C' && $wb->payment_mode == 'PP')) {
+				$row ['付款'] = $wb->payment_mode;
+				$error [] = '预到付';
+			}
+		} while ( false );
+		$row ['异常'] = implode ( "\n", $error );
+	}
+	
+	/**
+	 *
+	 * @param unknown $boxing        	
+	 * @return string
+	 */
+	static function boxing($boxing) {
+		if (in_array ( $boxing, array (
+			'P1','P2','ESF' 
+		) )) {
+			return 'N-DOC';
+		}
+		if ($boxing == 'D') {
+			return 'DOC';
+		}
+		if ($boxing == 'L') {
+			return 'LTR';
+		}
+	}
+	
+	/**
+	 * 创建SQL
+	 *
+	 * @return QDB_Select
+	 */
+	function createWaybillbalanceSQL($type = "I") {
+		//公共时间
+		if (request ( 'start_date', MyApp::getDate ( 'start_date' ) ) != MyApp::getDate ( 'start_date' )) {
+			MyApp::setDate ( 'start_date', request ( 'start_date' ) );
+		}
+		if (request ( 'end_date', MyApp::getDate ( 'end_date' ) ) != MyApp::getDate ( 'end_date' )) {
+			MyApp::setDate ( 'end_date', request ( 'end_date' ) );
+		}
+		
+		$date_type = request ( "datetype", "rating_date" ) == "rating_date" ? "rating_date" : Waybill::meta()->table->name.".record_order_date";
+		$status = request ( "status", "0" );
+		
+		$select = Waybillbalance::find ();
+		$select->where ( "[waybill.department_id] IN (?)", RelevantDepartment::departmentids () );
+		$select->where ( $date_type . " >= ?", MyApp::getDate ( 'start_date' ) );
+		$select->where ( $date_type . " <= ?", MyApp::getDate ( 'end_date' ) );
+		if ($status == "0") {
+			$select->where ( "balance_type = ?", $type );
+			$select->where ( "(voucher_code = '' OR voucher_code IS NULL)" );
+		} else if ($status == "1") {
+			$select->where ( "balance_type = ?", $type );
+			$select->where ( "(voucher_code != '' AND voucher_code IS NOT NULL) AND (headquarters_voucher_code IS NULL OR headquarters_voucher_code = '')" );
+		} else if ($status == "2") {
+			$select->where ( "balance_type = ?", $type );
+		} else if ($status == "3") {
+			$select->where ( "balance_type = 'T'" );
+			$select->where ( "voucher_code = '' OR voucher_code IS NULL " );
+		} else if ($status == "4") {
+			$select->where ( "balance_type = 'T'" );
+			$select->where ( "voucher_code != '' AND voucher_code IS NOT NULL" );
+		} else if ($status == "5") {
+			$select->where ( "balance_type = 'T'" );
+		} else if ($status == "6") {
+			$select->where ( "balance_type = ?", $type );
+			$select->where ( "headquarters_voucher_code != '' AND headquarters_voucher_code IS NOT NULL" );
+		}
+		if (request ( "fee_category" )) {
+			$select->where ( "fee_category = ?", request ( "fee_category" ) );
+		}
+		if (request ( "waybill_codes" )) {
+			$waybill_codes = array ();
+			$waybill_codes = str_replace ( array (
+				"\r",' ' 
+			), '', request ( 'waybill_codes' ) );
+			$waybill_codes = explode ( "\n", $waybill_codes );
+			$waybill_codes = array_unique ( $waybill_codes );
+			MyApp::$static_message = $waybill_codes; //缓存待用
+			$cond = new QDB_Cond ();
+			foreach ( $waybill_codes as $wbline ) {
+				if (strpos ( $wbline, "\t" )) {
+					list ( $wbcode, $balance ) = explode ( "\t", $wbline );
+					if ($balance) {
+						$cond->orCond ( '[waybill.waybill_code] =? and should_balance=?', $wbcode, $balance );
+					} else {
+						$cond->orCond ( '[waybill.waybill_code] =?', $wbcode );
+					}
+				} else {
+					$wbcode = $wbline;
+					$cond->orCond ( '[waybill.waybill_code] =?', $wbcode );
+				}
+			}
+			$select->where ( $cond );
+			//增加费用记录判断
+		}
+		if (request ( "invoice_code" )) {
+			$select->where ( "invoice_code = ?", request ( "invoice_code" ) );
+		}
+		if (request ( "voucher_code" )) {
+			$select->where ( "voucher_code = ?", request ( "voucher_code" ) );
+		}
+		if (request ( "headquarters_voucher_code" )) {
+			$select->where ( "headquarters_voucher_code = ?", request ( "headquarters_voucher_code" ) );
+		}
+		if (request ( "invoice_code_flag" )) {
+			$select->where ( "invoice_code = '' OR invoice_code IS NULL" );
+		}
+		$select->order ( $date_type . " desc, ".Waybill::meta()->table->name.".waybill_code asc" );
+		return $select;
+	}
+	
+	/**
+	 * 费用拆分
+	 */
+	function actionSplit(){
+		if(request("waybill_balance_id") && request("originamount") && request("nowamount") ){
+			$waybillbalance=Waybillbalance::find("waybill_balance_id=?",request("waybill_balance_id"))->getOne();
+			if(!$waybillbalance->isNewRecord()){
+				$conn = QDB::getConn ();
+				$conn->startTrans ();
+				$waybillbalance->should_balance=request("nowamount");
+				$waybillbalance->save();
+				//创建新的一条数据
+				$amount=request("originamount")-request("nowamount");
+				$sql = "INSERT INTO ".Waybillbalance::meta()->table->name." (waybill_id, channel_id, channel_name, customs_id, customs_abbreviation, fee_category, price, rate, fuel_rates, balance_type, should_balance, no_pay_flag, confirm_billing_flag, waybill_title,invoice_code,rating_date,invoice_date,billing_date,offs_date,voucher_code,headquarters_voucher_code,headquarters_offs_date,remark,data_recorder,voucher_recorder,create_date,update_date)";
+				$sql .= "SELECT waybill_id, channel_id, channel_name, customs_id, customs_abbreviation, fee_category, price, rate, fuel_rates, balance_type, '{$amount}', no_pay_flag, confirm_billing_flag, waybill_title,invoice_code,rating_date,invoice_date,billing_date,offs_date,voucher_code,headquarters_voucher_code,headquarters_offs_date,remark,data_recorder,voucher_recorder,create_date,update_date  FROM ".Waybillbalance::meta()->table->name." WHERE waybill_balance_id = " . $waybillbalance->waybill_balance_id;
+				$conn->execute ( $sql );
+				if (!MyApp::isShadow()){
+					$waybillrecord=new WaybillRecord();
+					//费用类型和费用金额
+					$type = "其他";
+					if ($waybillbalance->balance_type == "I") {
+						$type = "应收";
+					} else if ($waybillbalance->balance_type == "O") {
+						$type = "应付";
+					}
+					$waybillrecord->changeProps(array(
+						"waybill_id"=>$waybillbalance->waybill_id,
+						"modifier"=>MyApp::currentUser ( "user_name" ),
+						"modifier_content"=>"新建".$type." 「".$waybillbalance->fee_category."」 ".$amount
+					));
+					$waybillrecord->save();
+				}
+				$conn->completeTrans ( true );
+				echo "true";
+			}else{
+				echo "false";
+			}
+			
+		}else{
+			echo "false";
+		}
+		exit;
+	}
+	//批量导入收款发票号
+	function actionBatchInvoice(){
+	    if (request_is_post ()) {
+	        if(!request("start_date") || !request("end_date")){
+	           return  $this->_redirectMessage("起始日期和结束日期必填", "请重新操作", url("balance/batchinvoice"),2);
+	        }
+	        set_time_limit(0);
+	        $uploader = new Helper_Uploader ();
+	        if (! $uploader->existsFile ( 'file' )) {
+	            return $this->_redirectMessage("表格不存在", "请上传表格", url("balance/batchinvoice"),2);
+	        }
+	        $file = $uploader->file ( 'file' );
+	        $required_fields = array (
+	            '客户','金额','发票抬头','发票号'
+	        );
+	        $des_dir = Q::ini ( 'upload_tmp_dir' );
+	        $filename = $des_dir . DS . date ( 'YmdHis' ) . 'ImportBatchInvoice.' . $file->extname ();
+	        $file->move ( $filename );
+	        $xls = Helper_Excel::readFile ( $filename );
+	        $sheet = $xls->toHeaderMap ();
+	        foreach ( $sheet as &$row ) {
+	        	if(!strlen($row['金额'])){
+	        		continue;
+	        	}
+	            $r = self::checkRequired ( $required_fields, $row );
+	            if (! $r) {
+	                $row ['结果'] = '失败，有必填内容没有填写';
+	                continue;
+	            }
+	            $customer=Customs::find('customs_abbreviation=? and department_id=?',$row['客户'],request("department_id"))->getOne();
+	            if($customer->isNewRecord()){
+	            	$row ['结果'] = '失败，客户不存在';
+	            	continue;
+	            }else {
+	            	$title=WayBillTitle::find('customs_id=? and name=? ',$customer->customs_id,$row['发票抬头'])->getOne();
+	            	if($title->isNewRecord()){
+	            		$row ['结果'] = '失败，账单抬头不存在';
+	            		continue;
+	            	}
+	            }
+	            $wbs=Waybillbalance::find("tb_waybill_balance.customs_abbreviation=?  and rating_date>=? and rating_date<=?  and balance_type='I' and confirm_billing_flag='1' and (invoice_code is null or invoice_code ='') and (voucher_code = '' or voucher_code IS null)",$row['客户'],request("start_date"),request("end_date"))->joinLeft("tb_waybill", '*',"tb_waybill.waybill_id=tb_waybill_balance.waybill_id")->where("tb_waybill.department_id=?",request("department_id"))->asArray()->getAll();
+	            $a=Waybillbalance::find("tb_waybill_balance.customs_abbreviation=?  and rating_date>=? and rating_date<=?  and balance_type='I' and confirm_billing_flag='1' and (invoice_code is null or invoice_code ='') and (voucher_code = '' or voucher_code IS null)",$row['客户'],request("start_date"),request("end_date"))->joinLeft("tb_waybill", '*',"tb_waybill.waybill_id=tb_waybill_balance.waybill_id")->where("tb_waybill.department_id=?",request("department_id"))->asArray()->getSum('should_balance');
+	            if($a!=sprintf("%.2f",$row['金额'])){
+	                $row ['结果'] = '失败，金额不匹配';
+	                continue;
+	            }else{
+	                foreach ($wbs as $w){
+	                    $wb=Waybillbalance::find("waybill_balance_id=?",$w['waybill_balance_id'])->getOne();
+	                    if(!$wb->isNewRecord()){
+	                        $wb->invoice_code=$row['发票号'];
+	                        $wb->invoice_date=date('Y-m-d');
+	                        $wb->waybill_title=$row['发票抬头'];
+	                        $wb->save();
+	                    }
+	                }
+	            }
+	            $row ['结果'] = '成功';
+	        }
+	        $this->_view ['sheet'] = $sheet;
+	    }
+	}
+	
+	/**
+	 * 同步费用数据到金蝶系统
+	 */
+	function actionSyncFeeToJindie(){
+		if(request_is_post()){
+			if(!request("start_date") || !request("end_date")){
+				return  $this->_redirectMessage("起始日和截止日必填", "请重新操作", url("balance/syncfeetojindie"),2);
+			}
+			if(!request("balance_type")){
+				return  $this->_redirectMessage("费用类型不存在", "请重新操作", url("balance/syncfeetojindie"),2);
+			}
+			set_time_limit(0);
+			header("Content-type: text/html; charset=GBK");
+			$serverName = "192.168.0.220"; //金蝶sqlserver数据库服务器地址
+			$uid = "sa"; //数据库用户名
+			$pwd = "78uijkm,"; //数据库密码
+			$connectionInfo = array("UID"=>$uid, "PWD"=>$pwd, "Database"=>"FYZS");
+			//删除数据
+			$conn_delete = sqlsrv_connect( $serverName, $connectionInfo);
+			if($conn_delete!= false){
+				$sql_delete="";
+				if(request("balance_type")=="I"){
+					$sql_delete="delete from t_income_detail_bhn where f_biz_type='1' and  f_sign_date >='".request("start_date")."' and f_sign_date<='".request("end_date")."'";
+				}else{
+					$sql_delete="delete from t_cost_detail_bhn where f_biz_type='1' and  f_sign_date >='".request("start_date")."' and f_sign_date<='".request("end_date")."'";
+				}
+				$stmt_delete = sqlsrv_query($conn_delete, iconv ( "utf-8", "gb2312//IGNORE", $sql_delete ));
+				sqlsrv_free_stmt( $stmt_delete);
+				sqlsrv_close( $conn_delete);
+			}
+			$balances=Waybillbalance::find("balance_type=? and sign_date>=? and sign_date<=? and waybill_title!='' and waybill_title is not null and (sign_date >0 or (invoice_code is not null and invoice_code !=''))  ",request("balance_type"),request("start_date"),request("end_date")) ->all ()->getQueryHandle ();
+			while ( ($row = $balances->fetchRow ()) != false ) {
+				$waybillbalance=Waybillbalance::find("waybill_balance_id=?",$row["waybill_balance_id"])->getOne();
+				if(!$waybillbalance->isNewRecord()){
+					$sign_date=$waybillbalance->sign_date;
+					$invoice_date=is_null($waybillbalance->invoice_date)? '':$waybillbalance->invoice_date;
+					$offs_date=is_null($waybillbalance->offs_date)? '':$waybillbalance->offs_date;
+					$department=$waybillbalance->waybill->department_abbreviation;
+					if(!strlen($department)){
+						continue;
+					}
+					//验证客户账单抬头（金蝶系统）
+					$customer='';
+					$conn_customer = sqlsrv_connect( $serverName, $connectionInfo);
+					if(request("balance_type")=="I"){
+						$sql_customer="select FID from T_BD_Customer where FName_L2='".$waybillbalance->waybill_title."'";
+					}else{
+						$sql_customer="select FID from T_BD_Supplier where FName_L2='".$waybillbalance->waybill_title."'";
+					}
+					$stmt_customer = sqlsrv_query($conn_customer,iconv ( "utf-8", "gb2312//IGNORE", $sql_customer ) );
+					if($stmt_customer){
+						while($row = sqlsrv_fetch_array($stmt_customer)){
+							$customer=$row["FID"];
+						}
+					}
+					sqlsrv_free_stmt( $stmt_customer);
+					sqlsrv_close( $conn_customer);
+					if(!strlen($customer)){
+						continue;
+					}
+					//验证公司（金蝶系统）
+					$company='';
+					$company_id='';
+					if($department=="嘉兴分公司"){
+						$company='杭州泛远国际物流股份有限公司嘉兴分公司';
+					}elseif ($department=="绍兴分公司" || $department=="嵊州分公司"){
+						$company='杭州泛远国际物流股份有限公司绍兴分公司';
+					}elseif ($department=="台州分公司" || $department=="台州泛远"){
+						$company='杭州泛远国际物流股份有限公司台州分公司';
+					}elseif ($department=="义乌分公司" || $department=="义乌一部" || $department=="义乌二部" || $department=="义乌泛远"){
+						$company='杭州泛远国际物流股份有限公司义乌分公司';
+					}else{
+						$company='杭州泛远国际物流有限公司本部';
+					}
+					$conn_company = sqlsrv_connect( $serverName, $connectionInfo);
+					$sql_company="select FID from T_ORG_Company where FName_L2='".$company."'";
+					$stmt_company = sqlsrv_query($conn_company,iconv ( "utf-8", "gb2312//IGNORE", $sql_company ) );
+					if($stmt_company){
+						while($row = sqlsrv_fetch_array($stmt_company)){
+							$company_id=$row["FID"];
+						}
+					}
+					sqlsrv_free_stmt( $stmt_company);
+					sqlsrv_close( $conn_company);
+					if(!strlen($company_id)){
+						continue;
+					}
+					//费用类型
+					$fee_type='';
+					if($waybillbalance->waybill->sign_flag=='2'){
+						$fee_type="4";
+					}elseif(strlen($waybillbalance->invoice_code) && strlen($waybillbalance->sign_date)){
+						$fee_type="1";
+					}elseif(!strlen($waybillbalance->invoice_code) && strlen($waybillbalance->sign_date)){
+						$fee_type="2";
+					}elseif(strlen($waybillbalance->invoice_code) && !strlen($waybillbalance->sign_date)){
+						$fee_type="3";
+					}elseif(!strlen($fee_type)){
+						continue;
+					}
+					//收付状态
+					$fee_state='0';
+					if(strlen($waybillbalance->voucher_code)){
+						$fee_state='1';
+					}
+					$sql_value="('".$company_id."','".$customer."','".$sign_date."','".$waybillbalance->waybill->waybill_code."','".$waybillbalance->invoice_code."','".$invoice_date."',1,".$fee_type.",".$waybillbalance->should_balance.",'".$offs_date."',".$fee_state.",'".$waybillbalance->rating_date."','BB01')";
+					$conn_insert = sqlsrv_connect( $serverName, $connectionInfo);
+					if(request("balance_type")=="I"){
+						$sql_insert="insert into t_income_detail_bhn (f_compane_erp_id,f_customer_erp_id,f_sign_date,f_bill_code,f_invoice_code,f_invoice_date,f_biz_type,f_data_type,f_amount,f_write_off_date,f_receive_state,f_rating_date,f_currency_eas_id) values ";
+						$sql_insert.=$sql_value;
+					}else{
+						$sql_insert="insert into t_cost_detail_bhn (f_compane_erp_id,f_supplier_erp_id,f_sign_date,f_bill_code,f_invoice_code,f_invoice_date,f_biz_type,f_data_type,f_amount,f_write_off_date,f_pay_state,f_rating_date,f_currency_eas_id) values ";
+						$sql_insert.=$sql_value;
+					}
+					$stmt = sqlsrv_query($conn_insert,  iconv ( "utf-8", "gb2312//IGNORE", $sql_insert ));
+					sqlsrv_free_stmt( $stmt);
+					sqlsrv_close( $conn_insert);
+				}
+			}
+		}
+	}
+	
+	//更新发票号和凭证号
+	function actionUpdateInvoice(){
+		session_write_close();
+		set_time_limit(0);
+		
+		if (!MyApp::isShadow()){
+			exit('无权限操作');
+		}
+		if(request_is_post()){
+			ini_set("memory_limit", "3072M");
+			$uploader = new Helper_Uploader ();
+			if (! $uploader->existsFile ( 'file' )) {
+				exit ( '请上传表格' );
+			}
+			$file = $uploader->file ( 'file' );
+			$des_dir = Q::ini ( 'upload_tmp_dir' );
+			$filename = $des_dir . DS . date ( 'YmdHis' ) . 'updateInvoice.' . $file->extname ();
+			$file->move ( $filename );
+			$xls = Helper_Excel::readFile ( $filename );
+			$sheet = $xls->toHeaderMap ();
+			$balance_type=request("balance_type");
+			//记录无效的费用
+			$arr_bal=array();
+			foreach ($sheet as &$value){
+				if (strlen($value['运单号'])){
+					$w=Waybill::find("waybill_code=? ",$value['运单号'])->getOne();
+					if($w->isNewRecord()){
+						$value['结果']='运单号不存在';
+						continue;
+					}else{
+						$customer=Customs::find('customs_abbreviation=?',$value['客户'])->getOne();
+						if($customer->isNewRecord()){
+							$channel=Channel::find("channel_name=?",$value['客户'])->getOne();
+							if($channel->isNewRecord()){
+								$value['结果']='客户不存在';
+								continue;
+							}else{
+								$balance=Waybillbalance::find("waybill_id=? and balance_type=? and channel_name=? and should_balance=?",$w->waybill_id,$balance_type,$value['客户'],$value['金额'])->getOne();
+								
+							}
+						}else{
+							$balance=Waybillbalance::find("waybill_id=? and balance_type=? and customs_abbreviation=? and should_balance=?",$w->waybill_id,$balance_type,$value['客户'],$value['金额'])->getOne();
+						}
+						if($balance->isNewRecord()){
+							$value['结果']='费用不存在';
+							continue;
+						}else{
+							if(strlen($value['发票号'])){
+								$balance->invoice_code=$value['发票号'];
+							}
+							if(strlen($value['发票号']) && strtotime($value['开票日期'])){
+								$balance->invoice_date=date("Y-m-d",strtotime($value['开票日期']));
+							}
+							if(strlen($value['凭证号'])){
+								$balance->voucher_code=$value['凭证号'];
+							}
+							if(strlen($value['凭证号']) && strtotime($value['销账日期'])){
+								$balance->offs_date=date("Y-m-d",strtotime($value['销账日期']));
+							}
+							if(strlen($value['账单抬头'])){
+								$balance->waybill_title=$value['账单抬头'];
+							}
+							$balance->save();
+							$value['结果']='更新成功';
+						}	
+						
+					}
+				}
+			}
+			$this->_view["sheet"]=$sheet;
+		}	
+	}
+	/**
+	 * 逾期报告
+	 */
+	function actionOverdue(){
+		$select=Overduereport::find();
+		//部门
+		if(request("department_id")){
+			$select->where("department_id in (?)",request("department_id"));
+		}else{
+			$select->where('department_id in (?)',RelevantDepartment::departmentids());
+		}
+		if (request ( "do" ) == "export") {
+			set_time_limit ( 0 );
+			ini_set("memory_limit", "3072M");
+			$select_department=clone $select;
+			//部门
+			$department=$select_department->order('overdue_date')->group('department_id,department_name')->setColumns('department_id,department_name')->asArray()->getAll ();
+			if(count($department)){
+				$sheet=array();
+				foreach ($department as $d){
+					//月份
+					$select_month=clone $select;
+					$month = $select_month->where('department_id=?',$d['department_id'])->order('overdue_date')->group('overdue_date')->setColumns('overdue_date')->asArray()->getAll ();
+					if(count($month)){
+						//部门行
+						$fistheader=array('部门:'.$d['department_name'],'','');
+						foreach ($month as $v){
+							array_push($fistheader,'');
+						}
+						$month=Helper_Array::getCols($month, 'overdue_date');
+						$header = array (
+							"拒付状态","客户 ","合同天数 "
+						);
+						$header=array_merge($header,$month);
+						$sheet[] = $fistheader;
+						array_push($header, '总计');
+						$sheet[] = $header;
+					}else{
+						continue;
+					}
+					
+					//客户
+					$select_customer=clone $select;
+					$customer = $select_customer->where('department_id=?',$d['department_id'])->order('overdue_date')->group('customs_id,customs_abbreviation,contract_day_left')->setColumns('customs_id,customs_abbreviation,contract_day_left')->asArray()->getAll ();
+					if(count($customer)<1){
+						continue;
+					}
+					
+					//拒付状态
+					$select_type=clone $select;
+					$type=$select_type->where('department_id=?',$d['department_id'])->group('waybill_status')->setColumns('waybill_status')->asArray()->getAll ();
+					if(count($type)){
+						foreach ($type as $t){
+							foreach ($customer as $c){
+								$num=0;
+								$row=array('',$c['customs_abbreviation'],$c['contract_day_left']);
+								foreach ($month as $m){
+									$overdue_amount=Overduereport::find('department_id=? and waybill_status=? and customs_id=? and overdue_date=?',$d['department_id'],$t['waybill_status'],$c['customs_id'],$m)->asArray()->getSum('overdue_amount');
+									if($overdue_amount && $overdue_amount !=0){
+										array_push($row, $overdue_amount);
+										$num++;
+									}else{
+										array_push($row, '');
+									}
+								}
+								if($num>0){
+									//行统计
+									$sum_line=Overduereport::find('department_id=? and waybill_status=? and customs_id=?',$d['department_id'],$t['waybill_status'],$c['customs_id'])->asArray()->getSum('overdue_amount');
+									array_push($row, $sum_line);
+									$sheet [] = $row;
+								}
+								
+							}
+							//列统计
+							$row_column=array($t['waybill_status'],'汇总','');
+							$total_line_type=0;
+							foreach ($month as $mo){
+								$sum_column=Overduereport::find('department_id=? and waybill_status=? and overdue_date=? ',$d['department_id'],$t['waybill_status'],$mo)->asArray()->getSum('overdue_amount');
+								array_push($row_column, $sum_column?$sum_column:'');
+								$total_line_type+=$sum_column;
+							}
+							array_push($row_column, $total_line_type?$total_line_type:'');
+							$sheet [] = $row_column;
+						}
+						
+					}else{
+						continue;
+					}
+					//部门汇总
+					$total_department=array('总计','','');
+					$sum_department_all=0;
+					//空白行
+					$blank=array('','','');
+					foreach ($month as $mo){
+						$sum_department=Overduereport::find('department_id=? and overdue_date=? ',$d['department_id'],$mo)->asArray()->getSum('overdue_amount');
+						array_push($total_department, $sum_department?$sum_department:'');
+						$sum_department_all+=$sum_department;
+						array_push($blank, '');
+					}
+					array_push($total_department, $sum_department_all?$sum_department_all:'');
+					array_push($blank, '');
+					$sheet [] = $total_department;
+					$sheet [] = $blank;
+				}
+			}
+			Helper_ExcelX::array2xlsx ( $sheet, "逾期报告" );
+			exit ();
+		}
+		$report=$select->limitPage ( (request_is_post () ? 1 : request ( "page", 1 )), request ( "amount", MyApp::getPageSize () ) )
+		->fetchPagination ( $pagination )->getAll();
+		$this->_view['report']=$report;
+		$this->_view ["pagination"] = $pagination;
+	}
+	/**
+	 * 费用解锁
+	 */
+	function actionUnlockfee(){
+	    $balance_ids=request('waybill_balance_id');
+	    foreach ($balance_ids as $balance_id){
+	        $balance=Waybillbalance::find('waybill_balance_id=?',$balance_id)->getOne();
+	        $balance->unlock_flag='1';
+	        $balance->save();
+	    }
+	    echo 'success';
+	    exit();
+	}
+}

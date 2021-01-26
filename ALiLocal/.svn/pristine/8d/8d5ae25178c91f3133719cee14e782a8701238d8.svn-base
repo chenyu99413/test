@@ -1,0 +1,332 @@
+<?PHP $this->_extends('_layouts/default_layout'); ?>
+<?PHP $this->_block('title');?>
+    包裹出库
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('head');?>
+    <?php //head 部分 ?>
+<?PHP $this->_endblock();?>
+<?PHP $this->_block('contents');?>
+<script type="text/javascript" src="<?php echo $_BASE_DIR?>public/supcan/binary/dynaload.js"></script>
+<script type="text/javascript" src="<?php echo $_BASE_DIR?>qz/demo/js/dependencies/rsvp-3.1.0.min.js"></script>
+<script type="text/javascript" src="<?php echo $_BASE_DIR?>qz/demo/js/dependencies/sha-256.min.js"></script>
+<script type="text/javascript" src="<?php echo $_BASE_DIR?>qz/demo/js/qz-tray.js"></script>
+<script type="text/javascript">
+$('body').on('keydown', 'input, select', function(e) {
+	if (e.keyCode == 13) {
+		return enter2tab(this,e);
+	}
+});
+print=function () {
+	var agent = navigator.userAgent.toLowerCase();
+	if (agent.indexOf("msie") > 0) {
+		return true;
+	}
+	if (!navigator.mimeTypes["application/supcan-plugin"]) {
+		if (agent.indexOf("chrome") > 0){
+			$.messager.alert('', '条码打印功能暂时不支持谷歌浏览器');
+			//window.open("install_chrome.htm");
+		}
+		else{
+			window.open("<?php echo $_BASE_DIR?>public/supcan/binary/supcan.xpi");
+		}
+	}
+};
+function OnReady(id){
+	print();
+}
+function OnEvent(id, Event, p1, p2, p3, p4){}
+</script>
+<div class="span9">
+	<div style="height: 1px; width:1px ">
+		<SCRIPT type="text/javascript">insertReport('AF', 'CollapseToolbar=true');</SCRIPT>
+	</div>
+</div>
+    <div class="FarSearch" >
+	<table id="package">
+		<tbody>
+			<tr>
+				<th>阿里订单号</th>
+				<td>
+					<input name="ali_order_no" type="text" id="ali_order_no" style="width: 200px" value="">
+				</td>
+				<th>异形包装费数量</th>
+				<td>
+					<input name="special_packing_fee" type="number" id="special_packing_fee" style="width: 100px" value=""><span id="explain" style="margin-left:10px;"></span>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+<?PHP $this->_endblock();?>
+<script type="text/javascript">
+	function displayError(err) {
+	    console.error(err);
+	    displayMessage(err, 'alert-danger');
+	}
+
+	$(function(){
+		//加载可信证书
+		qz.security.setCertificatePromise(function(resolve, reject) {
+	    	$.ajax("<?php echo $_BASE_DIR?>qz/demo/assets/signing/digital-certificate.txt").then(resolve, reject);
+		});
+		//签名
+    	qz.security.setSignaturePromise(function(toSign) {
+            return function(resolve, reject) {
+            	$.post("<?php echo $_BASE_DIR?>qz/demo/assets/signing/sign-message.php", {request: toSign}).then(resolve, reject);
+            };
+        });
+		document.getElementById("ali_order_no").focus();
+		//扫描阿里单号
+		$('#ali_order_no').bind('keyup', function (e) {
+			if(e.keyCode ==13){
+				$("#explain").html('')
+				$.ajax({
+					url:'<?php echo url('warehouse/checkorder')?>',
+					type:'POST',
+					dataType:'json',
+					data:{ali_order_no:$("#ali_order_no").val()},
+					success:function(data){
+						 if(data.message=='notexist'){
+							$("#explain").html('单号不存在').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/danhaobucunzai.mp3');//单号不存在
+						}else if(data.message=='volume_weight'){//录入泡重
+							$("#package").nextAll().remove();
+							str='<b><span style="float:left;margin-left:5px;">录入Package信息：</span></b><form id="package_form" style="clear:both"><div><table>';
+							$.each(data.packages,function(key,value){
+								str+='<tr class="edit_packages"><th>长度</th><td><input name="package[length_far][]" type="number" step="0.01" required="required" style="width: 140px"value="'+value.length+'"></td>'+
+								'<th>宽度</th><td><input name="package[width_far][]" type="number" step="0.01" required="required" style="width: 150px"value="'+value.width+'"></td><th>高度</th><td><input name="package[height_far][]" type="number" step="0.01" required="required" style="width: 150px"value="'+value.height+'"></td>'+
+								'<th>重量</th><td><input name="package[weight_far][]" type="number" step="0.01" required="required" style="width: 150px"value="'+value.weight+'"><input type="hidden" name="package[order_id][]" value="'+value.order_id+'"><input type="hidden" name="package[far_package_id][]" value="'+value.far_package_id+'"></td></tr>';
+							})
+							str+='</table><div class="FarTool text-center" style="margin-left:-300px;"><a type="submit" class="btn btn-primary btn-small" href="javascript:void(0)" onclick="Save();"><i class="icon-save"></i>保存</a></div></div></form>';
+							$("#package").after(str);
+						}else if(data.message=='hasbattery'){
+							$("#explain").html('不支持带电产品').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/buzhichidaidianchanpin.mp3');//不支持带电产品
+						}else if(data.message=='checkout'){
+							$("#explain").html('订单已出库').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/yichuku.mp3');//包裹已出库
+						}else{
+							$("#special_packing_fee").focus();
+						}
+					}
+				})
+			}
+		});
+		//计算费用，保存面单
+		$('#special_packing_fee').bind('keyup', function (e) {
+			if(e.keyCode ==13){
+				$("#explain").html('');
+				$.ajax({
+					url:'<?php echo url('warehouse/checkout')?>',
+					type:'POST',
+					dataType:'json',
+					data:{ali_order_no:$("#ali_order_no").val(),special_packing_fee:$("#special_packing_fee").val()},
+					success:function(data){
+						$("#package").nextAll().remove();
+						if(data.message=='productnotexist'){
+							$("#explain").html('产品不存在').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/chanpinbucunzai.mp3');//产品不存在
+						}else if(data.message=='channelnotexist'){
+							$("#explain").html('渠道成本不存在').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/qudaochengbenbucunzai.mp3');//渠道成本不存在
+						}else if(data.message=='运费计算失败'){
+							$("#explain").html('').css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/jisuanyunfeishibai.mp3');//运费计算失败
+						}else if(data.message!='true'){
+							$("#explain").html('获取面单失败' + data.message).css('color','red');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/miandanshibai.mp3');//获取面单那失败
+						}else{
+							$("#explain").html('出库成功').css('color','green');
+							$.sound.play('<?php echo $_BASE_DIR;?>public/sound/chukuchenggong.mp3');//出库成功
+							//打印面单和invoice
+							print_label(data.account);
+						}
+					}
+				})
+			}
+		});
+	})
+	//保存泡重信息
+	function Save(){
+		$.ajax({
+			url:'<?php echo url('/savevolumeweight')?>',
+			type:'POST',
+			dataType:'json',
+			data:$("#package_form").serialize(),
+			success:function(data){
+				$("#special_packing_fee").focus();
+			}
+		});
+	}
+	/**
+	*打印功能
+	**/
+	function print_label(account){
+		var ali_order_no=$("#ali_order_no").val();
+		$.ajax({
+			url:'<?php echo url('/gettrackingno')?>',
+			type:'POST',
+			dataType:'json',
+			data:{ali_order_no:ali_order_no},
+			success:function(data){
+				//搜索斑马打印机
+				qz.websocket.connect().then(function() {
+					qz.printers.find('Zebra').then(function(datas) {
+		            	var cf = getUpdatedConfig();
+		                cf.setPrinter(datas);
+			        }).then(function(){
+			        	 var config = getUpdatedConfig();
+			          	 var printData = [
+			          	     { type: 'pdf', data: '<?php echo $_BASE_DIR;?>_tmp/upload/'+ data.tracking_no+".pdf" }
+			          	 ];
+			          	qz.print(config, printData);
+			        }).catch(displayError);
+				});
+				
+				if(account=='RF'){
+					AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsprintsheet3.xml");
+					AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+					switchPrinter('P1606dn');
+					AF.func("Calc", ""); //填充数据
+					AF.func("Print", "isOpenSysDialog=false");
+				}else{
+					for(var tt=1;tt<5;tt++){
+						if(data.sub_code_count <= 11 && tt==2){
+							continue;
+						}
+						AF.func("Build", "<?php echo $_BASE_DIR?>public/supcan/upsprintsheet"+tt+".xml");
+						AF.func("SetSource", "ds1 \r\n "+'<?php echo $_BASE_DIR?>_tmp/upload/'+data.tracking_no+'.json');
+						switchPrinter('P1606dn');
+						AF.func("Calc", ""); //填充数据
+						AF.func("Print", "isOpenSysDialog=false");
+					}
+				}
+			}
+		})
+	}
+	/**
+	 * 切换打印机
+	 * 例如 switchPrinter('EMS')，找到打印机名字中带 EMS的打印机并指定
+	 */
+	function switchPrinter(printerName){
+		var printers=AF.func("GetPrinters").split(',');
+		//搜索打印机
+		for (i in printers){
+			if(typeof(printers[i]) == 'string' ){
+				if (printers[i].indexOf(printerName)>-1){
+					printerName=printers[i];
+				}
+			}
+		}
+		var setting=AF.func("GetProp", "Print");
+		// console.log(setting);
+		if (setting.indexOf('<Printer>') > -1){
+			setting=setting.replace(/<Printer>.*?<\/Printer>/mg,'<Printer>'+printerName+'</Printer>');
+		}else {
+			setting=setting.replace('<PrintPage>',"<PrintPage>\r\n<Printer>"+printerName+'</Printer>');
+		}
+		// console.log(setting);
+		AF.func("SetProp", "Print \r\n" + setting);
+	}
+    /// QZ Config ///
+    var cfg = null;
+    function getUpdatedConfig() {
+        if (cfg == null) {
+            cfg = qz.configs.create(null);
+        }
+
+        updateConfig();
+        return cfg
+    }
+
+    function updateConfig() {
+        var pxlSize = null;
+        if (true) {
+            pxlSize = {
+                width: 9.5,
+                height: 14.5
+            };
+        }
+
+        var pxlMargins = $("#pxlMargins").val();
+        if (true) {
+            pxlMargins = {
+                top: 0.4,
+                right: 0.3,
+                bottom: 0.3,
+                left: 0.4
+            };
+        }
+
+        var copies = 1;
+        var jobName = null;
+        if ($("#rawTab").hasClass("active")) {
+            copies = $("#rawCopies").val();
+            jobName = $("#rawJobName").val();
+        } else {
+            copies = $("#pxlCopies").val();
+            jobName = $("#pxlJobName").val();
+        }
+
+        cfg.reconfigure({
+                            altPrinting: $("#rawAltPrinting").prop('checked'),
+                            encoding: $("#rawEncoding").val(),
+                            endOfDoc: $("#rawEndOfDoc").val(),
+                            perSpool: $("#rawPerSpool").val(),
+
+                            colorType: $("#pxlColorType").val(),
+                            copies: copies,
+                            density: $("#pxlDensity").val(),
+                            duplex: $("#pxlDuplex").prop('checked'),
+                            interpolation: $("#pxlInterpolation").val(),
+                            jobName: jobName,
+                            legacy: $("#pxlLegacy").prop('checked'),
+                            margins: pxlMargins,
+                            orientation: $("#pxlOrientation").val(),
+                            paperThickness: $("#pxlPaperThickness").val(),
+                            printerTray: $("#pxlPrinterTray").val(),
+                            rasterize: $("#pxlRasterize").prop('checked'),
+                            rotation: $("#pxlRotation").val(),
+                            scaleContent: $("#pxlScale").prop('checked'),
+                            size: pxlSize,
+                            units: 'cm'
+                        });
+    }
+
+    function setPrintFile() {
+        setPrinter({ file: $("#askFile").val() });
+        $("#askFileModal").modal('hide');
+    }
+
+    function setPrintHost() {
+        setPrinter({ host: $("#askHost").val(), port: $("#askPort").val() });
+        $("#askHostModal").modal('hide');
+    }
+
+    function setPrinter(printer) {
+        var cf = getUpdatedConfig();
+        cf.setPrinter(printer);
+
+        if (typeof printer === 'object' && printer.name == undefined) {
+            var shown;
+            if (printer.file != undefined) {
+                shown = "<em>FILE:</em> " + printer.file;
+            }
+            if (printer.host != undefined) {
+                shown = "<em>HOST:</em> " + printer.host + ":" + printer.port;
+            }
+
+            $("#configPrinter").html(shown);
+        } else {
+            if (printer.name != undefined) {
+                printer = printer.name;
+            }
+
+            if (printer == undefined) {
+                printer = 'NONE';
+            }
+            $("#configPrinter").html(printer);
+        }
+    }
+</script>
+

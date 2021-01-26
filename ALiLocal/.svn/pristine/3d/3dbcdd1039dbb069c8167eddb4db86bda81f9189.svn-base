@@ -1,0 +1,50 @@
+<?php
+class Controller_Customer extends Controller_Abstract{
+    /**
+     * 检索
+     */
+    function actionSearch(){
+        $this->_view['customers'] = Customer::find()->getAll();
+    }
+    /**
+     * 客户编辑
+     */
+    function actionEdit(){
+	    $customer = Customer::find('customer_id = ?',request('customer_id'))->getOne();
+	    $title=array();
+	    if(request('customer_id')){
+	        $title=Title::find('customer_id = ?',request('customer_id'))->asArray()->getAll();
+	    }
+	    if(request_is_post()){
+	        //判断供应商名称是否存在
+	        $customer_check=Customer::find('customer = ?',request('customer'))->getOne();
+	        $customer_code_check = Customer::find('customs_code = ?',request('customs_code'))->getOne();
+	        if(!$customer_check->isNewRecord() && ($customer_check->customer_id!=request('customer_id'))){
+	            return $this->_redirectMessage('客户编辑失败', '客户名称已存在', url('/edit',array('customer_id'=>$customer->customer_id)),2);
+	        }elseif(!$customer_code_check->isNewRecord() && ($customer_code_check->customer_id!=request('customer_id'))){
+	            return $this->_redirectMessage('客户编辑失败', '客户代码已存在', url('/edit',array('customer_id'=>$customer->customer_id)),2);
+	        }else{
+	            if(!request('title_name')){
+	                return $this->_redirectMessage('客户编辑失败', '账号抬头不能为空', url('/edit',array('customer_id'=>$customer->customer_id)),2);
+	            }
+	            $customer=Customer::find('customer_id = ?',request('customer_id'))->getOne();
+	            $customer->customs_code = request('customs_code');
+	            $customer->customer = request('customer');
+	            $customer->save();
+	            Title::meta()->destroyWhere('customer_id =?',$customer->customer_id);
+	            foreach (request('title_name') as $name){
+	                $ti=new Title(array(
+	                    'customer_id'=>$customer->customer_id,
+	                    'name'=>$name
+	                ));
+	                $ti->save();
+	            }
+	            return $this->_redirectMessage('客户编辑', '客户编辑成功', url('/search'));
+	        }
+	    }
+	    $this->_view['customer']=$customer;
+	    $this->_view['title']=$title;
+	}
+}
+
+?>

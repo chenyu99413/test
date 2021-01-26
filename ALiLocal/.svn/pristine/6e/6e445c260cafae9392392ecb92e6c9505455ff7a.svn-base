@@ -1,0 +1,134 @@
+<?php
+class Controller_Channel extends Controller_Abstract {
+	/**
+	 * 检索
+	 */
+	function actionSearch() {
+		$this->_view['networks']=Network::find()->getAll();
+		$this->_view ['channels'] = Channel::find ()->getAll ();
+	}
+	
+	/**
+	 * 编辑
+	 */
+	function actionEdit() {
+	    $channel=Channel::find('channel_id=?',request('channel_id'))->getOne();
+	    if(request_is_post()){
+	        //判断渠道名称是否存在
+	        $channel_check=Channel::find('channel_name=?',request('channel_name'))->getOne();
+	        if(!$channel_check->isNewRecord() && ($channel_check->channel_id!=request('channel_id'))){
+	            return $this->_redirectMessage('渠道编辑失败', '渠道名称已存在', url('/edit',array('channel_id'=>$channel->channel_id)),2);
+	        }else{
+	            $channel=Channel::find('channel_id=?',request('channel_id'))->getOne();
+	            $channel->channel_name=request('channel_name');
+	            $channel->channel_group_id=request('channel_group_id');
+	            $channel->network_code=request('network_code');
+	            $channel->sender_id=request('sender_id');
+	            $channel->account=request('account');
+	            $channel->save();
+	            //保存可用部门
+	            Channeldepartmentavailable::find('channel_id=?',$channel->channel_id)->getAll()->destroy();
+	            foreach (explode(',', request('department_hidden')) as $department_id){
+	            	if(!$department_id){
+	            		continue;
+	            	}
+	                $available= new Channeldepartmentavailable();
+	                $available->changeProps(array(
+	                    'channel_id'=>$channel->channel_id,
+	                    'department_id'=>$department_id
+	                ));
+	                $available->save();
+	            }
+	            return $this->_redirectMessage('渠道编辑', '渠道编辑成功', url('/edit',array('channel_id'=>$channel->channel_id)));
+	        }
+	    }
+	    $this->_view['channel']=$channel;
+	    $this->_view['disabled_department']=Channeldepartmentdisable::find('channel_id=?',$channel->channel_id)->getAll();
+	    //筛选可用部门
+	    $available_department=Channeldepartmentavailable::find('channel_id=?',$channel->channel_id)->getAll();
+	    $this->_view ["department"] = array (
+	        "state" => true,
+	        "checked" => implode ( ",", Helper_Array::getCols ( $available_department, "department_id" ) )
+	    );
+	}
+	/**
+	 * 获取渠道信息
+	 */
+	function actionGetchannel(){
+	    $channel=Channel::find('channel_id=?',request('channel_id'))->asArray()->getOne();
+	    echo json_encode($channel);
+	    exit();
+	}
+	/**
+	 * 保存禁用部门信息
+	 */
+	function actionDisabledsave(){
+	    if (request('disable_department')){
+	        $p = request ( "disable_department" );
+	        $disabled = Channeldepartmentdisable::find ( "disabled_id = ?", $p ["disabled_id"] )->getOne ();
+	        $disabled->channel_id = request('channel_id');
+	        $p['effect_time']=strtotime($p['effect_time']."00:00:00");
+	        $p['failure_time']=strtotime($p['failure_time']."23:59:59");
+	        $department=Department::find('department_name=?',$p['department_id'])->getOne();
+	        $p['department_id']=$department->department_id;
+	        $disabled->changeProps ( $p );
+	        $disabled->save ();
+	        echo ($disabled->disabled_id);
+	    }
+	    exit();
+	}
+	/**
+	 * 禁用部门删除
+	 */
+	function actionDisableddel() {
+	    if (request ( "disabled_id" )) {
+	        $disabled = Channeldepartmentdisable::find ( "disabled_id = ?", request ( "disabled_id" ) )->getOne ();
+	        $disabled->destroy ();
+	    }
+	    exit();
+	}
+	/**
+	 * 渠道分组管理
+	 */
+	function actionChannelgroup(){
+	    $channel_group=Channelgroup::find()->getAll();
+	    $this->_view['list']=$channel_group;
+	}
+	/**
+	 * 渠道分组编辑
+	 */
+	function actionChannelgroupedit(){
+	    $channel_group_info=Channelgroup::find('channel_group_id=?',request('channel_group_id'))->getOne();
+	    if(request_is_post()){
+	        //判断渠道分组名称是否存在
+	        $channel_group_check=Channelgroup::find('channel_group_name=?',request('channel_group_name'))->getOne();
+	        if(!$channel_group_check->isNewRecord() && ($channel_group_check->channel_group_id!=request('channel_group_id'))){
+	            return $this->_redirectMessage('渠道分组编辑失败', '渠道分组名称已存在', url('/Channelgroupedit',array('channel_group_id'=>$channel_group_info->channel_group_id)),2);
+	        }else{
+	            $channel_group_info->channel_group_name=request('channel_group_name');
+	            $channel_group_info->save();
+	            return $this->_redirectMessage('渠道分组编辑', '成功', url('/Channelgroupedit',array('channel_group_id'=>$channel_group_info->channel_group_id)));
+	        }
+	    }
+	    $this->_view['channel_group_info']=$channel_group_info;
+	}
+	/**
+	 * 渠道分组删除
+	 */
+	function actionChannelgroupdel(){
+	    $channel_group_info=Channelgroup::find('channel_group_id=?',request('channel_group_id'))->getOne();
+	    if($channel_group_info->isNewRecord()){
+	        echo 'error';
+	    }
+	    //检查渠道分组是否绑定渠道
+	    $channel=Channel::find('channel_group_id=?',$channel_group_info->channel_group_id)->getOne();
+	    if($channel->isNewRecord()){//未绑定，可以删除
+	        $channel_group_info->destroy();
+	        echo 'success';
+	    }else {
+	        echo 'fail';
+	    }
+	    exit();
+	}
+}
+
